@@ -1,0 +1,22 @@
+name: Validate extension
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate manifest
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))"
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/service-worker.js
+          node --check src/persistence.js
+          node --check src/file-access.js
+          node --check src/workspace.js
