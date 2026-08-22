@@ -9,14 +9,23 @@
 <body>
   <header class="toolbar">
     <div class="brand">Flashframe</div>
-    <div class="toolbar-actions">
-      <button id="add-text" type="button">Add text</button>
+
+    <div class="toolbar-actions" aria-label="Add blocks">
+      <button id="add-text" type="button">New note</button>
+      <button id="open-text" type="button">Open text</button>
+      <button id="open-pdf" type="button">Open PDF</button>
+      <button id="open-gallery" type="button">Open gallery</button>
+      <button id="open-video" type="button">Open video</button>
+    </div>
+
+    <div class="toolbar-actions frame-actions" aria-label="Flashframes">
       <button id="save-frame" type="button">Save Flashframe</button>
       <select id="saved-frames" aria-label="Saved Flashframes">
         <option value="">Saved Flashframes</option>
       </select>
       <button id="restore-frame" type="button">Restore</button>
     </div>
+
     <div id="status" class="status" role="status" aria-live="polite"></div>
   </header>
 
@@ -26,12 +35,74 @@
     <section class="block text-block" data-block-type="text">
       <div class="block-header">
         <input class="block-name" value="Untitled" aria-label="Block name">
+        <span class="source-badge" hidden></span>
         <div class="block-actions">
           <button class="maximize-block" type="button" title="Maximize">□</button>
           <button class="remove-block" type="button" title="Remove from workspace">×</button>
         </div>
       </div>
       <textarea class="text-editor" spellcheck="true" aria-label="Text"></textarea>
+    </section>
+  </template>
+
+  <template id="pdf-block-template">
+    <section class="block pdf-block" data-block-type="pdf">
+      <div class="block-header">
+        <input class="block-name" value="PDF" aria-label="Block name">
+        <div class="block-actions">
+          <button class="maximize-block" type="button" title="Maximize">□</button>
+          <button class="remove-block" type="button" title="Remove from workspace">×</button>
+        </div>
+      </div>
+      <div class="block-toolbar pdf-toolbar">
+        <button class="pdf-prev" type="button" title="Previous page">‹</button>
+        <label>Page <input class="pdf-page" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
+        <button class="pdf-next" type="button" title="Next page">›</button>
+        <button class="reconnect-source" type="button" hidden>Reconnect</button>
+      </div>
+      <div class="source-message" hidden></div>
+      <iframe class="pdf-viewer" title="PDF viewer"></iframe>
+    </section>
+  </template>
+
+  <template id="gallery-block-template">
+    <section class="block gallery-block" data-block-type="gallery">
+      <div class="block-header">
+        <input class="block-name" value="Gallery" aria-label="Block name">
+        <div class="block-actions">
+          <button class="maximize-block" type="button" title="Maximize">□</button>
+          <button class="remove-block" type="button" title="Remove from workspace">×</button>
+        </div>
+      </div>
+      <div class="gallery-stage">
+        <img class="gallery-image" alt="">
+        <div class="source-message" hidden></div>
+      </div>
+      <div class="block-toolbar gallery-toolbar">
+        <button class="gallery-prev" type="button" title="Previous image">‹</button>
+        <span class="gallery-position">0 / 0</span>
+        <span class="gallery-filename"></span>
+        <button class="gallery-next" type="button" title="Next image">›</button>
+        <button class="reconnect-source" type="button" hidden>Reconnect</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="video-block-template">
+    <section class="block video-block" data-block-type="video">
+      <div class="block-header">
+        <input class="block-name" value="Video" aria-label="Block name">
+        <div class="block-actions">
+          <button class="maximize-block" type="button" title="Maximize">□</button>
+          <button class="remove-block" type="button" title="Remove from workspace">×</button>
+        </div>
+      </div>
+      <div class="source-message" hidden></div>
+      <video class="video-player" controls preload="metadata"></video>
+      <div class="block-toolbar source-toolbar">
+        <span class="video-time">0:00</span>
+        <button class="reconnect-source" type="button" hidden>Reconnect</button>
+      </div>
     </section>
   </template>
 
