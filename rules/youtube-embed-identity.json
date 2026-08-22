@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://github.com/thanks-cohn/flashframe/"
+        }
+      ]
+    },
+    "condition": {
+      "regexFilter": "^https://(www\\.)?youtube(?:-nocookie)?\\.com/embed/",
+      "resourceTypes": ["sub_frame"]
+    }
+  }
+]
