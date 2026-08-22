@@ -1,3 +1,4 @@
+import "./live-state.js";
 import { getSnapshot, listSnapshots, saveSnapshot } from "./persistence.js";
 import { readLiveSnapshot, readNamedSnapshots, writeLiveSnapshot, writeNamedSnapshot } from "./archive.js";
 
