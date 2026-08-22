@@ -1,301 +1,314 @@
 # Flashframe Design Notes
 
-This document describes the intended behavior of Flashframe in enough detail that the project can be resumed later without having to reconstruct the idea from memory.
+Flashframe is a spatial workspace that runs inside Chrome/Chromium as a Manifest V3 extension.
+
+The purpose of this document is to preserve the interaction model. Implementation details can change; the few concepts the user sees should remain stable.
 
 ## 1. The workspace
 
-Flashframe presents one large browser workspace containing independent blocks.
+Opening Flashframe opens one extension-owned browser tab containing a large spatial workspace.
 
-The workspace is not a traditional document. It is closer to a spatial desktop or visual desk. Blocks may overlap, sit beside one another, or be arranged into clusters according to the user's own habits.
+The workspace behaves more like a desk than a conventional document. Independent blocks can sit beside each other, overlap, be resized, and be returned to later in the same arrangement.
 
-The workspace should eventually support:
+The workspace owns:
 
-- free positioning
-- free resizing
-- z-order / bring-to-front behavior
-- temporary maximization
-- restoration to previous geometry after maximization
-- optional pan and zoom
-- a clean empty-state for dropping or choosing the first piece of media
+- block position
+- block size
+- z-order
+- selection/focus behavior
+- temporary maximize/restore
+- save and restore of whole workspace snapshots
+- eventual pan/zoom if the canvas needs to grow beyond the viewport
 
-Coordinates should belong to the workspace, not to the current browser viewport. This keeps saved layouts meaningful even if the visible area changes.
+Coordinates belong to the workspace, not to an arbitrary current browser window position.
 
-## 2. The block contract
+## 2. Blocks
 
-Every block type should implement the same basic conceptual contract.
+A block is the basic object in Flashframe.
 
-A block needs:
-
-- a stable id
-- a type
-- a position
-- a size
-- a source description
-- serializable content state
-- a way to restore from that state
-
-Conceptually:
+Every block has:
 
 ```text
-Block
-  id
-  type
-  x
-  y
-  width
-  height
-  zIndex
-  source
-  state
+id
+type
+name
+geometry
+source
+state
 ```
 
-The workspace should not need to understand the private details of every block's state. It only needs to know how to ask a block to serialize and restore itself.
-
-This is important because future block types should be addable without redesigning the workspace format.
-
-## 3. Local video block
-
-The local video block is the simplest proof that Flashframe saves more than layout.
-
-### Source
-
-The source should be a user-selected local video file or a retained file handle where supported.
-
-### Saved state
-
-At minimum:
+`geometry` is generic:
 
 ```text
+x
+y
+width
+height
+z
+```
+
+The workspace owns geometry.
+
+The block implementation owns `source` and `state`.
+
+A new block type should be addable without teaching the canvas special cases about that block's internal behavior.
+
+Conceptually, a block implementation needs only to be able to:
+
+```text
+create
+render/mount
+serialize
+restore
+destroy
+```
+
+The exact JavaScript interface is allowed to evolve.
+
+## 3. Direct manipulation
+
+A block should feel physical and obvious.
+
+The user should be able to:
+
+- drag its header to move it
+- resize it directly
+- click it to bring it forward
+- edit its name
+- maximize it temporarily
+- restore it to its old geometry
+- remove it from the workspace without deleting its source file
+
+Content controls inside a block must remain usable without accidentally moving the whole block.
+
+## 4. Text block
+
+Text is one of the first-class early block types because writing and research are central uses of Flashframe.
+
+The first editor does not need to be sophisticated. A plain text control is acceptable if restoration is reliable.
+
+Minimum state:
+
+```text
+text
+visible position / scrollTop
+cursor offset?  // optional
+```
+
+The generic block shell already saves the block name and geometry.
+
+If the text came from an external file, a saved Flashframe still needs the actual text that existed at the saved moment. Re-reading the current external file is not sufficient because the file may have changed or disappeared.
+
+Later improvements may include richer editing, but they are not prerequisites for proving Flashframe.
+
+## 5. PDF block
+
+The first PDF block should remain intentionally small.
+
+Minimum state:
+
+```text
+source
+page
+```
+
+The important experience is:
+
+1. open a PDF
+2. read to page 83
+3. save a Flashframe
+4. reopen it later
+5. return to page 83
+
+Zoom, annotations, selections, and other viewer state can be added if users miss them. They should not delay the core restoration path.
+
+If the browser's built-in PDF embedding does not expose reliable page control, the implementation may later bundle a viewer such as PDF.js while keeping the same block contract.
+
+## 6. Directory lightbox block
+
+A lightbox block points to a user-chosen local image directory.
+
+The user can browse that directory from inside the block rather than repeatedly opening a file manager.
+
+Minimum state:
+
+```text
+directory source
+current image
+```
+
+The exact image identity or filename matters more than a numeric index. If new files change the sort order, Flashframe should still try to return to the image the user was actually viewing.
+
+Early interactions:
+
+- previous / next
+- left/right keyboard navigation while focused
+- fit image to block
+- direct drag/resize of the outer block
+
+Later additions can include thumbnails, sorting, fill/original-size modes, and slideshow behavior.
+
+Large directories should be enumerated without decoding every image at once. Load the current image and a small nearby cache.
+
+## 7. Local video block
+
+The local video block demonstrates temporal state.
+
+Minimum state:
+
+```text
+source
 currentTime
+```
+
+Useful additional state:
+
+```text
 paused
 volume
 muted
 playbackRate
 ```
 
-The block itself also inherits workspace geometry such as x, y, width, height, and z-order.
+Returning to the correct timestamp is the defining behavior. Browser autoplay policy may require a click before playback resumes, and that is acceptable.
 
-### Restore behavior
+## 8. Adding local content
 
-On restore:
+The first version is local-first.
 
-1. Resolve or request access to the original local file.
-2. Create the video element.
-3. Wait until enough metadata is available to seek safely.
-4. Restore `currentTime`.
-5. Restore volume, mute state, and playback rate.
-6. Restore playing/paused state when browser policy permits it.
+Expected browser-native entry points:
 
-If autoplay is blocked, the restored timestamp is still valuable. The UI should clearly indicate that playback is ready and requires user interaction rather than treating this as an error.
+- text/PDF/video: file picker
+- gallery: directory picker
+- drag-and-drop where it naturally fits
 
-### Missing source behavior
+The user explicitly grants access to the selected file or directory. Flashframe should not try to crawl the filesystem.
 
-If the original file moved, disappeared, or permission was lost, the block should remain visible as a recoverable placeholder.
+Where supported, retained file/directory handles can make restoration smoother. Those handles are conveniences, not guarantees; permission may need to be granted again.
 
-It should say what file it expected and offer the user a way to relink it.
+## 9. Saving a Flashframe
 
-A missing source should not cause the entire Flashframe to fail.
+A Flashframe is a deliberate saved moment of the workspace.
 
-## 4. Directory lightbox block
-
-The lightbox is a block backed by a local image directory.
-
-Its purpose is to let the user operate on a collection visually without repeatedly returning to a file explorer.
-
-### Source
-
-The source is a directory selected by the user.
-
-The application should enumerate supported image files from that directory and keep a lightweight ordered list rather than loading all image bytes at once.
-
-Likely image extensions include:
-
-- png
-- jpg / jpeg
-- webp
-- gif
-- avif where supported
-- svg where appropriate
-
-### Saved state
-
-At minimum:
-
-```text
-currentEntry
-currentIndex
-sortMode
-sortDirection
-viewMode
-zoom
-slideshowEnabled
-slideshowInterval
-```
-
-`currentEntry` should preferably use a filename or another stable identifier rather than relying only on an integer index. That way, adding a file earlier in the sort order does not necessarily make the restored block open the wrong image.
-
-### Navigation
-
-The first version should make these operations obvious:
-
-- previous image
-- next image
-- keyboard left/right
-- jump through thumbnails
-- fit image to block
-- fill block
-- show natural/original size
-
-The user should not need to reopen the directory chooser simply to move to another image in the same directory.
-
-### Large directories
-
-A directory may contain hundreds or thousands of images.
-
-Flashframe should avoid decoding everything at startup. Prefer lazy loading, thumbnail generation or browser-native previews, and small caches around the current image.
-
-The lightbox should remain responsive even when the directory itself is large.
-
-## 5. Saving a Flashframe
-
-Saving should produce a durable description of the workspace state.
-
-A Flashframe snapshot should include:
+A snapshot contains:
 
 ```text
 snapshot id
 name
-timestamp
-workspace viewport / camera state
-block list
+created time
+block records
 ```
 
-Each block entry includes generic geometry and block-specific source/state data.
+Each block record contains:
 
-Saving should be cheap enough that the user never hesitates to do it.
+```text
+id
+type
+name
+geometry
+source
+state
+```
 
-The underlying media should not normally be duplicated into the snapshot. A snapshot describes how to return to the user's workspace; it is not automatically an archive of all source files.
+Saving should be cheap enough that the user does not hesitate to use it.
 
-## 6. Restoring a Flashframe
+A saved Flashframe is conceptually immutable. Opening it creates a live workspace derived from that snapshot. Ordinary use of the restored workspace should not silently rewrite the historical snapshot.
+
+## 10. Restoration
 
 Restoration should be resilient rather than all-or-nothing.
 
-The expected sequence is:
+Sequence:
 
-1. Load snapshot metadata.
-2. Recreate the workspace.
-3. Recreate each block shell and geometry.
-4. Resolve each block's source.
-5. Restore each block's content state.
-6. Clearly mark any block that could not fully restore.
+1. load snapshot metadata
+2. recreate block shells and geometry
+3. resolve each block's source if it has one
+4. apply each block's small saved state
+5. leave unresolved sources as relinkable placeholders
 
-A Flashframe with five blocks should still be useful if four restore perfectly and one needs to be relinked.
+If a workspace has five blocks and one local source vanished, the other four should still restore normally.
 
-## 7. Persistence
+## 11. Missing sources
 
-There are two different things to persist:
+A missing local source should not make a block disappear.
 
-### Snapshot metadata
+The placeholder should preserve:
 
-Small structured state such as geometry, timestamps, filenames, and block state.
+- block name
+- block type
+- old geometry
+- expected source name
+- saved state
 
-IndexedDB is a natural browser-side store for this kind of data.
+It should offer a clear Relink action.
 
-### Local file and directory access
+Removing a block from Flashframe must never delete the underlying file.
 
-Where browser support allows, retain file or directory handles rather than copying the source media.
+## 12. Persistence
 
-Permissions may not survive forever or may need to be requested again. The data model should therefore treat a retained handle as a convenience, not as an absolute guarantee.
+IndexedDB is the natural first persistence layer because Flashframe needs both ordinary structured records and browser file/directory handles.
 
-If access is no longer available, ask the user to relink the source and update the block reference.
+Conceptual stores:
 
-## 8. Interaction details
+```text
+snapshots
+handles
+content
+```
 
-The workspace should favor actions that are immediately visible and reversible.
+Text content can live directly in snapshot state initially. More elaborate content-addressing is unnecessary until measurements justify it.
 
-### Adding content
+Schema versions should be explicit from the beginning.
 
-Likely entry methods:
+## 13. Memorew
 
-- drag a local video into the workspace
-- choose a video through a file picker
-- add a directory lightbox and choose a directory
+Memorew is a separate layer on top of the same block-state contract.
 
-### Moving
+Flashframe owns space and explicit snapshots.
 
-Dragging the block header or a dedicated grab region should move the block.
+Memorew records those states over time.
 
-Media controls themselves should remain usable without accidentally dragging the block.
+It should not create a second kind of block or a second restoration system. If a block can serialize and restore correctly for Flashframe, the same record should be sufficient for Memorew.
 
-### Resizing
+The state remains intentionally small:
 
-Resize handles should be generous enough to use easily.
+```text
+text -> text + position (+ optional cursor)
+pdf -> page
+gallery -> current image
+video -> timestamp
+```
 
-The content should adapt continuously while resizing rather than waiting until the resize gesture ends.
+Names and geometry already come from Flashframe.
 
-### Maximizing
+## 14. Performance
 
-A block should be able to temporarily occupy the useful workspace area, then return exactly to its previous geometry.
+Avoid doing work merely because a block exists.
 
-This is particularly useful for videos and images.
+Useful rules:
 
-### Deleting a block
+- debounce high-frequency persistence during movement/resizing
+- write exact final geometry when interaction ends
+- lazy-load large local sources
+- do not decode an entire image directory at startup
+- do not duplicate large videos into ordinary snapshots
+- keep text snapshots simple until storage size proves otherwise
 
-Removing a block from Flashframe must never imply deleting the underlying local file or directory.
+## 15. What Flashframe is not
 
-The distinction should be unambiguous.
+The first product is not:
 
-## 9. Data safety
-
-Flashframe's snapshot data is valuable because it records the user's arrangement and progress.
-
-The application should avoid fragile storage formats and should eventually support export/import of snapshot metadata.
-
-Schema versions should be explicit so old snapshots can be migrated instead of silently breaking when the project evolves.
-
-## 10. Performance principles
-
-A workspace may eventually contain many media blocks, so avoid assumptions that every block is continuously active.
-
-Useful principles:
-
-- lazy-load source data where possible
-- do not decode entire image directories up front
-- pause expensive work for offscreen or inactive blocks
-- debounce persistence of high-frequency movement and resize events
-- keep the final saved state exact even if intermediate updates are throttled
-- avoid duplicating large media into application storage unnecessarily
-
-## 11. Accessibility and keyboard use
-
-Mouse-driven spatial interaction is central, but common actions should also have keyboard paths.
-
-At minimum, the application should eventually support sensible focus behavior and keyboard access for:
-
-- block selection
-- image previous/next
-- play/pause
-- maximizing/restoring
-- removal
-- snapshot save and restore
-
-Keyboard support should complement direct manipulation rather than create a separate interaction model.
-
-## 12. What Flashframe is not
-
-The first version is not intended to be:
-
-- a complete replacement for the browser's tab system
-- a general remote-web embedding platform
-- a professional nonlinear video editor
-- a DAM or photo catalog
+- a replacement Chromium build
+- an arbitrary website tiling system
+- a professional video editor
+- a full document-management system
 - a replacement filesystem
-- a giant project-management suite
+- a VM/RAM snapshot system
 
-Those directions would obscure the central idea before it is proven.
+It is a Chrome/Chromium extension that gives supported local content a spatial workspace and a tiny restorable state.
 
-The first test is much simpler:
+## 16. Product test
 
-> Can someone arrange several local videos and image collections into a useful visual workspace, close it, and later return to the same useful moment?
+The project is proving the right thing when a user can arrange a text draft, PDFs, a reference gallery, and a local video, save the workspace, close it, and later return to the same useful points without manually reconstructing their desk.
 
-If that works well, the architecture can grow from there.
+The interaction should feel surprisingly small compared with the result.
