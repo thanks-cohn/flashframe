@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Flashframe",
-  "version": "0.1.0",
-  "description": "Arrange local text, PDFs, images, and video in a spatial workspace and restore useful moments later.",
+  "version": "1.0.0",
+  "description": "A spatial workspace for Chrome and Chromium.",
   "action": {
     "default_title": "Open Flashframe"
   },
