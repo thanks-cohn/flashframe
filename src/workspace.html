@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flashframe</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="brand">Flashframe</div>
+    <div class="toolbar-actions">
+      <button id="add-text" type="button">Add text</button>
+      <button id="save-frame" type="button">Save Flashframe</button>
+      <select id="saved-frames" aria-label="Saved Flashframes">
+        <option value="">Saved Flashframes</option>
+      </select>
+      <button id="restore-frame" type="button">Restore</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+  </header>
+
+  <main id="workspace" class="workspace" aria-label="Flashframe workspace"></main>
+
+  <template id="text-block-template">
+    <section class="block text-block" data-block-type="text">
+      <div class="block-header">
+        <input class="block-name" value="Untitled" aria-label="Block name">
+        <div class="block-actions">
+          <button class="maximize-block" type="button" title="Maximize">□</button>
+          <button class="remove-block" type="button" title="Remove from workspace">×</button>
+        </div>
+      </div>
+      <textarea class="text-editor" spellcheck="true" aria-label="Text"></textarea>
+    </section>
+  </template>
+
+  <script type="module" src="workspace.js"></script>
+</body>
+</html>
