@@ -2,10 +2,8 @@ import { connectArchiveDirectory, getArchiveStatus } from "./archive.js";
 
 const SETTINGS_KEY = "flashframe.settings.v1";
 const VIDEO_LOOP_OVERRIDES_KEY = "flashframe.video-loop-overrides.v1";
-const TOOLBAR_BUTTON_KEY = "flashframe.toolbar-summon-position.v1";
-const SETTINGS_DOCK_KEY = "flashframe.settings-dock.v2";
-const VIDEO_DOCK_KEY = "flashframe.video-dock.v2";
 const VIDEO_STEP_KEY = "flashframe.video-step-seconds.v1";
+const TOOLBAR_BUTTON_KEY = "flashframe.toolbar-summon-position.v1";
 
 const defaults = {
   showBlockHeaders: true,
@@ -14,23 +12,20 @@ const defaults = {
 };
 
 const workspace = document.querySelector("#workspace");
-const toolbarSummon = document.querySelector("#toolbar-summon");
-const settingsDock = document.querySelector("#settings-dock");
-const settingsDrag = document.querySelector("#settings-dock-grip");
-const settingsExpand = document.querySelector("#settings-expand");
-const settingsMini = document.querySelector("#settings-mini");
-const videoDock = document.querySelector("#video-dock");
-const videoDrag = document.querySelector("#video-dock-grip");
-const videoExpand = document.querySelector("#video-expand");
-const rewindButton = document.querySelector("#video-rewind-all");
-const playButton = document.querySelector("#video-play-all");
-const forwardButton = document.querySelector("#video-forward-all");
-const stepInput = document.querySelector("#video-rewind-seconds");
+const status = document.querySelector("#status");
+const settingsToggle = document.querySelector("#settings-toggle");
+const settingsPanel = document.querySelector("#settings-panel");
+const settingsClose = document.querySelector("#settings-close");
 const showBlockHeadersInput = document.querySelector("#setting-block-headers");
 const showToolbarInput = document.querySelector("#setting-toolbar");
 const loopVideosInput = document.querySelector("#setting-loop-videos");
+const stepInput = document.querySelector("#video-rewind-seconds");
+const rewindButton = document.querySelector("#video-rewind-all");
+const playButton = document.querySelector("#video-play-all");
+const forwardButton = document.querySelector("#video-forward-all");
 const archiveStatus = document.querySelector("#archive-status");
 const archiveConnect = document.querySelector("#archive-connect");
+const toolbarSummon = document.querySelector("#toolbar-summon");
 
 let settings = { ...defaults, ...readJson(SETTINGS_KEY, {}) };
 let videoLoopOverrides = readJson(VIDEO_LOOP_OVERRIDES_KEY, {});
@@ -58,110 +53,18 @@ function saveSettings() {
   writeJson(SETTINGS_KEY, settings);
 }
 
-function clampPosition(element, x, y) {
-  const margin = 8;
-  const width = element.offsetWidth || 48;
-  const height = element.offsetHeight || 48;
-
-  return {
-    x: Math.min(Math.max(margin, x), Math.max(margin, window.innerWidth - width - margin)),
-    y: Math.min(Math.max(margin, y), Math.max(margin, window.innerHeight - height - margin))
-  };
+function setStatus(message) {
+  if (status) status.textContent = message;
 }
 
-function placeFloating(element, key, x, y, persist = false) {
-  const point = clampPosition(element, x, y);
-  element.style.right = "auto";
-  element.style.left = `${point.x}px`;
-  element.style.top = `${point.y}px`;
-
-  if (persist) {
-    const old = readJson(key, {});
-    writeJson(key, { ...old, x: point.x, y: point.y });
-  }
+function openSettings() {
+  settingsPanel.hidden = false;
+  settingsToggle.setAttribute("aria-expanded", "true");
 }
 
-function initializeFloatingPosition(element, key) {
-  const saved = readJson(key, {});
-  requestAnimationFrame(() => {
-    const rect = element.getBoundingClientRect();
-    placeFloating(
-      element,
-      key,
-      Number.isFinite(saved.x) ? saved.x : rect.left,
-      Number.isFinite(saved.y) ? saved.y : rect.top
-    );
-  });
-}
-
-function attachDragOnly(element, handle, key) {
-  handle.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const rect = element.getBoundingClientRect();
-    const startX = event.clientX;
-    const startY = event.clientY;
-    const startLeft = rect.left;
-    const startTop = rect.top;
-
-    element.classList.add("is-dragging");
-    handle.setPointerCapture(event.pointerId);
-
-    const move = (moveEvent) => {
-      placeFloating(
-        element,
-        key,
-        startLeft + moveEvent.clientX - startX,
-        startTop + moveEvent.clientY - startY
-      );
-    };
-
-    const finish = () => {
-      element.classList.remove("is-dragging");
-      handle.removeEventListener("pointermove", move);
-      handle.removeEventListener("pointerup", finish);
-      handle.removeEventListener("pointercancel", finish);
-
-      const finalRect = element.getBoundingClientRect();
-      placeFloating(element, key, finalRect.left, finalRect.top, true);
-    };
-
-    handle.addEventListener("pointermove", move);
-    handle.addEventListener("pointerup", finish);
-    handle.addEventListener("pointercancel", finish);
-  });
-}
-
-function setDockCollapsed(dock, expandButton, key, collapsed) {
-  dock.classList.toggle("is-collapsed", collapsed);
-  expandButton.textContent = collapsed ? "□" : "−";
-  expandButton.title = collapsed ? "Expand" : "Minimize";
-  expandButton.setAttribute("aria-label", expandButton.title);
-
-  const old = readJson(key, {});
-  writeJson(key, { ...old, collapsed });
-
-  requestAnimationFrame(() => {
-    const rect = dock.getBoundingClientRect();
-    placeFloating(dock, key, rect.left, rect.top, true);
-  });
-}
-
-function initializeDock(dock, expandButton, key) {
-  const saved = readJson(key, {});
-  const collapsed = saved.collapsed === true;
-  dock.classList.toggle("is-collapsed", collapsed);
-  expandButton.textContent = collapsed ? "□" : "−";
-  expandButton.title = collapsed ? "Expand" : "Minimize";
-  expandButton.setAttribute("aria-label", expandButton.title);
-  initializeFloatingPosition(dock, key);
-
-  expandButton.addEventListener("click", () => {
-    setDockCollapsed(dock, expandButton, key, !dock.classList.contains("is-collapsed"));
-  });
+function closeSettings() {
+  settingsPanel.hidden = true;
+  settingsToggle.setAttribute("aria-expanded", "false");
 }
 
 function effectiveToolbarVisible() {
@@ -169,7 +72,9 @@ function effectiveToolbarVisible() {
 }
 
 function applyToolbarVisibility() {
-  document.body.classList.toggle("toolbar-hidden", !effectiveToolbarVisible());
+  const visible = effectiveToolbarVisible();
+  document.body.classList.toggle("toolbar-hidden", !visible);
+  if (!visible) closeSettings();
 }
 
 function bringBlockForward(block) {
@@ -260,7 +165,8 @@ function prepareVideoBlock(block) {
     if (!id) return;
     delete videoLoopOverrides[id];
     writeJson(VIDEO_LOOP_OVERRIDES_KEY, videoLoopOverrides);
-    prepareVideoBlock(block);
+    player.loop = settings.loopVideosByDefault;
+    checkbox.checked = settings.loopVideosByDefault;
   });
 }
 
@@ -296,7 +202,10 @@ function updatePlayButton() {
 
 async function toggleAllPlayback() {
   const all = players();
-  if (!all.length) return;
+  if (!all.length) {
+    setStatus("No connected videos to control.");
+    return;
+  }
 
   if (anyPlaying()) {
     for (const player of all) player.pause();
@@ -306,7 +215,7 @@ async function toggleAllPlayback() {
       try {
         await player.play();
       } catch {
-        // One unavailable source should not stop the rest.
+        // One unavailable source should not stop the others.
       }
     }
   }
@@ -398,6 +307,19 @@ async function refreshArchiveStatus() {
   archiveConnect.textContent = "Reconnect folder";
 }
 
+settingsToggle.addEventListener("click", () => {
+  if (settingsPanel.hidden) openSettings();
+  else closeSettings();
+});
+
+settingsClose.addEventListener("click", closeSettings);
+
+document.addEventListener("pointerdown", (event) => {
+  if (settingsPanel.hidden) return;
+  if (settingsPanel.contains(event.target) || settingsToggle.contains(event.target)) return;
+  closeSettings();
+});
+
 showBlockHeadersInput.addEventListener("change", () => {
   settings.showBlockHeaders = showBlockHeadersInput.checked;
   saveSettings();
@@ -417,28 +339,21 @@ loopVideosInput.addEventListener("change", () => {
 
   for (const block of workspace.querySelectorAll('.block[data-block-type="video"]')) {
     const id = block.dataset.blockId;
-    if (id && !Object.prototype.hasOwnProperty.call(videoLoopOverrides, id)) {
-      const player = block.querySelector(".video-player");
-      const checkbox = block.querySelector(".video-loop");
-      if (player) player.loop = settings.loopVideosByDefault;
-      if (checkbox) checkbox.checked = settings.loopVideosByDefault;
-    }
+    if (id && Object.prototype.hasOwnProperty.call(videoLoopOverrides, id)) continue;
+    const player = block.querySelector(".video-player");
+    const checkbox = block.querySelector(".video-loop");
+    if (player) player.loop = settings.loopVideosByDefault;
+    if (checkbox) checkbox.checked = settings.loopVideosByDefault;
   }
 });
-
-settingsMini.addEventListener("click", () => {
-  if (settingsDock.classList.contains("is-collapsed")) {
-    setDockCollapsed(settingsDock, settingsExpand, SETTINGS_DOCK_KEY, false);
-  }
-});
-
-playButton.addEventListener("click", () => void toggleAllPlayback());
-bindStepButton(rewindButton, -1);
-bindStepButton(forwardButton, 1);
 
 stepInput.value = String(readJson(VIDEO_STEP_KEY, 10));
 updateStepSetting();
 stepInput.addEventListener("change", updateStepSetting);
+
+playButton.addEventListener("click", () => void toggleAllPlayback());
+bindStepButton(rewindButton, -1);
+bindStepButton(forwardButton, 1);
 
 archiveConnect.addEventListener("click", async () => {
   archiveConnect.disabled = true;
@@ -466,12 +381,28 @@ archiveConnect.addEventListener("click", async () => {
   }
 });
 
-attachDragOnly(settingsDock, settingsDrag, SETTINGS_DOCK_KEY);
-attachDragOnly(videoDock, videoDrag, VIDEO_DOCK_KEY);
-initializeDock(settingsDock, settingsExpand, SETTINGS_DOCK_KEY);
-initializeDock(videoDock, videoExpand, VIDEO_DOCK_KEY);
+function placeToolbarSummon(x, y, persist = false) {
+  const margin = 8;
+  const width = toolbarSummon.offsetWidth || 36;
+  const height = toolbarSummon.offsetHeight || 36;
+  const point = {
+    x: Math.min(Math.max(margin, x), Math.max(margin, window.innerWidth - width - margin)),
+    y: Math.min(Math.max(margin, y), Math.max(margin, window.innerHeight - height - margin))
+  };
 
-initializeFloatingPosition(toolbarSummon, TOOLBAR_BUTTON_KEY);
+  toolbarSummon.style.left = `${point.x}px`;
+  toolbarSummon.style.top = `${point.y}px`;
+  if (persist) writeJson(TOOLBAR_BUTTON_KEY, point);
+}
+
+const savedToolbarButton = readJson(TOOLBAR_BUTTON_KEY, null);
+requestAnimationFrame(() => {
+  placeToolbarSummon(
+    Number.isFinite(savedToolbarButton?.x) ? savedToolbarButton.x : window.innerWidth - 52,
+    Number.isFinite(savedToolbarButton?.y) ? savedToolbarButton.y : window.innerHeight - 52
+  );
+});
+
 toolbarSummon.addEventListener("pointerdown", (event) => {
   if (event.button !== 0) return;
 
@@ -483,13 +414,10 @@ toolbarSummon.addEventListener("pointerdown", (event) => {
   toolbarSummon.setPointerCapture(event.pointerId);
 
   const move = (moveEvent) => {
-    if (Math.abs(moveEvent.clientX - startX) + Math.abs(moveEvent.clientY - startY) > 4) moved = true;
-    placeFloating(
-      toolbarSummon,
-      TOOLBAR_BUTTON_KEY,
-      rect.left + moveEvent.clientX - startX,
-      rect.top + moveEvent.clientY - startY
-    );
+    const dx = moveEvent.clientX - startX;
+    const dy = moveEvent.clientY - startY;
+    if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+    placeToolbarSummon(rect.left + dx, rect.top + dy);
   };
 
   const finish = () => {
@@ -497,7 +425,7 @@ toolbarSummon.addEventListener("pointerdown", (event) => {
     toolbarSummon.removeEventListener("pointerup", finish);
     toolbarSummon.removeEventListener("pointercancel", finish);
     const finalRect = toolbarSummon.getBoundingClientRect();
-    placeFloating(toolbarSummon, TOOLBAR_BUTTON_KEY, finalRect.left, finalRect.top, true);
+    placeToolbarSummon(finalRect.left, finalRect.top, true);
 
     if (moved) {
       suppressToolbarClick = true;
@@ -514,8 +442,13 @@ toolbarSummon.addEventListener("pointerdown", (event) => {
 
 toolbarSummon.addEventListener("click", () => {
   if (suppressToolbarClick) return;
-  toolbarTemporaryVisible = !effectiveToolbarVisible();
+  toolbarTemporaryVisible = true;
   applyToolbarVisibility();
+});
+
+workspace.addEventListener("click", (event) => {
+  if (!event.target.closest(".remove-block")) return;
+  setTimeout(() => setStatus("Block removed. Local source unchanged."), 0);
 });
 
 const observer = new MutationObserver((mutations) => {
@@ -530,19 +463,14 @@ const observer = new MutationObserver((mutations) => {
 });
 
 observer.observe(workspace, { childList: true, subtree: true });
+
 for (const eventName of ["play", "pause", "ended"]) {
   workspace.addEventListener(eventName, updatePlayButton, true);
 }
 
 window.addEventListener("resize", () => {
-  for (const [element, key] of [
-    [toolbarSummon, TOOLBAR_BUTTON_KEY],
-    [settingsDock, SETTINGS_DOCK_KEY],
-    [videoDock, VIDEO_DOCK_KEY]
-  ]) {
-    const rect = element.getBoundingClientRect();
-    placeFloating(element, key, rect.left, rect.top, true);
-  }
+  const rect = toolbarSummon.getBoundingClientRect();
+  placeToolbarSummon(rect.left, rect.top, true);
 });
 
 applySettings();
