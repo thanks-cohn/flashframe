@@ -1,0 +1,135 @@
+.dock-head,
+.player-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 5px 6px;
+  border-bottom: 1px solid color-mix(in srgb, CanvasText 11%, transparent);
+}
+
+.dock-drag,
+.dock-expand,
+.settings-mini,
+.player-control {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 9px;
+}
+
+.dock-drag {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.dock-drag:active,
+.floating-dock.is-dragging .dock-drag {
+  cursor: grabbing;
+}
+
+.spinner-mark {
+  display: block;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.floating-dock.is-dragging .spinner-mark {
+  transform: rotate(35deg);
+}
+
+.settings-mini {
+  display: none;
+}
+
+.dock-title {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+}
+
+.player-head {
+  justify-content: space-between;
+}
+
+.player-middle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.player-control {
+  width: 36px;
+  font-size: 16px;
+}
+
+.player-play {
+  width: 40px;
+  font-size: 14px;
+}
+
+.video-dock {
+  width: min(270px, calc(100vw - 36px));
+}
+
+.settings-dock.is-collapsed {
+  width: 116px;
+}
+
+.settings-dock.is-collapsed .settings-body,
+.settings-dock.is-collapsed .dock-title {
+  display: none;
+}
+
+.settings-dock.is-collapsed .settings-mini {
+  display: grid;
+  flex: 1;
+  width: 34px;
+}
+
+.settings-dock.is-collapsed .dock-head {
+  border-bottom: 0;
+}
+
+.video-dock.is-collapsed {
+  width: 190px;
+}
+
+.video-dock.is-collapsed .video-dock-body {
+  display: none;
+}
+
+.video-dock.is-collapsed .player-head {
+  border-bottom: 0;
+}
+
+.floating-dock.is-collapsed .dock-expand {
+  font-size: 0;
+}
+
+.floating-dock.is-collapsed .dock-expand::before {
+  content: "□";
+  font-size: 15px;
+}
+
+.rewind-amount {
+  grid-template-columns: auto 72px auto;
+}
+
+@media (max-width: 520px) {
+  .video-dock.is-collapsed {
+    width: 184px;
+  }
+
+  .player-control {
+    width: 32px;
+  }
+}
