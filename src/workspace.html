@@ -53,6 +53,14 @@
         <input id="setting-loop-videos" type="checkbox">
         <span><strong>Loop all videos automatically</strong><small>Individual videos can still turn looping off.</small></span>
       </label>
+      <label class="setting-row">
+        <input id="setting-fade-settings" type="checkbox">
+        <span><strong>Fade Settings sticky after 10 seconds</strong><small>Move the mouse over its area and it immediately reappears.</small></span>
+      </label>
+      <label class="setting-row">
+        <input id="setting-fade-player" type="checkbox">
+        <span><strong>Fade Player sticky after 10 seconds</strong><small>Move the mouse over its area and it immediately reappears.</small></span>
+      </label>
       <div class="storage-setting">
         <div><strong>Flashframe data folder</strong><small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small></div>
         <div id="archive-status" class="archive-status">Not connected</div>
@@ -89,6 +97,7 @@
 
   <script type="module" src="workspace.js"></script>
   <script type="module" src="controls.js"></script>
+  <script type="module" src="dock-fade.js"></script>
   <script type="module" src="reconnect-all.js"></script>
   <script type="module" src="archive-bridge.js"></script>
 </body>
