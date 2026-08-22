@@ -1,169 +1,236 @@
 # Flashframe
 
-Flashframe is a browser-based spatial workspace for arranging media and other useful objects as movable, resizable blocks, then saving and restoring the exact state of that workspace.
+Flashframe is a spatial workspace that runs on top of Chrome and Chromium.
 
-The first goal is intentionally small: make it pleasant to work with several local videos and image collections at once inside one browser tab.
+It is intended to be installed as a browser extension. Opening Flashframe gives the user a full extension-owned workspace tab containing movable, resizable blocks. A block can be a text document, PDF, image gallery, local video, or another type added later.
 
-A Flashframe workspace should feel more like a desk than a playlist. The user places things where they want them, resizes them, leaves them at useful points, and comes back later without having to reconstruct the arrangement by memory.
+The central idea is small:
 
-## Core idea
+> Arrange a moment. Save it. Return to it.
 
-A workspace contains blocks.
+Flashframe is not trying to replace Chromium. Chromium is the application platform. Flashframe supplies a better workspace model inside it.
 
-Every block has two kinds of state:
+## What the user sees
 
-1. **Spatial state** — where the block is and how large it is.
-2. **Content state** — what the block itself was doing.
+A Flashframe workspace is a large canvas inside a browser tab.
 
-For example, a local video block may remember:
+The user can place several independent blocks on that canvas, resize them, move them, overlap them, maximize one temporarily, and save the arrangement.
 
-- which video file it points to
-- playback position
-- paused or playing state
-- volume
-- playback speed
-- block position
-- block size
+For example, a writing workspace might contain:
 
-An image lightbox block may remember:
+- a text block called `Chapter 4`
+- a PDF open on page 83
+- a second PDF open on page 17
+- an image lightbox showing one image from a chosen reference directory
+- a local video paused at 31:18
 
-- which directory it points to
-- the current image
-- sort order
-- fit/zoom mode
-- slideshow state
-- block position
-- block size
+Saving the Flashframe records enough state to reopen the same useful arrangement later.
 
-Saving a Flashframe means saving the workspace as a moment. Restoring it means rebuilding that moment as closely as the browser and local file permissions allow.
+The project should prefer small, obvious state over complicated simulation. A PDF does not need its entire internal state preserved: its file identity and current page are enough for the first version. A video needs its file identity and timestamp. A gallery needs its directory and current image. A text block needs its name, text, and visible position in the document, with cursor position optional.
+
+## Chrome / Chromium extension
+
+The first implementation is a Manifest V3 extension.
+
+The extension should have a very small browser-facing shell:
+
+- toolbar action: open or focus the Flashframe workspace
+- extension-owned full-page workspace: the main product
+- service worker: extension lifecycle and opening/focusing the workspace
+- IndexedDB: durable workspace state, file/directory handles where supported, and later historical state
+- File System Access API: user-granted access to local text files, PDFs, videos, and directories
+
+Flashframe should not ask for broad website permissions merely to work with local content. The first version is local-first.
+
+## The platform model
+
+Flashframe owns **space**.
+
+It provides:
+
+- a canvas
+- blocks
+- position and size
+- naming
+- z-order
+- save/restore
+- a small state contract that every block type follows
+
+A block has a generic shell:
+
+```text
+Block
+  id
+  type
+  name
+  x
+  y
+  width
+  height
+  z
+  source
+  state
+```
+
+The workspace owns geometry. The block implementation owns the meaning of its `source` and `state`.
+
+This is the main architectural boundary. The canvas should not contain special-case knowledge about PDFs, videos, galleries, or text editors.
 
 ## First block types
 
-### Local video
+### Text
 
-A local video is a normal movable and resizable block with its own playback controls.
+Text is a first-class block rather than an afterthought.
 
-Multiple videos may exist in the same workspace. They are independent: one can be playing while another is paused, and each remembers its own playback position.
+Minimum saved state:
 
-The important part is not merely opening several videos. It is being able to return to the same arrangement and the same points in those videos later.
+```text
+name
+text
+scroll position / top visible position
+cursor position (optional)
+```
+
+The saved text itself matters. If the underlying text file later changes or disappears, a saved historical state can still contain the text that existed at that moment.
+
+### PDF
+
+Minimum saved state:
+
+```text
+file identity
+current page
+```
+
+Zoom or finer scroll state can be added later if it proves useful. Page restoration is the important first behavior.
 
 ### Directory lightbox
 
-A lightbox block points to a user-chosen image directory rather than a single image.
+A lightbox points to a user-selected local image directory and lets the user move through it from inside one block.
 
-Inside the block, the user can move through the directory without opening a separate file browser. The block should eventually support:
+Minimum saved state:
 
-- previous / next image
-- keyboard navigation
-- thumbnail navigation
-- fit, fill, and original-size viewing modes
-- filename and date sorting
-- optional slideshow behavior
-- remembering the exact image currently being viewed
+```text
+directory identity
+current image
+```
 
-The directory should be treated as the source. Flashframe should avoid copying an entire image collection into its own storage when it can keep a reference to the chosen directory instead.
+The exact image name or stable identity matters more than a bare numeric index because directory ordering can change.
 
-## Workspace behavior
+The lightbox can later add thumbnails, sorting, fit/fill modes, and slideshow behavior without changing the core block contract.
 
-Blocks should be direct-manipulation objects.
+### Local video
 
-The user should be able to:
+Minimum saved state:
 
-- drag a block to move it
-- resize it from its edges or corners
-- bring it forward
-- maximize it temporarily
-- return it to its previous size and position
-- remove it from the workspace without deleting the underlying file
-- add several blocks of the same type
+```text
+file identity
+current timestamp
+```
 
-The canvas may later support panning and zooming so a workspace can grow beyond the visible browser area without becoming cramped.
+Paused/playing state, volume, mute, and playback rate are useful additions but should not make the first implementation complicated.
 
 ## Flashframes
 
-A Flashframe is a saved snapshot of a workspace.
+A Flashframe is a deliberate snapshot of the current workspace.
 
-At minimum, a snapshot should preserve:
+At minimum it records:
 
-- workspace identity
-- all blocks present
-- block type
-- block source
-- block position
-- block size
-- block-specific state
+- snapshot id
+- snapshot name
 - creation time
-- optional user-provided name
+- the blocks that existed
+- each block's name
+- each block's position and size
+- each block's source
+- each block's minimal restorable state
 
-A saved Flashframe should be safe to restore repeatedly. Restoring it should not destroy the saved snapshot.
+A saved Flashframe is conceptually immutable. Opening it creates a live workspace derived from that saved moment. Using the restored workspace should not silently mutate the snapshot that was opened.
 
-Examples:
+## Memorew
 
-- a research workspace with three local videos parked at useful timestamps
-- an art-reference workspace with separate lightboxes for characters, clothing, and poses
-- a mixed workspace containing local video and image-reference blocks
+Memorew is a separate first-party layer built on top of Flashframe's block-state contract.
 
-## Design principles
+Flashframe answers:
 
-### State matters as much as content
+> What is on the workspace, and where is it?
 
-Opening the same file is not enough. Flashframe should restore the useful state around the file.
+Memorew answers:
 
-### Position is meaningful
+> What did this workspace look like at that moment?
 
-Where the user places a block is part of the workspace, not incidental decoration.
+It does not need to understand every block deeply. Each block already knows how to serialize the tiny amount of state required to recreate itself. Memorew records those states over time and can later ask Flashframe to restore one.
 
-### Local-first
+For example, a remembered moment may mean:
 
-The first version should work well with local files before depending on remote services or site-specific integrations.
+- a text block has its earlier name and earlier text
+- that text returns near the same visible line, optionally with the old cursor position
+- a PDF returns to page 83
+- a gallery returns to `image_142.png`
+- a video returns to 31:18
+- every block returns to its old size and position
+
+This is intentionally not a virtual-machine snapshot or RAM snapshot. It is a reconstruction of the small set of user-visible states that matter.
+
+See `docs/MEMOREW.md` for the boundary between the platform and the time layer.
+
+## Why an extension
+
+The browser is meant to be the environment, not merely one app among many.
+
+An extension lets Flashframe live directly in Chrome/Chromium while still having its own full-page interface and browser lifecycle. The user can click the extension and enter the workspace without launching a separate desktop application.
+
+Local content is selected explicitly by the user. The implementation should use browser-native file and directory pickers and persist handles where the platform allows it, while always handling lost permissions or moved files gracefully.
+
+## Design rules
 
 ### Few concepts
 
-The application should remain understandable without a manual. A block is something on the workspace. A Flashframe is a saved workspace state.
+A block is something on the workspace. A Flashframe is a saved workspace. New functionality should fit those concepts before a new concept is invented.
+
+### Minimal restorable state
+
+Save what is needed to make returning feel correct, not every property that happens to exist.
 
 ### Direct manipulation
 
-Moving, resizing, navigating, and restoring should happen through obvious interactions rather than nested configuration screens.
+Move and resize things directly. Avoid configuration screens for actions that can be obvious on the object itself.
 
-### No forced project ceremony
+### Local-first
 
-A user should be able to open Flashframe, drop or choose media, arrange it, and save the state without first creating a complicated project structure.
+Text, PDFs, images, and local video should work well before remote integrations are attempted.
 
-## Initial scope
+### Resilient restoration
 
-The first useful version does not need to be a general-purpose browser window manager.
+One missing file should not prevent the rest of a workspace from opening. A missing source becomes a relinkable block in the correct old position.
 
-It needs to do a smaller set of things very well:
+### The workspace is a platform
 
-1. Create a workspace in one browser tab.
-2. Add multiple local video blocks.
-3. Add image lightbox blocks backed by chosen local directories.
-4. Move and resize blocks freely.
-5. Save the workspace state.
+New block types should plug into a small contract. They should not require changes to the canvas or historical system merely because their private state differs.
+
+## First useful milestone
+
+The first version does not need every planned feature.
+
+A convincing milestone is:
+
+1. Install the unpacked extension in Chrome/Chromium.
+2. Click its toolbar icon to open a Flashframe workspace tab.
+3. Add text, PDF, directory-lightbox, and local-video blocks.
+4. Move and resize those blocks.
+5. Save a named Flashframe.
 6. Close the workspace.
-7. Restore it later with the same layout and block state.
+7. Reopen it and restore the saved Flashframe.
+8. Verify that text content/position, PDF page, gallery image, video timestamp, block names, and block geometry return correctly.
 
-That is enough to prove the central idea.
+Once that path is solid, Memorew can record the same block states over time instead of requiring the user to create every snapshot deliberately.
 
-## Possible later block types
+## Repository notes
 
-These are extensions of the same model, not requirements for the first version:
+- `docs/DESIGN.md` describes workspace and block behavior.
+- `docs/STATE_MODEL.md` describes persistence.
+- `docs/ARCHITECTURE.md` describes the Chrome/Chromium extension boundary.
+- `docs/MEMOREW.md` describes the optional time layer.
+- `docs/IMPLEMENTATION_PLAN.md` gives a bounded build order.
 
-- single image
-- PDF
-- text note
-- audio
-- YouTube video
-- browser content where embedding rules permit it
-
-The block model should be designed so that new types can provide their own serializable state without changing the meaning of the workspace itself.
-
-## Mental model
-
-Flashframe is not primarily a media player.
-
-It is a spatial workspace whose contents can remember their state.
-
-The simplest description is:
-
-> Arrange a moment. Save it. Return to it.
+The code should remain boring where possible. The product value is in the interaction model and the state contract, not in unnecessary framework machinery.
