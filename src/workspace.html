@@ -26,42 +26,68 @@
       <button id="restore-frame" type="button">Restore</button>
     </div>
 
-    <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">Settings</button>
     <div id="status" class="status" role="status" aria-live="polite"></div>
   </header>
 
-  <aside id="settings-panel" class="settings-panel" hidden aria-label="Flashframe settings">
-    <div class="settings-heading">
-      <strong>Settings</strong>
-      <button id="settings-close" class="settings-close" type="button" aria-label="Close settings">×</button>
+  <button id="toolbar-summon" class="toolbar-summon" type="button" title="Show or hide Flashframe controls" aria-label="Show or hide Flashframe controls">F</button>
+
+  <aside id="settings-dock" class="floating-dock settings-dock" aria-label="Flashframe settings">
+    <div id="settings-dock-grip" class="dock-grip" role="button" tabindex="0" title="Drag. Click to minimize or expand.">
+      <span>Settings</span>
     </div>
+    <button id="settings-mini" class="dock-mini-button" type="button" title="Open settings" aria-label="Open settings">⚙</button>
+    <div class="dock-body settings-body">
+      <label class="setting-row">
+        <input id="setting-block-headers" type="checkbox" checked>
+        <span>
+          <strong>Show block headers</strong>
+          <small>Hide the title bars on Flashframe blocks.</small>
+        </span>
+      </label>
 
-    <label class="setting-row">
-      <input id="setting-block-headers" type="checkbox" checked>
-      <span>
-        <strong>Show block headers</strong>
-        <small>Hide the title bars on Flashframe blocks.</small>
-      </span>
-    </label>
+      <label class="setting-row">
+        <input id="setting-toolbar" type="checkbox" checked>
+        <span>
+          <strong>Show top toolbar</strong>
+          <small>When hidden, use the movable F button to bring it back.</small>
+        </span>
+      </label>
 
-    <label class="setting-row">
-      <input id="setting-toolbar" type="checkbox" checked>
-      <span>
-        <strong>Show top toolbar</strong>
-        <small>When hidden, use the movable Flashframe button to bring it back.</small>
-      </span>
-    </label>
+      <label class="setting-row">
+        <input id="setting-loop-videos" type="checkbox">
+        <span>
+          <strong>Loop all videos automatically</strong>
+          <small>Individual videos can still turn looping off.</small>
+        </span>
+      </label>
 
-    <label class="setting-row">
-      <input id="setting-loop-videos" type="checkbox">
-      <span>
-        <strong>Loop all videos automatically</strong>
-        <small>Individual videos can still turn looping off.</small>
-      </span>
-    </label>
+      <div class="storage-setting">
+        <div>
+          <strong>Flashframe data folder</strong>
+          <small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small>
+        </div>
+        <div id="archive-status" class="archive-status">Not connected</div>
+        <button id="archive-connect" type="button">Choose ~/flashframe</button>
+      </div>
+    </div>
   </aside>
 
-  <button id="toolbar-summon" class="toolbar-summon" type="button" title="Show or hide Flashframe controls" aria-label="Show or hide Flashframe controls">F</button>
+  <aside id="video-dock" class="floating-dock video-dock" aria-label="All video controls">
+    <div id="video-dock-grip" class="dock-grip" role="button" tabindex="0" title="Drag. Click to minimize or expand.">
+      <span>All videos</span>
+    </div>
+    <button id="video-mini-play" class="dock-mini-button video-mini-play" type="button" title="Play or pause all videos" aria-label="Play or pause all videos">▶</button>
+    <div class="dock-body video-dock-body">
+      <button id="video-play-all" type="button">Play all</button>
+      <label class="rewind-amount">
+        <span>Rewind</span>
+        <input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal">
+        <span>seconds</span>
+      </label>
+      <button id="video-rewind-all" type="button" title="Click once or hold to keep rewinding">↶ 10s all</button>
+      <small>Click once, or hold rewind to keep stepping every loaded video backward.</small>
+    </div>
+  </aside>
 
   <main id="workspace" class="workspace" aria-label="Flashframe workspace"></main>
 
