@@ -9,5 +9,21 @@
   "background": {
     "service_worker": "src/service-worker.js",
     "type": "module"
+  },
+  "permissions": [
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://www.youtube-nocookie.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "youtube_embed_identity",
+        "enabled": true,
+        "path": "rules/youtube-embed-identity.json"
+      }
+    ]
   }
 }
