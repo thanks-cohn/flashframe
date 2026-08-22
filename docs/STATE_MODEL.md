@@ -2,22 +2,9 @@
 
 This document defines the conceptual shape of Flashframe's saved state.
 
-It is not a binding implementation format yet. The purpose is to make the project's persistence model obvious before code grows around accidental assumptions.
+The format should stay small, versioned, readable during development, and tolerant of missing local sources.
 
-## Goals
-
-The saved state should be:
-
-- small compared with the media it references
-- readable enough to inspect during development
-- versioned
-- tolerant of missing files
-- extensible to new block types
-- precise enough to restore useful block state
-
-A Flashframe should normally reference local media rather than copy the media itself.
-
-## Top-level snapshot
+## 1. Top-level Flashframe
 
 Conceptually:
 
@@ -25,277 +12,330 @@ Conceptually:
 {
   "schemaVersion": 1,
   "id": "snapshot-id",
-  "name": "Reference desk",
+  "name": "Writing desk",
   "createdAt": "2026-08-22T21:00:00.000Z",
-  "workspace": {
-    "camera": {
-      "x": 0,
-      "y": 0,
-      "zoom": 1
-    }
-  },
   "blocks": []
 }
 ```
 
-`camera` matters only if the workspace becomes pannable or zoomable. Keeping it in the model early avoids confusing canvas coordinates with browser viewport coordinates later.
+A later pannable/zoomable canvas may add workspace camera state, but that does not need to complicate the first version.
 
-## Generic block record
+## 2. Generic block record
 
-Every block should have a generic shell:
+Every block uses the same shell:
 
 ```json
 {
   "id": "block-id",
-  "type": "local-video",
+  "type": "text",
+  "name": "Chapter 4",
   "geometry": {
     "x": 120,
     "y": 80,
     "width": 640,
-    "height": 360,
+    "height": 420,
     "z": 3
   },
-  "source": {},
+  "source": null,
   "state": {}
 }
 ```
 
-The workspace owns `geometry`.
+The workspace owns `geometry` and `name`.
 
-The block implementation owns the meaning of `source` and `state`.
+The block type owns the meaning of `source` and `state`.
 
-This separation is intentional.
+This is the contract that lets Flashframe add future block types without redesigning the canvas or snapshot format.
 
-## Local video example
+## 3. Text block
+
+Text is the important exception to the general "reference the source rather than copy it" rule.
+
+A saved text state should preserve the text that existed at the saved moment.
+
+```json
+{
+  "id": "text-1",
+  "type": "text",
+  "name": "Chapter 4",
+  "geometry": {
+    "x": 40,
+    "y": 60,
+    "width": 700,
+    "height": 760,
+    "z": 2
+  },
+  "source": {
+    "displayName": "chapter-4.txt",
+    "handleKey": "optional-file-handle"
+  },
+  "state": {
+    "text": "The exact text that existed when this state was captured...",
+    "scrollTop": 1140,
+    "cursorOffset": 2841
+  }
+}
+```
+
+`source` may be null for a text block that exists only inside Flashframe.
+
+`cursorOffset` is optional. Restoring the text and visible position is sufficient for the core behavior.
+
+Do not reconstruct a historical text state by simply rereading the current external file. The current file may have changed or been deleted.
+
+## 4. PDF block
+
+The first useful PDF state is deliberately tiny:
+
+```json
+{
+  "id": "pdf-1",
+  "type": "pdf",
+  "name": "Sources",
+  "geometry": {
+    "x": 780,
+    "y": 60,
+    "width": 620,
+    "height": 760,
+    "z": 3
+  },
+  "source": {
+    "displayName": "sources.pdf",
+    "handleKey": "pdf-handle"
+  },
+  "state": {
+    "page": 83
+  }
+}
+```
+
+Zoom or within-page scroll position can be added later without changing the basic model.
+
+## 5. Directory lightbox block
+
+The directory is the source; the current image is state.
+
+```json
+{
+  "id": "gallery-1",
+  "type": "directory-lightbox",
+  "name": "References",
+  "geometry": {
+    "x": 80,
+    "y": 860,
+    "width": 560,
+    "height": 600,
+    "z": 2
+  },
+  "source": {
+    "displayName": "references",
+    "handleKey": "directory-handle"
+  },
+  "state": {
+    "currentEntry": "image_142.png"
+  }
+}
+```
+
+If a numeric index is also stored for UI convenience, it is secondary. The filename or another stable entry identity should be used first when restoring because directory ordering may change.
+
+## 6. Local video block
+
+Minimum:
 
 ```json
 {
   "id": "video-1",
   "type": "local-video",
+  "name": "Lecture",
   "geometry": {
-    "x": 120,
-    "y": 80,
-    "width": 640,
-    "height": 360,
-    "z": 3
-  },
-  "source": {
-    "displayName": "lecture.mp4",
-    "handleKey": "local-handle-reference"
-  },
-  "state": {
-    "currentTime": 2591.42,
-    "paused": true,
-    "volume": 0.8,
-    "muted": false,
-    "playbackRate": 1
-  }
-}
-```
-
-`handleKey` represents an implementation-defined reference to a separately stored file handle or permission record. It should not be assumed to be portable between machines.
-
-The human-readable `displayName` is still useful if the handle can no longer be resolved.
-
-## Directory lightbox example
-
-```json
-{
-  "id": "lightbox-1",
-  "type": "directory-lightbox",
-  "geometry": {
-    "x": 820,
-    "y": 80,
-    "width": 520,
-    "height": 620,
+    "x": 680,
+    "y": 860,
+    "width": 720,
+    "height": 420,
     "z": 4
   },
   "source": {
-    "displayName": "poses",
-    "handleKey": "directory-handle-reference"
+    "displayName": "lecture.mp4",
+    "handleKey": "video-handle"
   },
   "state": {
-    "currentEntry": "pose_054.png",
-    "currentIndex": 53,
-    "sortMode": "name",
-    "sortDirection": "ascending",
-    "viewMode": "fit",
-    "zoom": 1,
-    "slideshowEnabled": false,
-    "slideshowInterval": 5
+    "currentTime": 1878.4
   }
 }
 ```
 
-`currentEntry` is the primary identity for the selected image.
-
-`currentIndex` is useful as a fallback and for UI display, but it should not be the only saved identity because directory contents may change between sessions.
-
-## Stable identity versus current ordering
-
-Directories are mutable.
-
-Suppose a saved lightbox contains:
-
-```text
-currentEntry = pose_054.png
-currentIndex = 53
-```
-
-Later, ten files are added earlier in the sort order.
-
-On restore, Flashframe should first look for `pose_054.png`. If it exists, show it even though its numeric index has changed.
-
-If it no longer exists, sensible fallback behavior would be:
-
-1. use the old index if there is still an entry there
-2. otherwise clamp to the nearest valid entry
-3. visibly note that the exact saved image could not be restored
-
-The workspace itself should still open.
-
-## Missing sources
-
-Source resolution has to be treated as fallible.
-
-A file may have been:
-
-- renamed
-- moved
-- deleted
-- placed on an unavailable drive
-- made inaccessible because browser permission expired
-
-The saved block should therefore retain enough descriptive metadata to explain what it expected.
-
-A future source record may contain fields such as:
+Optional additions:
 
 ```json
 {
-  "displayName": "lecture.mp4",
-  "lastKnownKind": "file",
-  "handleKey": "...",
+  "paused": true,
+  "volume": 0.8,
+  "muted": false,
+  "playbackRate": 1
+}
+```
+
+The timestamp is the defining first behavior.
+
+## 7. File and directory handles
+
+Snapshot JSON should contain an application-generated `handleKey`, not an attempt to serialize a browser handle directly into JSON.
+
+Actual `FileSystemFileHandle` and `FileSystemDirectoryHandle` values can be stored separately in IndexedDB where supported.
+
+Conceptually:
+
+```text
+snapshot/source.handleKey
+        ↓
+IndexedDB handles store
+        ↓
+FileSystemFileHandle or FileSystemDirectoryHandle
+```
+
+Handles are conveniences, not permanent filesystem identities.
+
+A user may move/delete the source or browser permission may need to be requested again.
+
+## 8. Missing source state
+
+A block whose source cannot be resolved should remain reconstructable as a placeholder.
+
+The snapshot should therefore retain at least a human-readable source name:
+
+```json
+{
+  "displayName": "sources.pdf",
+  "handleKey": "pdf-handle"
+}
+```
+
+Optional descriptive metadata may later help relinking:
+
+```json
+{
   "lastKnownSize": 218381938,
   "lastKnownModified": 1787412345000
 }
 ```
 
-These fields can assist relinking without pretending that they provide permanent filesystem identity.
+Do not treat these as guaranteed unique identities.
 
-## Relinking
+## 9. Relinking
 
-When a source cannot be opened, the block should enter a recoverable state rather than disappear.
+When a local source cannot be opened:
 
-A relink flow should allow the user to select the missing file or directory again.
+1. recreate the block shell at its saved geometry
+2. preserve the old block name
+3. show the expected source name
+4. offer Relink
+5. let the user choose a replacement source
+6. apply the compatible saved state
 
-After successful relinking:
+Relinking a live restored workspace should not silently rewrite the immutable old snapshot that was opened.
 
-- update the stored source reference
-- retain the block id
-- retain geometry
-- retain compatible block state
-- save the repaired snapshot only when the user chooses to update or resave it
+## 10. Snapshot immutability
 
-Restoring an old snapshot should not silently mutate the historical snapshot merely because a source had to be relinked.
+A named Flashframe is a deliberate saved moment.
 
-## Snapshot immutability
+Opening it creates a live workspace derived from the snapshot.
 
-A saved Flashframe should conceptually be immutable.
+Moving blocks, editing text, changing pages, changing gallery images, or advancing a video in the live workspace should not mutate the old snapshot unless the user explicitly saves/replaces it.
 
-Opening and using a snapshot creates a live workspace derived from it. Moving blocks or advancing videos in that live workspace should not rewrite the original snapshot automatically.
+## 11. Live workspace
 
-The user may:
-
-- save a new Flashframe
-- explicitly replace/update an existing snapshot if that feature is later offered
-
-This prevents a useful saved moment from drifting merely because it was opened.
-
-## Live workspace state
-
-The application will also need autosaved live state so a browser crash or accidental reload does not destroy current work.
-
-That is different from a named Flashframe snapshot.
+Crash/reload recovery is separate from named snapshots.
 
 Conceptually:
 
 ```text
-Named Flashframe
-  deliberate saved moment
-  stable until explicitly changed
+live workspace
+  mutable
+  autosaved
 
-Live workspace
-  current mutable state
-  updated automatically for crash recovery
+named Flashframe
+  deliberate saved moment
+  stable
 ```
 
-Keeping these concepts separate avoids turning every small movement into a destructive edit of a saved snapshot.
+The two may use the same block-record format while differing in lifecycle.
 
-## Persistence frequency
+## 12. Historical moments / Memorew
 
-Dragging and resizing may emit many events per second.
+A historical moment should reuse the same block records.
 
-Persistence should be throttled or debounced during interaction, but the final state at the end of an operation should always be written promptly.
+Conceptually:
 
-For media state, useful persistence points include:
+```json
+{
+  "schemaVersion": 1,
+  "id": "moment-id",
+  "workspaceId": "workspace-id",
+  "capturedAt": "2026-08-22T21:17:00.000Z",
+  "blocks": []
+}
+```
 
-- play/pause
-- seek completion
-- playback-rate change
-- volume/mute change
-- periodic low-frequency checkpoint while playing
+The difference between a named Flashframe and a historical moment is not the block format.
 
-For lightboxes:
+It is why and when the record was created.
 
-- image change
-- sort change
-- view-mode change
-- slideshow-state change
+A remembered text block still contains the old text. A remembered PDF still contains its old page. A gallery still names its old current image. A video still contains its old timestamp. Names and geometry are already part of the generic block record.
 
-The design goal is crash resilience without making storage writes part of every animation frame.
+This reuse is important. Do not build a separate restoration engine for historical moments.
 
-## Schema versioning
+## 13. Persistence frequency
 
-Every stored snapshot should include `schemaVersion`.
+High-frequency UI events should not produce one database write per animation frame.
 
-When the model changes, prefer explicit migrations:
+Useful checkpoint moments include:
+
+- block drag/resize ends
+- block rename
+- text edit after debounce
+- text scroll settles
+- PDF page change
+- gallery image change
+- video seek/play/pause and occasional coarse playback checkpoint
+- block add/remove
+
+The final state after an interaction should be persisted promptly even if intermediate writes are throttled.
+
+## 14. Schema versioning
+
+Every persisted top-level record should have `schemaVersion`.
+
+Prefer explicit migrations:
 
 ```text
 v1 -> v2 -> v3
 ```
 
-Do not make old snapshots depend on undocumented guesses about which fields happened to exist.
+If an individual block type eventually needs independent evolution, it may add `blockVersion`, but do not introduce it before necessary.
 
-Block-specific state may eventually have its own version if individual block types evolve independently.
+## 15. Export and portability
 
-For example:
+A future exported metadata file can preserve:
 
-```json
-{
-  "type": "directory-lightbox",
-  "blockVersion": 2,
-  "state": {}
-}
-```
+- block names
+- geometry
+- block type
+- text snapshot content
+- PDF page
+- gallery current image name
+- video timestamp
 
-This is optional initially but worth keeping in mind.
+Local browser handles are generally machine/browser-profile specific and should not be represented as portable guarantees.
 
-## Export and portability
+A portable import may need the user to relink PDFs, directories, and videos.
 
-A future exported Flashframe metadata file can describe the workspace, but local file handles themselves may not be portable.
+## 16. Rule of thumb
 
-An exported snapshot should therefore be honest about what it contains:
+For every block type ask:
 
-- layout: portable
-- names and descriptive source metadata: portable
-- playback/lightbox state: portable
-- local browser file handles: generally not portable
-- underlying media: not included unless an explicit archive/export feature is created later
+> What is the smallest state that makes the user feel like they returned to the same useful moment?
 
-Importing on another machine may recreate the layout and then ask the user to relink local sources.
+Store that.
 
-## Rule of thumb
-
-If a user could reasonably say, "I expected to come back to exactly that," the relevant state should probably be serializable.
-
-If the information is merely an implementation detail that can be reconstructed safely, it probably should not be stored.
+Do not turn Flashframe into a general application-state capture system merely because more properties exist.
