@@ -32,8 +32,12 @@
   <button id="toolbar-summon" class="toolbar-summon" type="button" title="Show or hide Flashframe controls" aria-label="Show or hide Flashframe controls">F</button>
 
   <aside id="settings-dock" class="floating-dock settings-dock" aria-label="Flashframe settings">
-    <div id="settings-dock-grip" class="dock-grip" role="button" tabindex="0" title="Drag. Click to minimize or expand.">
-      <span>Settings</span>
+    <div class="dock-head">
+      <button id="settings-dock-grip" class="dock-drag" type="button" title="Drag settings" aria-label="Drag settings">
+        <span class="spinner-mark" aria-hidden="true">✣</span>
+      </button>
+      <strong class="dock-title">Settings</strong>
+      <button id="settings-expand" class="dock-expand" type="button" title="Minimize settings" aria-label="Minimize settings">−</button>
     </div>
     <button id="settings-mini" class="dock-mini-button" type="button" title="Open settings" aria-label="Open settings">⚙</button>
     <div class="dock-body settings-body">
@@ -73,19 +77,24 @@
   </aside>
 
   <aside id="video-dock" class="floating-dock video-dock" aria-label="All video controls">
-    <div id="video-dock-grip" class="dock-grip" role="button" tabindex="0" title="Drag. Click to minimize or expand.">
-      <span>All videos</span>
+    <div class="player-head">
+      <button id="video-dock-grip" class="dock-drag" type="button" title="Drag player" aria-label="Drag player">
+        <span class="spinner-mark" aria-hidden="true">✣</span>
+      </button>
+      <div class="player-middle" aria-label="Global video controls">
+        <button id="video-rewind-all" class="player-control" type="button" title="Rewind all videos">↶</button>
+        <button id="video-play-all" class="player-control player-play" type="button" title="Play or pause all videos">▶</button>
+        <button id="video-forward-all" class="player-control" type="button" title="Forward all videos">↷</button>
+      </div>
+      <button id="video-expand" class="dock-expand" type="button" title="Minimize player" aria-label="Minimize player">−</button>
     </div>
-    <button id="video-mini-play" class="dock-mini-button video-mini-play" type="button" title="Play or pause all videos" aria-label="Play or pause all videos">▶</button>
     <div class="dock-body video-dock-body">
-      <button id="video-play-all" type="button">Play all</button>
       <label class="rewind-amount">
-        <span>Rewind</span>
+        <span>Step</span>
         <input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal">
         <span>seconds</span>
       </label>
-      <button id="video-rewind-all" type="button" title="Click once or hold to keep rewinding">↶ 10s all</button>
-      <small>Click once, or hold rewind to keep stepping every loaded video backward.</small>
+      <small>Rewind or forward every loaded video. Click once for one step, or hold either button to keep moving.</small>
     </div>
   </aside>
 
