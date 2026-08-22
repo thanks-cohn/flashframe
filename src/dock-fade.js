@@ -1,10 +1,11 @@
 const STORAGE_KEY = "flashframe.dock-fade.v1";
-const FADE_DELAY_MS = 10_000;
+const FADE_DELAY_KEY = "flashframe.fade-delay-seconds.v1";
 
 const settingsDock = document.querySelector("#settings-dock");
 const videoDock = document.querySelector("#video-dock");
 const fadeSettingsInput = document.querySelector("#setting-fade-settings");
 const fadePlayerInput = document.querySelector("#setting-fade-player");
+const fadeDelayInput = document.querySelector("#setting-fade-delay");
 
 const defaults = {
   settings: false,
@@ -28,6 +29,23 @@ function savePreferences() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
   } catch (error) {
     console.warn("Could not save sticky fade preferences:", error);
+  }
+}
+
+function readFadeDelaySeconds() {
+  try {
+    const raw = Number.parseFloat(localStorage.getItem(FADE_DELAY_KEY) ?? "10");
+    return Number.isFinite(raw) ? Math.min(300, Math.max(1, raw)) : 10;
+  } catch {
+    return 10;
+  }
+}
+
+function saveFadeDelaySeconds(value) {
+  try {
+    localStorage.setItem(FADE_DELAY_KEY, String(value));
+  } catch (error) {
+    console.warn("Could not save fade delay:", error);
   }
 }
 
@@ -62,7 +80,7 @@ function scheduleFade(dock) {
     }
 
     dock.classList.add("is-faded");
-  }, FADE_DELAY_MS);
+  }, readFadeDelaySeconds() * 1000);
 
   timers.set(dock, timer);
 }
@@ -86,6 +104,7 @@ function bindDock(dock) {
 function applyPreferences() {
   if (fadeSettingsInput) fadeSettingsInput.checked = Boolean(preferences.settings);
   if (fadePlayerInput) fadePlayerInput.checked = Boolean(preferences.player);
+  if (fadeDelayInput) fadeDelayInput.value = String(readFadeDelaySeconds());
 
   if (settingsDock) {
     revealDock(settingsDock);
@@ -96,6 +115,10 @@ function applyPreferences() {
     revealDock(videoDock);
     scheduleFade(videoDock);
   }
+
+  window.dispatchEvent(new CustomEvent("flashframe:fade-delay-changed", {
+    detail: { seconds: readFadeDelaySeconds() }
+  }));
 }
 
 fadeSettingsInput?.addEventListener("change", () => {
@@ -107,6 +130,14 @@ fadeSettingsInput?.addEventListener("change", () => {
 fadePlayerInput?.addEventListener("change", () => {
   preferences.player = fadePlayerInput.checked;
   savePreferences();
+  applyPreferences();
+});
+
+fadeDelayInput?.addEventListener("change", () => {
+  const parsed = Number.parseFloat(fadeDelayInput.value);
+  const seconds = Number.isFinite(parsed) ? Math.min(300, Math.max(1, parsed)) : 10;
+  fadeDelayInput.value = String(seconds);
+  saveFadeDelaySeconds(seconds);
   applyPreferences();
 });
 
