@@ -1,6 +1,7 @@
 import { getSnapshot, listSnapshots, saveSnapshot } from "./persistence.js";
 import { readLiveSnapshot, readNamedSnapshots, writeLiveSnapshot, writeNamedSnapshot } from "./archive.js";
 
+const LIVE_ID = "__flashframe_live__";
 const saveButton = document.querySelector("#save-frame");
 const restoreButton = document.querySelector("#restore-frame");
 const savedFramesSelect = document.querySelector("#saved-frames");
@@ -13,7 +14,7 @@ function setStatus(message) {
 }
 
 async function refreshSnapshotOptions(selectedId = "") {
-  const snapshots = await listSnapshots();
+  const snapshots = (await listSnapshots()).filter((snapshot) => snapshot.id !== LIVE_ID);
   savedFramesSelect.replaceChildren();
 
   const placeholder = document.createElement("option");
@@ -28,7 +29,7 @@ async function refreshSnapshotOptions(selectedId = "") {
     savedFramesSelect.append(option);
   }
 
-  if (selectedId) savedFramesSelect.value = selectedId;
+  if (selectedId && selectedId !== LIVE_ID) savedFramesSelect.value = selectedId;
 }
 
 async function importArchive() {
@@ -37,23 +38,24 @@ async function importArchive() {
     const live = await readLiveSnapshot();
 
     for (const snapshot of archived) {
-      await saveSnapshot(snapshot);
+      if (snapshot.id !== LIVE_ID) await saveSnapshot(snapshot);
     }
 
-    if (live) await saveSnapshot(live);
+    if (live) await saveSnapshot({ ...live, id: LIVE_ID, name: "Current workspace" });
 
     if (archived.length || live) {
-      await refreshSnapshotOptions(live?.id ?? archived[0]?.id ?? "");
-      setStatus(`Recovered ${archived.length || 1} Flashframe session${archived.length === 1 ? "" : "s"} from disk.`);
+      await refreshSnapshotOptions(archived[0]?.id ?? "");
+      setStatus(`Recovered ${archived.length + (live ? 1 : 0)} Flashframe state${archived.length + (live ? 1 : 0) === 1 ? "" : "s"} from disk.`);
+      window.dispatchEvent(new CustomEvent("flashframe:archive-imported"));
     }
   } catch (error) {
     console.warn("Could not import Flashframe archive:", error);
   }
 }
 
-async function mirrorAllSnapshotsToDisk(preferredId = "") {
+async function mirrorNamedSnapshotsToDisk(preferredId = "") {
   try {
-    const snapshots = await listSnapshots();
+    const snapshots = (await listSnapshots()).filter((snapshot) => snapshot.id !== LIVE_ID);
     if (!snapshots.length) return;
 
     for (const snapshot of snapshots) {
@@ -61,8 +63,8 @@ async function mirrorAllSnapshotsToDisk(preferredId = "") {
     }
 
     const current = preferredId
-      ? snapshots.find((snapshot) => snapshot.id === preferredId) ?? snapshots[0]
-      : snapshots[0];
+      ? snapshots.find((snapshot) => snapshot.id === preferredId) ?? null
+      : null;
 
     if (current) await writeLiveSnapshot(current);
   } catch (error) {
@@ -74,18 +76,17 @@ function scheduleMirror(preferredId = "") {
   if (syncTimer != null) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     syncTimer = null;
-    void mirrorAllSnapshotsToDisk(preferredId);
+    void mirrorNamedSnapshotsToDisk(preferredId);
   }, 300);
 }
 
 saveButton.addEventListener("click", () => {
-  // workspace.js performs the actual save first; wait for its IndexedDB write.
-  scheduleMirror();
+  scheduleMirror(savedFramesSelect.value);
 });
 
 restoreButton.addEventListener("click", () => {
   const id = savedFramesSelect.value;
-  if (!id) return;
+  if (!id || id === LIVE_ID) return;
 
   setTimeout(async () => {
     const snapshot = await getSnapshot(id);
@@ -95,8 +96,7 @@ restoreButton.addEventListener("click", () => {
 
 window.addEventListener("flashframe:archive-ready", async () => {
   await importArchive();
-  await mirrorAllSnapshotsToDisk(savedFramesSelect.value);
+  await mirrorNamedSnapshotsToDisk(savedFramesSelect.value);
 });
 
-// If Chrome retained permission to the chosen folder, recover sessions immediately.
 setTimeout(() => void importArchive(), 0);
