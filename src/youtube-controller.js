@@ -7,3 +7,4 @@ if (![...document.styleSheets].some((sheet) => sheet.href === href)) {
 }
 
 await import("./web-drop.js");
+await import("./appearance.js");
