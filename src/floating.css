@@ -26,6 +26,19 @@ body.toolbar-hidden .workspace {
   display: block;
   visibility: visible;
   opacity: 1;
+  transition: opacity 180ms ease, filter 180ms ease;
+}
+
+.floating-dock.is-faded {
+  opacity: 0.045;
+  filter: saturate(0.55);
+}
+
+.floating-dock.is-faded:hover,
+.floating-dock.is-faded:focus-within,
+.floating-dock.is-dragging {
+  opacity: 1;
+  filter: none;
 }
 
 .dock-head,
