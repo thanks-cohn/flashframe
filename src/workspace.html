@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flashframe</title>
   <link rel="stylesheet" href="workspace.css">
+  <link rel="stylesheet" href="floating.css">
 </head>
 <body>
   <header class="toolbar">
@@ -33,9 +34,7 @@
 
   <aside id="settings-dock" class="floating-dock settings-dock" aria-label="Flashframe settings">
     <div class="dock-head settings-head">
-      <button id="settings-dock-grip" class="dock-drag" type="button" title="Drag settings" aria-label="Drag settings">
-        <span class="spinner-mark" aria-hidden="true">✣</span>
-      </button>
+      <button id="settings-dock-grip" class="dock-drag" type="button" title="Drag settings" aria-label="Drag settings"><span class="spinner-mark" aria-hidden="true">✣</span></button>
       <button id="settings-mini" class="settings-mini" type="button" title="Settings" aria-label="Settings">⚙</button>
       <strong class="dock-title">Settings</strong>
       <button id="settings-expand" class="dock-expand" type="button" title="Minimize settings" aria-label="Minimize settings">−</button>
@@ -43,33 +42,18 @@
     <div class="dock-body settings-body">
       <label class="setting-row">
         <input id="setting-block-headers" type="checkbox" checked>
-        <span>
-          <strong>Show block headers</strong>
-          <small>Hide the title bars on Flashframe blocks.</small>
-        </span>
+        <span><strong>Show block headers</strong><small>Hide the title bars on Flashframe blocks.</small></span>
       </label>
-
       <label class="setting-row">
         <input id="setting-toolbar" type="checkbox" checked>
-        <span>
-          <strong>Show top toolbar</strong>
-          <small>When hidden, use the movable F button to bring it back.</small>
-        </span>
+        <span><strong>Show top toolbar</strong><small>When hidden, use the movable F button to bring it back.</small></span>
       </label>
-
       <label class="setting-row">
         <input id="setting-loop-videos" type="checkbox">
-        <span>
-          <strong>Loop all videos automatically</strong>
-          <small>Individual videos can still turn looping off.</small>
-        </span>
+        <span><strong>Loop all videos automatically</strong><small>Individual videos can still turn looping off.</small></span>
       </label>
-
       <div class="storage-setting">
-        <div>
-          <strong>Flashframe data folder</strong>
-          <small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small>
-        </div>
+        <div><strong>Flashframe data folder</strong><small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small></div>
         <div id="archive-status" class="archive-status">Not connected</div>
         <button id="archive-connect" type="button">Choose ~/flashframe</button>
       </div>
@@ -78,9 +62,7 @@
 
   <aside id="video-dock" class="floating-dock video-dock" aria-label="All video controls">
     <div class="player-head">
-      <button id="video-dock-grip" class="dock-drag" type="button" title="Drag player" aria-label="Drag player">
-        <span class="spinner-mark" aria-hidden="true">✣</span>
-      </button>
+      <button id="video-dock-grip" class="dock-drag" type="button" title="Drag player" aria-label="Drag player"><span class="spinner-mark" aria-hidden="true">✣</span></button>
       <div class="player-middle" aria-label="Global video controls">
         <button id="video-rewind-all" class="player-control" type="button" title="Rewind all videos">↶</button>
         <button id="video-play-all" class="player-control player-play" type="button" title="Play or pause all videos">▶</button>
@@ -89,98 +71,23 @@
       <button id="video-expand" class="dock-expand" type="button" title="Minimize player" aria-label="Minimize player">−</button>
     </div>
     <div class="dock-body video-dock-body">
-      <label class="rewind-amount">
-        <span>Step</span>
-        <input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal">
-        <span>seconds</span>
-      </label>
+      <label class="rewind-amount"><span>Step</span><input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal"><span>seconds</span></label>
       <small>Rewind or forward every loaded video. Click once for one step, or hold either button to keep moving.</small>
     </div>
   </aside>
 
   <main id="workspace" class="workspace" aria-label="Flashframe workspace"></main>
 
-  <template id="text-block-template">
-    <section class="block text-block" data-block-type="text">
-      <div class="block-header">
-        <input class="block-name" value="Untitled" aria-label="Block name">
-        <span class="source-badge" hidden></span>
-        <div class="block-actions">
-          <button class="maximize-block" type="button" title="Maximize">□</button>
-          <button class="remove-block" type="button" title="Remove from workspace">×</button>
-        </div>
-      </div>
-      <textarea class="text-editor" spellcheck="true" aria-label="Text"></textarea>
-    </section>
-  </template>
+  <template id="text-block-template"><section class="block text-block" data-block-type="text"><div class="block-header"><input class="block-name" value="Untitled" aria-label="Block name"><span class="source-badge" hidden></span><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div><textarea class="text-editor" spellcheck="true" aria-label="Text"></textarea></section></template>
 
-  <template id="pdf-block-template">
-    <section class="block pdf-block" data-block-type="pdf">
-      <div class="block-header">
-        <input class="block-name" value="PDF" aria-label="Block name">
-        <div class="block-actions">
-          <button class="maximize-block" type="button" title="Maximize">□</button>
-          <button class="remove-block" type="button" title="Remove from workspace">×</button>
-        </div>
-      </div>
-      <div class="block-toolbar pdf-toolbar">
-        <button class="pdf-prev" type="button" title="Previous page">‹</button>
-        <label>Page <input class="pdf-page" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
-        <button class="pdf-next" type="button" title="Next page">›</button>
-        <button class="reconnect-source" type="button" hidden>Reconnect</button>
-      </div>
-      <div class="source-message" hidden></div>
-      <iframe class="pdf-viewer" title="PDF viewer"></iframe>
-    </section>
-  </template>
+  <template id="pdf-block-template"><section class="block pdf-block" data-block-type="pdf"><div class="block-header"><input class="block-name" value="PDF" aria-label="Block name"><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div><div class="block-toolbar pdf-toolbar"><button class="pdf-prev" type="button" title="Previous page">‹</button><label>Page <input class="pdf-page" type="number" min="1" step="1" value="1" inputmode="numeric"></label><button class="pdf-next" type="button" title="Next page">›</button><button class="reconnect-source" type="button" hidden>Reconnect</button></div><div class="source-message" hidden></div><iframe class="pdf-viewer" title="PDF viewer"></iframe></section></template>
 
-  <template id="gallery-block-template">
-    <section class="block gallery-block" data-block-type="gallery">
-      <div class="block-header">
-        <input class="block-name" value="Gallery" aria-label="Block name">
-        <div class="block-actions">
-          <button class="maximize-block" type="button" title="Maximize">□</button>
-          <button class="remove-block" type="button" title="Remove from workspace">×</button>
-        </div>
-      </div>
-      <div class="gallery-stage">
-        <img class="gallery-image" alt="">
-        <div class="source-message" hidden></div>
-      </div>
-      <div class="block-toolbar gallery-toolbar">
-        <button class="gallery-prev" type="button" title="Previous image">‹</button>
-        <span class="gallery-position">0 / 0</span>
-        <span class="gallery-filename"></span>
-        <button class="gallery-next" type="button" title="Next image">›</button>
-        <button class="reconnect-source" type="button" hidden>Reconnect</button>
-      </div>
-    </section>
-  </template>
+  <template id="gallery-block-template"><section class="block gallery-block" data-block-type="gallery"><div class="block-header"><input class="block-name" value="Gallery" aria-label="Block name"><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div><div class="gallery-stage"><img class="gallery-image" alt=""><div class="source-message" hidden></div></div><div class="block-toolbar gallery-toolbar"><button class="gallery-prev" type="button" title="Previous image">‹</button><span class="gallery-position">0 / 0</span><span class="gallery-filename"></span><button class="gallery-next" type="button" title="Next image">›</button><button class="reconnect-source" type="button" hidden>Reconnect</button></div></section></template>
 
-  <template id="video-block-template">
-    <section class="block video-block" data-block-type="video">
-      <div class="block-header">
-        <input class="block-name" value="Video" aria-label="Block name">
-        <div class="block-actions">
-          <button class="maximize-block" type="button" title="Maximize">□</button>
-          <button class="remove-block" type="button" title="Remove from workspace">×</button>
-        </div>
-      </div>
-      <div class="source-message" hidden></div>
-      <video class="video-player" controls preload="metadata"></video>
-      <div class="block-toolbar source-toolbar">
-        <span class="video-time">0:00</span>
-        <label class="video-loop-control" title="Override the global loop setting for this video">
-          <input class="video-loop" type="checkbox">
-          <span>Loop</span>
-        </label>
-        <button class="reconnect-source" type="button" hidden>Reconnect</button>
-      </div>
-    </section>
-  </template>
+  <template id="video-block-template"><section class="block video-block" data-block-type="video"><div class="block-header"><input class="block-name" value="Video" aria-label="Block name"><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div><div class="source-message" hidden></div><video class="video-player" controls preload="metadata"></video><div class="block-toolbar source-toolbar"><span class="video-time">0:00</span><label class="video-loop-control" title="Override the global loop setting for this video"><input class="video-loop" type="checkbox"><span>Loop</span></label><button class="reconnect-source" type="button" hidden>Reconnect</button></div></section></template>
 
   <script type="module" src="workspace.js"></script>
-  <script type="module" src="settings.js"></script>
+  <script type="module" src="controls.js"></script>
   <script type="module" src="archive-bridge.js"></script>
 </body>
 </html>
