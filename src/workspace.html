@@ -55,12 +55,36 @@
       </label>
       <label class="setting-row">
         <input id="setting-fade-settings" type="checkbox">
-        <span><strong>Fade Settings sticky after 10 seconds</strong><small>Move the mouse over its area and it immediately reappears.</small></span>
+        <span><strong>Fade Settings sticky</strong><small>Fade after the configured delay. Hover its area to bring it back.</small></span>
       </label>
       <label class="setting-row">
         <input id="setting-fade-player" type="checkbox">
-        <span><strong>Fade Player sticky after 10 seconds</strong><small>Move the mouse over its area and it immediately reappears.</small></span>
+        <span><strong>Fade Player sticky</strong><small>Fade after the configured delay. Hover its area to bring it back.</small></span>
       </label>
+
+      <label class="setting-choice-row">
+        <span><strong>Fade delay</strong><small>Default: 10 seconds.</small></span>
+        <span class="setting-inline-input"><input id="setting-fade-delay" type="number" min="1" max="300" step="1" value="10" inputmode="numeric"><span>seconds</span></span>
+      </label>
+
+      <label class="setting-choice-row">
+        <span><strong>Video footer</strong><small>Controls below each video block.</small></span>
+        <select id="setting-video-footer" aria-label="Video footer behavior">
+          <option value="show">Always show</option>
+          <option value="fade">Fade until hover</option>
+          <option value="hide">Hide</option>
+        </select>
+      </label>
+
+      <label class="setting-choice-row">
+        <span><strong>Other block controls</strong><small>PDF and gallery control bars.</small></span>
+        <select id="setting-other-footers" aria-label="Other block control behavior">
+          <option value="show">Always show</option>
+          <option value="fade">Fade until hover</option>
+          <option value="hide">Hide</option>
+        </select>
+      </label>
+
       <div class="storage-setting">
         <div><strong>Flashframe data folder</strong><small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small></div>
         <div id="archive-status" class="archive-status">Not connected</div>
@@ -98,6 +122,7 @@
   <script type="module" src="workspace.js"></script>
   <script type="module" src="controls.js"></script>
   <script type="module" src="dock-fade.js"></script>
+  <script type="module" src="footer-visibility.js"></script>
   <script type="module" src="reconnect-all.js"></script>
   <script type="module" src="archive-bridge.js"></script>
 </body>
