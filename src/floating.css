@@ -1,3 +1,33 @@
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+}
+
+.toolbar-actions {
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+}
+
+.workspace {
+  margin-top: 54px;
+}
+
+body.toolbar-hidden .workspace {
+  margin-top: 0;
+}
+
+.floating-dock {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
 .dock-head,
 .player-head {
   display: flex;
