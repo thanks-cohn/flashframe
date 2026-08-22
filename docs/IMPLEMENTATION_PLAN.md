@@ -1,226 +1,196 @@
 # Implementation Plan
 
-This is the shortest path from the current repository to a useful Flashframe extension.
+This is the shortest path from the current repository to a Chrome Web Store-ready Flashframe extension.
 
 The order matters. Each phase should leave a runnable extension rather than a pile of disconnected subsystems.
 
-## Phase 0: extension shell
+## Current status
 
-Goal: clicking the extension opens one Flashframe workspace tab.
+Implemented in the repository now:
 
-Deliverables:
+- Manifest V3 extension shell
+- extension toolbar action that opens the Flashframe workspace
+- full extension-owned workspace page
+- generic block registry and serializable block shell
+- movable/resizable/named blocks
+- z-order and temporary maximize/restore
+- IndexedDB snapshot persistence
+- retained browser file/directory handle storage where Chromium permits it
+- text blocks and open-from-local-text
+- PDF blocks with Flashframe page controls
+- directory-backed image lightboxes
+- local video blocks
+- named Flashframe save/restore
+- missing-source reconnect affordances
+- syntax-validation GitHub Action
+- local-first privacy documentation
 
-- Manifest V3 `manifest.json`
-- service worker
-- extension toolbar action
-- full-page `workspace.html`
-- minimal workspace styling
-- no framework or build step
+Still requires hands-on Chrome smoke testing before this should be called release-ready.
 
-Acceptance:
+See `CURRENT_BUILD.md` for exact behavior and known limitations.
 
-1. Load the repository as an unpacked extension in Chrome/Chromium.
-2. Click the extension icon.
-3. A Flashframe workspace tab opens.
-4. Clicking the icon again focuses the existing workspace instead of spawning copies when practical.
+## Phase 0: extension shell — implemented
 
-## Phase 1: generic block shell
+Goal: clicking the extension opens a Flashframe workspace tab.
 
-Goal: prove the spatial platform before adding real content.
+Current design intentionally opens a workspace tab without requesting broad tab or website permissions. Supporting several independent Flashframe tabs is acceptable and keeps the first manifest narrow.
 
-Implement:
+## Phase 1: generic block shell — implemented
 
-- block registry
-- block id/name/type
-- draggable block header
-- resize handles
-- z-order / bring-to-front
-- remove block
-- temporary maximize and restore
-- generic `serialize()` and `restore()` path
+Current block shell contains:
 
-Use a dummy block first if necessary.
+- stable id
+- block type
+- editable name
+- x/y
+- width/height
+- z-order
+- source record
+- block-owned serialized state
 
-Acceptance:
+The canvas does not need to understand the private meaning of every block's state.
 
-- create several blocks
-- move and resize each independently
-- serialize the workspace to JSON
-- reload the workspace from that JSON with matching names and geometry
+## Phase 2: durable persistence — partially implemented
 
-## Phase 2: durable persistence
+Implemented:
 
-Goal: survive browser reload and closure.
+- named snapshots in IndexedDB
+- file/directory handle store
+- content store reserved for future use
+- immutable named-snapshot behavior
 
-Implement an IndexedDB wrapper with stores conceptually similar to:
+Next:
 
-```text
-workspaces
-snapshots
-handles
-content
-```
+- autosaved live workspace separate from named snapshots
+- snapshot rename/delete UI
+- optional export/import later
 
-Do not over-design the schema. The first goal is a small versioned record that can migrate later.
+## Phase 3: text block — implemented for snapshots
 
-Acceptance:
-
-- live workspace survives reload/crash-level refresh
-- a named Flashframe can be saved
-- a named Flashframe can be restored repeatedly without being mutated by ordinary use
-
-## Phase 3: text block
-
-Goal: make Flashframe useful for writing immediately.
-
-Start with a plain textarea or equally simple editor.
-
-Implement:
+Implemented:
 
 - new text block
 - editable block name
 - text editing
-- optional open-from-file
-- optional save-to-file
-- serialized text content
+- open-from-file
+- serialized text itself
 - serialized scroll position
-- optional serialized cursor offset
+- optional cursor offset
 
-Acceptance:
+Important property:
 
-- write several paragraphs
-- scroll halfway down
-- save Flashframe
-- alter or clear the live text
-- restore the Flashframe
-- earlier text and visible position return
+The saved Flashframe contains its historical text. Restore does not simply reread the present-day external file.
 
-The saved snapshot must contain the old text rather than simply re-reading the current external text file.
+Not implemented yet:
 
-## Phase 4: PDF block
+- explicit write-back/save-to-original-file
 
-Goal: restore reading position with the smallest useful state.
+Do not add write-back casually. It should be an obvious user action and must not undermine historical snapshot behavior.
 
-Implement:
+## Phase 4: PDF block — prototype implemented
+
+Implemented:
 
 - choose local PDF
-- display PDF inside block
-- page navigation
-- current page state
-- source relink placeholder
+- display inside block using Chromium's native PDF handling
+- Flashframe page input and previous/next controls
+- serialized page
+- restore to serialized page
+- reconnect placeholder
 
-Acceptance:
+Known issue before polished release:
 
-- open PDF
-- go to page N
-- save Flashframe
-- restore
-- PDF returns to page N
+Native embedded PDF UI can have internal navigation that Flashframe cannot reliably observe. The durable block contract remains `source + page`. If exact page tracking cannot be made reliable with the native viewer, bundle a local PDF.js-style renderer later. Do not load executable viewer code from a CDN in the extension.
 
-Do not block this phase on annotation support, perfect zoom state, or sophisticated PDF editing.
+## Phase 5: directory lightbox — prototype implemented
 
-If native browser PDF embedding does not offer reliable page control inside the extension, use a bundled PDF.js-style viewer later. Keep the block contract unchanged: source + page.
+Implemented:
 
-## Phase 5: directory lightbox
+- user-selected directory
+- direct image enumeration
+- filename-natural sorting
+- previous/next
+- left/right keyboard navigation
+- current filename + fallback index
+- restore by filename first
 
-Goal: browse a selected image directory without leaving the workspace.
+Later polish:
 
-Implement:
+- thumbnails
+- user-selectable sorting
+- fit/fill controls
+- slideshow
+- optional recursive subdirectory browsing
 
-- choose directory from a user gesture
-- enumerate supported image files
-- previous / next
-- keyboard left/right while the block is focused
-- current image identity/name
-- lazy loading around the current item
+## Phase 6: local video block — prototype implemented
 
-Acceptance:
-
-- choose directory
-- navigate to a particular image
-- save
-- add/remove unrelated files from the directory if desired
-- restore
-- Flashframe tries to reopen the same named image rather than blindly trusting the old numeric index
-
-## Phase 6: local video block
-
-Goal: restore media position.
-
-Implement:
+Implemented:
 
 - choose local video
-- normal browser video controls
-- current timestamp serialization
-- optional paused/playing state, volume, muted, playback rate
+- HTML video controls
+- timestamp serialization
+- paused state
+- volume/mute
+- playback rate
+- timestamp restoration
 
-Acceptance:
+Autoplay refusal is not a restoration failure. Correct timestamp restoration is the required behavior.
 
-- seek to a recognizable timestamp
-- save
-- close/reopen
-- restore to that timestamp
+## Phase 7: missing-source recovery — prototype implemented
 
-Autoplay policy should not be treated as a restoration failure. Returning to the correct timestamp is the required behavior.
+Source-backed blocks retain their shell and state when a source cannot be reopened.
 
-## Phase 7: missing-source recovery
+The current Reconnect action first tries the stored browser-managed handle and may ask Chromium for permission again. If that cannot be recovered, the user can choose a source again through the normal picker flow.
 
-Goal: one unavailable file never destroys the workspace.
+This needs real restart/permission testing in Chrome before release.
 
-For every source-backed block:
+## Phase 8: release correctness
 
-- keep block name and geometry visible
-- show expected source name
-- offer Relink
-- when relinked, apply compatible saved state
+Do this before broadening the product.
 
-Acceptance:
+1. Load the repository unpacked in current stable Chrome.
+2. Exercise every block type.
+3. Save mixed workspaces.
+4. close/reopen Chrome.
+5. Restore mixed workspaces.
+6. Test expired file/directory permissions.
+7. Test moved/deleted source files.
+8. Test large image directories.
+9. Verify PDF page behavior.
+10. Verify video timestamp behavior.
+11. Add snapshot rename/delete controls.
+12. Add live-workspace crash/reload autosave.
+13. Add proper extension icons and store graphics.
+14. Package the exact repository release contents and inspect them for remote code or accidental development files.
 
-- save a workspace
-- move/delete one source
-- restore
-- all other blocks work
-- missing block remains in place and can be repaired
+## Phase 9: Chrome Web Store release
 
-## Phase 8: Memorew foundation
+Keep Flashframe's single purpose easy to explain:
 
-Only begin this after ordinary Flashframe serialization/restoration is reliable.
+> Arrange local files in a spatial workspace and return to the saved arrangement later.
 
-Memorew should reuse the same block records.
+Store posture:
 
-First version:
+- Manifest V3
+- no remote executable code
+- no broad website access for the Flashframe product
+- no unrelated feature bundle
+- explicit user action before local file/directory access
+- local workspace state by default
+- privacy disclosures match actual behavior
 
-- create time-stamped workspace moments
-- record on meaningful state changes with debounce/coalescing
-- display a simple chronological list/timeline
-- open a historical moment as a live workspace
+If a later feature needs a new permission, add it only when the shipping feature requires it.
 
-Do not create a second block model.
+## Phase 10: later platform work
 
-Acceptance:
+Only after ordinary Flashframe restoration is reliable:
 
-At an earlier selected moment:
-
-- historical text returns
-- text visible position returns
-- PDF page returns
-- gallery image returns
-- video timestamp returns
-- names and geometry return
-
-## Phase 9: polish only after correctness
-
-Then improve:
-
+- improved PDF renderer if needed
 - pan/zoom canvas
-- thumbnail strip for galleries
-- keyboard shortcuts
-- nicer resize behavior
 - block grouping
-- export/import metadata
-- retention policy for historical moments
-- side panel companion
-- future remote block types
+- richer lightbox
+- Block SDK / stable external block contract
+- optional integrations with other first-party extensions
 
 ## Things to avoid early
 
@@ -240,4 +210,4 @@ Do not spend the first implementation on:
 
 The proof is restoration.
 
-If four simple block types can close and reopen in the same useful state, the platform idea works.
+If four simple local block types can close and reopen in the same useful state, the platform idea works.
