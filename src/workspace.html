@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flashframe</title>
   <link rel="stylesheet" href="workspace.css">
-  <link rel="stylesheet" href="top-controls.css">
+  <link rel="stylesheet" href="floating.css">
 </head>
 <body>
   <header class="toolbar">
@@ -28,50 +28,54 @@
       <button id="reconnect-all" type="button">Reconnect all</button>
     </div>
 
-    <div class="header-player" aria-label="All video controls">
-      <button id="video-rewind-all" type="button" title="Rewind all videos">↶</button>
-      <button id="video-play-all" class="player-play" type="button" title="Play or pause all videos">▶</button>
-      <button id="video-forward-all" type="button" title="Forward all videos">↷</button>
-    </div>
-
-    <button id="settings-toggle" class="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">Settings</button>
     <div id="status" class="status" role="status" aria-live="polite"></div>
   </header>
 
-  <aside id="settings-panel" class="settings-panel" hidden aria-label="Flashframe settings">
-    <div class="settings-heading">
-      <strong>Settings</strong>
-      <button id="settings-close" class="settings-close" type="button" aria-label="Close settings">×</button>
+  <button id="toolbar-summon" class="toolbar-summon" type="button" title="Show or hide Flashframe controls" aria-label="Show or hide Flashframe controls">F</button>
+
+  <aside id="settings-dock" class="floating-dock settings-dock" aria-label="Flashframe settings">
+    <div class="dock-head settings-head">
+      <button id="settings-dock-grip" class="dock-drag" type="button" title="Drag settings" aria-label="Drag settings"><span class="spinner-mark" aria-hidden="true">✣</span></button>
+      <button id="settings-mini" class="settings-mini" type="button" title="Settings" aria-label="Settings">⚙</button>
+      <strong class="dock-title">Settings</strong>
+      <button id="settings-expand" class="dock-expand" type="button" title="Minimize settings" aria-label="Minimize settings">−</button>
     </div>
-
-    <label class="setting-row">
-      <input id="setting-block-headers" type="checkbox" checked>
-      <span><strong>Show block headers</strong><small>Hide title bars while keeping a small drag handle available.</small></span>
-    </label>
-
-    <label class="setting-row">
-      <input id="setting-toolbar" type="checkbox" checked>
-      <span><strong>Show top toolbar</strong><small>When hidden, the small F button brings the toolbar back.</small></span>
-    </label>
-
-    <label class="setting-row">
-      <input id="setting-loop-videos" type="checkbox">
-      <span><strong>Loop all videos automatically</strong><small>Individual videos can still override the global default.</small></span>
-    </label>
-
-    <label class="video-step-setting">
-      <span><strong>Video skip amount</strong><small>Used by the ↶ and ↷ buttons in the header.</small></span>
-      <input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal" aria-label="Video skip amount in seconds">
-    </label>
-
-    <div class="storage-setting">
-      <div><strong>Flashframe data folder</strong><small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small></div>
-      <div id="archive-status" class="archive-status">Not connected</div>
-      <button id="archive-connect" type="button">Choose ~/flashframe</button>
+    <div class="dock-body settings-body">
+      <label class="setting-row">
+        <input id="setting-block-headers" type="checkbox" checked>
+        <span><strong>Show block headers</strong><small>Hide the title bars on Flashframe blocks.</small></span>
+      </label>
+      <label class="setting-row">
+        <input id="setting-toolbar" type="checkbox" checked>
+        <span><strong>Show top toolbar</strong><small>When hidden, use the movable F button to bring it back.</small></span>
+      </label>
+      <label class="setting-row">
+        <input id="setting-loop-videos" type="checkbox">
+        <span><strong>Loop all videos automatically</strong><small>Individual videos can still turn looping off.</small></span>
+      </label>
+      <div class="storage-setting">
+        <div><strong>Flashframe data folder</strong><small>Recommended: <code>~/flashframe</code>. Saved sessions live here independently of the extension code.</small></div>
+        <div id="archive-status" class="archive-status">Not connected</div>
+        <button id="archive-connect" type="button">Choose ~/flashframe</button>
+      </div>
     </div>
   </aside>
 
-  <button id="toolbar-summon" class="toolbar-summon" type="button" title="Show Flashframe controls" aria-label="Show Flashframe controls">F</button>
+  <aside id="video-dock" class="floating-dock video-dock" aria-label="All video controls">
+    <div class="player-head">
+      <button id="video-dock-grip" class="dock-drag" type="button" title="Drag player" aria-label="Drag player"><span class="spinner-mark" aria-hidden="true">✣</span></button>
+      <div class="player-middle" aria-label="Global video controls">
+        <button id="video-rewind-all" class="player-control" type="button" title="Rewind all videos">↶</button>
+        <button id="video-play-all" class="player-control player-play" type="button" title="Play or pause all videos">▶</button>
+        <button id="video-forward-all" class="player-control" type="button" title="Forward all videos">↷</button>
+      </div>
+      <button id="video-expand" class="dock-expand" type="button" title="Minimize player" aria-label="Minimize player">−</button>
+    </div>
+    <div class="dock-body video-dock-body">
+      <label class="rewind-amount"><span>Step</span><input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal"><span>seconds</span></label>
+      <small>Rewind or forward every loaded video. Click once for one step, or hold either button to keep moving.</small>
+    </div>
+  </aside>
 
   <main id="workspace" class="workspace" aria-label="Flashframe workspace"></main>
 
