@@ -13,23 +13,12 @@ async function permissionState(handle, mode = "readwrite") {
   }
 }
 
-async function writableArchiveHandle({ request = false } = {}) {
+async function writableArchiveHandle() {
   const handle = await getHandle(ARCHIVE_HANDLE_KEY);
   if (!handle) return null;
 
-  let state = await permissionState(handle, "readwrite");
-  if (state === "granted") return handle;
-
-  if (request && handle.requestPermission) {
-    try {
-      state = await handle.requestPermission({ mode: "readwrite" });
-      if (state === "granted") return handle;
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
+  const state = await permissionState(handle, "readwrite");
+  return state === "granted" ? handle : null;
 }
 
 async function ensureLayout(root) {
@@ -91,8 +80,8 @@ export async function getArchiveStatus() {
   };
 }
 
-export async function connectArchiveDirectory() {
-  let handle = await getHandle(ARCHIVE_HANDLE_KEY);
+export async function connectArchiveDirectory({ chooseNew = false } = {}) {
+  let handle = chooseNew ? null : await getHandle(ARCHIVE_HANDLE_KEY);
 
   if (handle) {
     const current = await permissionState(handle, "readwrite");
