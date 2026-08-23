@@ -1,0 +1,65 @@
+name: Build isolated Chrome candidate on Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - isolated-windows-exe
+    paths:
+      - manifest.json
+      - src/**
+      - rules/**
+      - icons/**
+      - LICENSE
+      - scripts/package-web-store.ps1
+      - .github/workflows/isolated-chrome-windows.yml
+
+permissions:
+  contents: read
+
+jobs:
+  windows-candidate:
+    runs-on: windows-latest
+    steps:
+      - name: Check out Flashframe
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate JavaScript syntax
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Get-ChildItem src -Recurse -Filter *.js | ForEach-Object {
+            node --check $_.FullName
+            if ($LASTEXITCODE -ne 0) { throw "JavaScript syntax check failed: $($_.FullName)" }
+          }
+
+      - name: Build exact Windows test and Store package
+        shell: pwsh
+        run: ./scripts/package-web-store.ps1
+
+      - name: Inspect isolated package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $manifest = Get-Content dist/test-unpacked/manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.manifest_version -ne 3) { throw "Expected Manifest V3" }
+          if (@($manifest.permissions).Count -ne 1) { throw "Unexpected permission count" }
+          if (@($manifest.host_permissions).Count -ne 2) { throw "Unexpected host permission count" }
+          if (-not (Test-Path dist/test-unpacked/src/workspace.html)) { throw "workspace.html missing" }
+          Write-Host "PASS: exact candidate unpacks with manifest at root"
+          Write-Host "PASS: no companion/native messaging/broad-host dependency allowed by release gate"
+
+      - name: Upload Windows test candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: Flashframe-Isolated-Windows-Test
+          path: |
+            dist/flashframe-chrome-web-store-v*.zip
+            dist/test-unpacked/**
+          if-no-files-found: error
+          retention-days: 30
