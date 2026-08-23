@@ -70,6 +70,7 @@ foreach ($Size in $RequiredIcons.Keys) {
 # excluded from the Store ZIP.
 $ShipRoots = @("manifest.json", "LICENSE", "src", "rules", "icons")
 $TextExtensions = @(".js", ".mjs", ".html", ".css", ".json")
+$ForbiddenBinaryExtensions = @(".exe", ".dll", ".msi", ".bat", ".cmd", ".ps1", ".py", ".pyc")
 $ForbiddenText = @(
     @{ Name = "localhost dependency"; Pattern = '(?i)localhost' },
     @{ Name = "loopback dependency"; Pattern = '127\.0\.0\.1' },
@@ -79,7 +80,8 @@ $ForbiddenText = @(
     @{ Name = "eval"; Pattern = '(?i)\beval\s*\(' },
     @{ Name = "Function constructor"; Pattern = '(?i)new\s+Function\s*\(' },
     @{ Name = "remote script tag"; Pattern = '(?i)<script[^>]+src\s*=\s*[''\"]https?://' },
-    @{ Name = "remote JavaScript import"; Pattern = '(?i)(?:import\s*\(|from\s*)\s*[''\"]https?://' }
+    @{ Name = "remote JavaScript import"; Pattern = '(?i)(?:import\s*\(|from\s*)\s*[''\"]https?://' },
+    @{ Name = "remote importScripts"; Pattern = '(?i)importScripts\s*\(\s*[''\"]https?://' }
 )
 
 $FilesToShip = New-Object System.Collections.Generic.List[string]
@@ -96,11 +98,16 @@ foreach ($Relative in $ShipRoots) {
 }
 
 foreach ($File in $FilesToShip) {
-    if ([IO.Path]::GetExtension($File) -notin $TextExtensions) { continue }
+    $Extension = [IO.Path]::GetExtension($File).ToLowerInvariant()
+    if ($Extension -in $ForbiddenBinaryExtensions) {
+        throw "Forbidden desktop/runtime file in Store package: $File"
+    }
+    if ($Extension -notin $TextExtensions) { continue }
     $Text = Get-Content $File -Raw
     foreach ($Rule in $ForbiddenText) {
         if ($Text -match $Rule.Pattern) {
-            $Prefix = $Root.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+            $TrimChars = [char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+            $Prefix = $Root.TrimEnd($TrimChars) + [IO.Path]::DirectorySeparatorChar
             $Relative = if ($File.StartsWith($Prefix, [StringComparison]::OrdinalIgnoreCase)) {
                 $File.Substring($Prefix.Length)
             } else {
