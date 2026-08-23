@@ -8,12 +8,13 @@ Flashframe is a Manifest V3 Chrome/Chromium extension.
 
 Clicking the extension action opens a full extension-owned workspace tab.
 
-The workspace currently has four block types:
+The workspace currently has first-class core block types:
 
 - text
 - PDF
 - image-directory gallery
 - local video
+- dropped local audio
 
 Every block has the common Flashframe shell:
 
@@ -22,12 +23,12 @@ Every block has the common Flashframe shell:
 - x/y position
 - width/height
 - z-order
-- drag-to-move
+- a standardized Grab hand for drag-to-move
 - browser-native resize
 - temporary maximize/restore
 - removal without deleting the underlying local source
 
-Named Flashframes are stored locally in IndexedDB and can be selected and restored later.
+Named Flashframes are stored locally in IndexedDB and can be selected and restored later. Schema v2 includes workspace background color/image/mode while global UI preferences remain separate. A distinct local live checkpoint restores the last working workspace without requiring an archive directory.
 
 ## Text block
 
@@ -98,6 +99,10 @@ Current behavior:
 - restore the timestamp when the source is available
 
 If Chrome blocks automatic playback, returning to the correct timestamp still counts as a successful restore. The user can press play.
+
+## Audio and timed-media groups
+
+Dropped MP3, WAV, Ogg/OGA, M4A/AAC, FLAC, and WebM audio use native Chromium playback. Audio state includes time, pause, volume, mute, rate, loop, visual visibility, and sync-group membership. Visible, fade, and hidden modes are supported; Settings can reveal hidden audio. Local audio and video can be linked through **Sync with…** into automatically generated generic timed-media groups, or made independent. The floating transport targets all non-independent media or a selected discovered group.
 
 ## Local source handles
 

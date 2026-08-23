@@ -1,10 +1,12 @@
 # Flashframe Chrome release readiness
 
-Branch: `isolated-windows-exe`
+Branch: `windows-ux-audio-restore-pass`
 
-Target manifest version: `1.0.5`
+Target manifest version: `1.0.6`
 
-Reference prerelease tag: `flashframe-chrome-v1.0.5-rc1`
+Historical tested prerelease (unchanged): `flashframe-chrome-v1.0.5-rc1`
+
+Candidate: v1.0.6 RC2 source; no RC2 tag is created by this preparation pass.
 
 ## Ready before hands-on Windows testing
 
@@ -30,6 +32,9 @@ Reference prerelease tag: `flashframe-chrome-v1.0.5-rc1`
 - [x] Reference prerelease workflow is configured to publish the candidate package and review documentation.
 - [x] Universal drag/drop routes images, PDFs, local videos, text/code files, generic files, URLs, and dropped image directories into workspace blocks.
 - [x] Dropped image directories use the gallery/lightbox flow with previous/next and keyboard navigation.
+- [x] Schema v2 named checkpoints and live autosave include workspace appearance and remain backward compatible with v1.
+- [x] Native audio drops, visible/fade/hidden modes, mixed audio/video sync groups, and group-aware transport are implemented without new permissions.
+- [x] Blocks use a standardized generous grab-hand affordance; context menus recover the toolbar and Settings.
 
 ## Must still be completed before submission
 

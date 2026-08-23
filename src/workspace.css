@@ -342,12 +342,7 @@ body.toolbar-hidden .workspace {
   min-height: 42px;
   padding: 6px 7px 6px 9px;
   border-bottom: 1px solid color-mix(in srgb, CanvasText 12%, transparent);
-  cursor: grab;
   user-select: none;
-}
-
-.block-header:active {
-  cursor: grabbing;
 }
 
 body.hide-block-headers .block-header {
@@ -355,32 +350,39 @@ body.hide-block-headers .block-header {
 }
 
 .compact-drag-handle {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  z-index: 20;
-  display: none;
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
-  padding: 0;
-  border-radius: 999px;
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 76px;
+  height: 34px;
+  min-height: 34px;
+  padding: 1px 8px 1px 5px;
+  border-radius: 9px;
   cursor: grab;
-  opacity: 0;
+  color: #171717;
+  background: #f7cf4b;
   touch-action: none;
   user-select: none;
-  transition: opacity 120ms ease;
+  font-size: 11px;
+  font-weight: 800;
 }
 
-body.hide-block-headers .block:hover > .compact-drag-handle,
-body.hide-block-headers .compact-drag-handle:focus-visible,
-body.hide-block-headers .compact-drag-handle.is-dragging {
-  display: block;
-  opacity: 0.62;
+.compact-drag-handle svg {
+  width: 34px;
+  height: 26px;
+  fill: #fff;
+  stroke: #171717;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-body.hide-block-headers .compact-drag-handle:active {
+.compact-drag-handle:active,
+.compact-drag-handle.is-dragging {
   cursor: grabbing;
+  background: #ffe47d;
 }
 
 .block-name {
@@ -549,6 +551,12 @@ body.hide-block-headers .compact-drag-handle:active {
 .video-loop-control input {
   margin: 0;
 }
+
+.audio-block { min-width: 360px; min-height: 150px; }
+.audio-player { width: 100%; padding: 14px; flex: 1; }
+.audio-fade:not(:hover):not(:focus-within) .audio-player,
+.audio-fade:not(:hover):not(:focus-within) .block-toolbar { opacity: .08; transition: opacity .7s ease; }
+.audio-hidden { display: none; }
 
 .source-message {
   padding: 12px 14px;

@@ -187,10 +187,10 @@ function attachCompactBlockDrag(block) {
   const handle = document.createElement("button");
   handle.type = "button";
   handle.className = "compact-drag-handle";
-  handle.textContent = "✣";
-  handle.title = "Drag block";
-  handle.setAttribute("aria-label", "Drag block");
-  block.append(handle);
+  handle.innerHTML = `<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M9 24c-3-3-5-8-2-10 2-1 4 2 5 3V5c0-4 5-4 5 0v8-9c0-4 5-4 5 0v9-8c0-4 5-4 5 0v9-6c0-4 5-4 5 0v10c3-4 8-3 9 0-4 9-10 13-20 13-5 0-9-2-12-7Z"/><path d="M13 24c7 3 14 3 22 0"/></svg><span>Grab</span>`;
+  handle.title = "Grab here to move block";
+  handle.setAttribute("aria-label", "Grab here to move block");
+  block.querySelector(":scope > .block-header")?.prepend(handle);
 
   handle.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
@@ -280,7 +280,12 @@ function applySettings() {
 }
 
 function players() {
-  return [...workspace.querySelectorAll(".video-player")];
+  const scope = document.querySelector("#media-scope")?.value || "all";
+  return [...workspace.querySelectorAll(".video-player, .audio-player")]
+    .filter((player) => {
+      const group = player.closest(".block")?.dataset.syncGroup || "all";
+      return group !== "independent" && (scope === "all" || group === scope);
+    });
 }
 
 function anyPlaying() {
@@ -290,7 +295,7 @@ function anyPlaying() {
 function updatePlayButton() {
   const playing = anyPlaying();
   playButton.textContent = playing ? "❚❚" : "▶";
-  playButton.title = playing ? "Pause all videos" : "Play all videos";
+  playButton.title = playing ? "Pause timed media" : "Play timed media";
   playButton.setAttribute("aria-label", playButton.title);
 }
 
@@ -543,6 +548,17 @@ window.addEventListener("resize", () => {
     const rect = element.getBoundingClientRect();
     placeFloating(element, key, rect.left, rect.top, true);
   }
+});
+
+window.addEventListener("flashframe:show-toolbar", () => {
+  toolbarTemporaryVisible = true;
+  applyToolbarVisibility();
+});
+
+window.addEventListener("flashframe:show-settings", () => {
+  settingsDock.classList.remove("is-faded");
+  setDockCollapsed(settingsDock, settingsExpand, SETTINGS_DOCK_KEY, false);
+  settingsDock.animate([{ outline: "4px solid #ffd34e" }, { outline: "0 solid transparent" }], { duration: 900 });
 });
 
 applySettings();

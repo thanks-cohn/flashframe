@@ -98,6 +98,7 @@
     <div class="player-head">
       <button id="video-dock-grip" class="dock-drag" type="button" title="Drag player" aria-label="Drag player"><span class="spinner-mark" aria-hidden="true">✣</span></button>
       <div class="player-middle" aria-label="Global video controls">
+        <select id="media-scope" aria-label="Timed media scope"><option value="all">All media</option></select>
         <button id="video-rewind-all" class="player-control" type="button" title="Rewind all videos">↶</button>
         <button id="video-play-all" class="player-control player-play" type="button" title="Play or pause all videos">▶</button>
         <button id="video-forward-all" class="player-control" type="button" title="Forward all videos">↷</button>
@@ -142,6 +143,7 @@
   <script type="module" src="dock-fade.js"></script>
   <script type="module" src="footer-visibility.js"></script>
   <script type="module" src="reconnect-all.js"></script>
+  <script type="module" src="media-sync.js"></script>
   <script type="module" src="archive-bridge.js"></script>
 </body>
 </html>

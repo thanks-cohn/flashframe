@@ -553,11 +553,16 @@ registerBlockType("video", {
       paused: player.paused,
       volume: player.volume,
       muted: player.muted,
-      playbackRate: player.playbackRate
+      playbackRate: player.playbackRate,
+      loop: player.loop,
+      syncGroup: block.dataset.syncGroup || "all"
     };
   },
 
   async restore(block, state = {}, source = null) {
+    block.dataset.timedMedia = "true";
+    block.dataset.syncGroup = state.syncGroup ?? "all";
+    block.querySelector(".video-player").loop = Boolean(state.loop);
     block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);
     const handle = await storedReadableHandle(source);
 
@@ -615,11 +620,14 @@ function captureBlock(block) {
 }
 
 function captureWorkspace(name) {
+  const detail = {};
+  window.dispatchEvent(new CustomEvent("flashframe:capture-appearance", { detail }));
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: crypto.randomUUID(),
     name,
     createdAt: new Date().toISOString(),
+    appearance: detail.appearance ?? null,
     blocks: [...workspace.querySelectorAll(".block")].map(captureBlock)
   };
 }
@@ -629,6 +637,12 @@ async function restoreWorkspace(snapshot) {
   workspace.replaceChildren();
   zCounter = 1;
   newBlockOffset = 0;
+
+  if ((snapshot.schemaVersion ?? 1) >= 2 && snapshot.appearance) {
+    const detail = { appearance: snapshot.appearance, tasks: [] };
+    window.dispatchEvent(new CustomEvent("flashframe:restore-appearance", { detail }));
+    await Promise.all(detail.tasks);
+  }
 
   for (const record of snapshot.blocks ?? []) {
     await createBlock(record);
