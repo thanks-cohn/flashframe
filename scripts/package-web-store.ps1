@@ -65,7 +65,7 @@ foreach ($Size in $RequiredIcons.Keys) {
 
 # Audit only files that can ship in the extension. Documentation is intentionally
 # excluded from the Store ZIP.
-$ShipRoots = @("manifest.json", "LICENSE", "src", "rules", "icons")
+$ShipRoots = @("manifest.json", "LICENSE", "src", "icons")
 $TextExtensions = @(".js", ".mjs", ".html", ".css", ".json")
 $ForbiddenBinaryExtensions = @(".exe", ".dll", ".msi", ".bat", ".cmd", ".ps1", ".py", ".pyc")
 $ForbiddenText = @(

@@ -72,7 +72,6 @@ include_roots = [
     pathlib.Path("manifest.json"),
     pathlib.Path("LICENSE"),
     pathlib.Path("src"),
-    pathlib.Path("rules"),
     pathlib.Path("icons"),
 ]
 
