@@ -51,7 +51,9 @@ function isVideoToolbar(toolbar) {
 
   return block.dataset.blockType === "video"
     || block.dataset.customKind === "remote-video"
-    || block.classList.contains("remote-video-block");
+    || block.dataset.customLocalKind === "video"
+    || block.classList.contains("remote-video-block")
+    || block.classList.contains("video-block");
 }
 
 function modeFor(toolbar) {
