@@ -47,6 +47,7 @@ style.textContent = `
     border: 1px solid rgba(255,255,255,.16);
     border-radius: 10px;
     background: rgba(20,22,24,.97);
+    color: #fff;
     box-shadow: 0 14px 34px rgba(0,0,0,.38);
     backdrop-filter: blur(10px);
   }
@@ -58,7 +59,7 @@ style.textContent = `
     border: 0;
     border-radius: 7px;
     background: transparent;
-    color: inherit;
+    color: #fff;
     text-align: left;
     cursor: pointer;
     font: inherit;
