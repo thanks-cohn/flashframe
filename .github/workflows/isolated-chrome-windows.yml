@@ -102,11 +102,16 @@ jobs:
           $title = "Flashframe Chrome v$version RC1"
           $zip = Get-ChildItem dist/flashframe-chrome-web-store-v*.zip | Select-Object -First 1
           $checksum = "$($zip.FullName).sha256"
+          $hash = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 
           @"
           # Flashframe Chrome v$version RC1
 
           Chrome-only release candidate for the `isolated-windows-exe` branch.
+
+          Candidate commit: `$env:GITHUB_SHA`
+
+          Store ZIP SHA-256: `$hash`
 
           This candidate is intentionally self-contained inside Chrome:
 
@@ -142,6 +147,8 @@ jobs:
           $ErrorActionPreference = $savedPreference
 
           if ($exists) {
+            git tag -f $tag $env:GITHUB_SHA
+            git push --force origin "refs/tags/$tag"
             gh release edit $tag --title $title --notes-file release-notes.md --prerelease
             gh release upload $tag @assets --clobber
           } else {
