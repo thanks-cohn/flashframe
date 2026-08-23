@@ -42,8 +42,17 @@ function fadeDelayMs() {
   }
 }
 
+function isVideoToolbar(toolbar) {
+  const block = toolbar.closest(".block");
+  if (!block) return false;
+
+  return block.dataset.blockType === "video"
+    || block.dataset.customKind === "remote-video"
+    || block.classList.contains("remote-video-block");
+}
+
 function modeFor(toolbar) {
-  return toolbar.closest('.block[data-block-type="video"]') ? preferences.video : preferences.other;
+  return isVideoToolbar(toolbar) ? preferences.video : preferences.other;
 }
 
 function clearTimer(toolbar) {
