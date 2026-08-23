@@ -1,4 +1,5 @@
 const REMOTE_VIDEO_MARKER = "__FLASHFRAME_REMOTE_VIDEO_V1__";
+const WEB_MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
 const workspace = document.querySelector("#workspace");
 const openUrlButton = document.querySelector("#open-url");
 const status = document.querySelector("#status");
@@ -65,6 +66,17 @@ function readPayload(block) {
   if (!store?.value?.startsWith(REMOTE_VIDEO_MARKER)) return null;
   try {
     return JSON.parse(store.value.slice(REMOTE_VIDEO_MARKER.length));
+  } catch {
+    return null;
+  }
+}
+
+function readWebPayload(block) {
+  const store = block.querySelector(".custom-state-store");
+  if (!store?.value?.startsWith(WEB_MARKER)) return null;
+  try {
+    const payload = JSON.parse(store.value.slice(WEB_MARKER.length));
+    return payload?.kind === "web" && payload.url ? payload : null;
   } catch {
     return null;
   }
@@ -306,6 +318,51 @@ function createRemoteVideoBlock(payload, options = {}) {
   return block;
 }
 
+function promoteWebBlock(block) {
+  const payload = readWebPayload(block);
+  if (!payload) return false;
+
+  const name = block.querySelector(".block-name")?.value?.trim() || payload.name || "Remote video";
+  createRemoteVideoBlock({
+    name,
+    url: payload.url,
+    paused: true,
+    currentTime: 0
+  }, {
+    id: block.dataset.blockId,
+    name,
+    style: {
+      left: block.style.left,
+      top: block.style.top,
+      width: block.style.width,
+      height: block.style.height,
+      zIndex: block.style.zIndex
+    },
+    replace: block
+  });
+  setStatus("URL block is now a native video block. Global play, rewind, and forward include it.");
+  workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+  return true;
+}
+
+function prepareWebVideoFallback(block) {
+  if (!block?.isConnected || !block.classList.contains("web-block")) return;
+  if (block.querySelector(".play-as-video")) return;
+  const payload = readWebPayload(block);
+  if (!payload) return;
+
+  const footer = block.querySelector(".custom-block-toolbar, .web-toolbar, .block-toolbar");
+  if (!footer) return;
+
+  const playAsVideo = document.createElement("button");
+  playAsVideo.type = "button";
+  playAsVideo.className = "play-as-video";
+  playAsVideo.textContent = "Play as video";
+  playAsVideo.title = "Use this URL in Flashframe's native video player";
+  playAsVideo.addEventListener("click", () => promoteWebBlock(block));
+  footer.append(playAsVideo);
+}
+
 function convertRestoredRemoteVideo(block) {
   if (!block?.isConnected || block.classList.contains("remote-video-block")) return false;
   const editor = block.querySelector(".text-editor");
@@ -335,7 +392,10 @@ function convertRestoredRemoteVideo(block) {
 
 function scheduleRestoreCheck(block) {
   for (const delay of [0, 30, 120, 350]) {
-    setTimeout(() => convertRestoredRemoteVideo(block), delay);
+    setTimeout(() => {
+      convertRestoredRemoteVideo(block);
+      prepareWebVideoFallback(block);
+    }, delay);
   }
 }
 
@@ -365,7 +425,7 @@ function interceptOpenUrl(event) {
 
   // Reuse the same answer for the existing Web/YouTube/image handler without
   // showing the user a second prompt.
-  window.prompt = (...args) => {
+  window.prompt = () => {
     window.prompt = originalPrompt;
     return value;
   };
@@ -411,4 +471,4 @@ const observer = new MutationObserver((mutations) => {
 });
 
 observer.observe(workspace, { childList: true, subtree: false });
-for (const block of workspace.querySelectorAll('.block[data-block-type="text"]')) scheduleRestoreCheck(block);
+for (const block of workspace.querySelectorAll(".block")) scheduleRestoreCheck(block);
