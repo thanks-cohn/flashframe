@@ -7,6 +7,7 @@ DIST_DIR="$ROOT_DIR/dist"
 python3 - "$ROOT_DIR" "$DIST_DIR" <<'PY'
 import json
 import pathlib
+import re
 import sys
 import zipfile
 
@@ -31,6 +32,30 @@ if not isinstance(description, str) or not description.strip():
     raise SystemExit("Manifest description is missing")
 if len(description) > 132:
     raise SystemExit(f"Manifest description is {len(description)} characters; Chrome allows at most 132")
+
+allowed_permissions = {"declarativeNetRequestWithHostAccess"}
+actual_permissions = set(manifest.get("permissions", []))
+if actual_permissions != allowed_permissions:
+    raise SystemExit(
+        "Permission gate failed. Expected only "
+        + repr(sorted(allowed_permissions))
+        + "; got "
+        + repr(sorted(actual_permissions))
+    )
+
+allowed_hosts = {
+    "https://www.youtube.com/*",
+    "https://www.youtube-nocookie.com/*",
+}
+actual_hosts = set(manifest.get("host_permissions", []))
+if actual_hosts != allowed_hosts:
+    raise SystemExit(
+        "Host-permission gate failed. Expected only the two YouTube hosts; got "
+        + repr(sorted(actual_hosts))
+    )
+
+if {"http://*/*", "https://*/*", "<all_urls>"} & actual_hosts:
+    raise SystemExit("Broad host access is forbidden in the isolated Chrome edition")
 
 required_icons = {
     "16": "icons/icon16.png",
@@ -64,8 +89,37 @@ for item in include_roots:
     else:
         raise SystemExit(f"Required package path is missing: {item}")
 
+forbidden_binary_suffixes = {".exe", ".dll", ".msi", ".bat", ".cmd", ".ps1", ".py", ".pyc"}
+for path in files:
+    if path.suffix.lower() in forbidden_binary_suffixes:
+        raise SystemExit(f"Forbidden desktop/runtime file in Store package: {path.relative_to(root)}")
+
+text_suffixes = {".js", ".mjs", ".html", ".css", ".json"}
+forbidden_text = [
+    ("localhost dependency", re.compile(r"localhost", re.I)),
+    ("loopback dependency", re.compile(r"127\.0\.0\.1")),
+    ("native messaging", re.compile(r"nativeMessaging|connectNative|sendNativeMessage", re.I)),
+    ("desktop companion", re.compile(r"\bcompanion\b", re.I)),
+    ("Windows executable dependency", re.compile(r"\.exe\b", re.I)),
+    ("eval", re.compile(r"\beval\s*\(", re.I)),
+    ("Function constructor", re.compile(r"new\s+Function\s*\(", re.I)),
+    ("remote script tag", re.compile(r"<script[^>]+src\s*=\s*['\"]https?://", re.I)),
+    ("remote JavaScript import", re.compile(r"(?:import\s*\(|from\s*)\s*['\"]https?://", re.I)),
+    ("remote importScripts", re.compile(r"importScripts\s*\(\s*['\"]https?://", re.I)),
+]
+
+for path in files:
+    if path.suffix.lower() not in text_suffixes:
+        continue
+    text = path.read_text(encoding="utf-8", errors="replace")
+    for name, pattern in forbidden_text:
+        if pattern.search(text):
+            raise SystemExit(f"Release gate failed: {name} found in {path.relative_to(root)}")
+
 dist.mkdir(parents=True, exist_ok=True)
 output = dist / f"flashframe-chrome-web-store-v{version}.zip"
+if output.exists():
+    output.unlink()
 
 with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
     for path in sorted(files):
@@ -79,10 +133,13 @@ with zipfile.ZipFile(output, "r") as archive:
     if "manifest.json" not in names:
         raise SystemExit("Packaging error: manifest.json is not at ZIP root")
     if "LICENSE" not in names:
-        raise SystemExit("Packaging error: proprietary LICENSE is missing")
+        raise SystemExit("Packaging error: LICENSE is missing")
     for expected in required_icons.values():
         if expected not in names:
             raise SystemExit(f"Packaging error: {expected} is missing")
 
-print(output)
+print("FLASHFRAME ISOLATED CHROME RELEASE GATE: PASS")
+print(f"Store ZIP: {output}")
+print("Companion: NONE")
+print("Python/EXE: NOT REQUIRED")
 PY
