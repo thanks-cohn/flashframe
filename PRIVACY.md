@@ -16,17 +16,19 @@ The current Chrome Web Store candidate is self-contained in the browser. It does
 
 ## Local files and folders
 
-Flashframe only opens a local file or folder after the user explicitly chooses it through a browser file or directory picker.
+Flashframe only opens a local file or folder after explicit user action. The user may choose a source through a browser-native file or directory picker, or deliberately drag a local file or directory into the Flashframe workspace.
 
-Selected content is used only to provide the visible Flashframe feature the user requested, such as displaying text, a PDF, an image directory, or a local video.
+Selected or dropped content is used only to provide the visible Flashframe feature the user requested, such as displaying text, a PDF, an image directory, a local video, an image, or a generic local-file block.
 
 Flashframe does not silently crawl the user's filesystem.
+
+When Chrome provides a browser-managed file or directory handle, Flashframe may store that handle locally so a saved workspace can reconnect to the user-selected source. Browser permission may need to be renewed later.
 
 ## Saved Flashframes
 
 Named Flashframes and related local state are stored in extension-local browser storage and, when the user explicitly chooses a Flashframe data directory, in that user-selected local directory.
 
-A saved workspace can contain lightweight restoration state such as block geometry, names, text content, current PDF page, gallery position, video timestamp, playback settings, URLs, and browser-managed references to local sources selected by the user.
+A saved workspace can contain lightweight restoration state such as block geometry, names, text content, current PDF page, gallery position, video timestamp, playback settings, URLs, and browser-managed references to local sources selected or dropped by the user.
 
 Flashframe does not upload saved Flashframes to a Flashframe-operated cloud service.
 
@@ -63,7 +65,7 @@ The current manifest uses:
 - `declarativeNetRequestWithHostAccess`, solely for the packaged YouTube embed compatibility rule; and
 - host access limited to `https://www.youtube.com/*` and `https://www.youtube-nocookie.com/*`.
 
-Local file and directory access is granted through explicit user interaction with browser-native pickers rather than broad filesystem permission.
+Local file and directory access occurs through explicit user interaction with browser-native pickers or drag-and-drop, rather than broad filesystem permission.
 
 Flashframe does not request permission to read or change all websites the user visits.
 
