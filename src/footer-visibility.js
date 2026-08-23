@@ -1,3 +1,5 @@
+import "./local-source-links.js";
+
 const STORAGE_KEY = "flashframe.block-controls.v1";
 const FADE_DELAY_KEY = "flashframe.fade-delay-seconds.v1";
 
@@ -59,13 +61,16 @@ function schedule(toolbar) {
   clearTimer(toolbar);
 
   const mode = modeFor(toolbar);
-  toolbar.classList.toggle("is-control-hidden", mode === "hide");
+  const hidden = mode === "hide";
+  toolbar.hidden = hidden;
+  toolbar.classList.toggle("is-control-hidden", hidden);
 
   if (mode !== "fade") {
     toolbar.classList.remove("is-control-faded");
     return;
   }
 
+  toolbar.hidden = false;
   toolbar.classList.remove("is-control-hidden");
 
   const timer = setTimeout(() => {
