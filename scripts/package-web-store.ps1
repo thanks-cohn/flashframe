@@ -71,15 +71,15 @@ foreach ($Size in $RequiredIcons.Keys) {
 $ShipRoots = @("manifest.json", "LICENSE", "src", "rules", "icons")
 $TextExtensions = @(".js", ".mjs", ".html", ".css", ".json")
 $ForbiddenText = @(
-    @{ Name = "localhost dependency"; Pattern = "(?i)localhost" },
-    @{ Name = "loopback dependency"; Pattern = "127\.0\.0\.1" },
-    @{ Name = "native messaging"; Pattern = "(?i)nativeMessaging|connectNative|sendNativeMessage" },
-    @{ Name = "desktop companion"; Pattern = "(?i)\bcompanion\b" },
-    @{ Name = "Windows executable dependency"; Pattern = "(?i)\.exe\b" },
-    @{ Name = "eval"; Pattern = "(?i)\beval\s*\(" },
-    @{ Name = "Function constructor"; Pattern = "(?i)new\s+Function\s*\(" },
-    @{ Name = "remote script tag"; Pattern = "(?i)<script[^>]+src\s*=\s*['\"]https?://" },
-    @{ Name = "remote JavaScript import"; Pattern = "(?i)(?:import\s*\(|from\s*)\s*['\"]https?://" }
+    @{ Name = "localhost dependency"; Pattern = '(?i)localhost' },
+    @{ Name = "loopback dependency"; Pattern = '127\.0\.0\.1' },
+    @{ Name = "native messaging"; Pattern = '(?i)nativeMessaging|connectNative|sendNativeMessage' },
+    @{ Name = "desktop companion"; Pattern = '(?i)\bcompanion\b' },
+    @{ Name = "Windows executable dependency"; Pattern = '(?i)\.exe\b' },
+    @{ Name = "eval"; Pattern = '(?i)\beval\s*\(' },
+    @{ Name = "Function constructor"; Pattern = '(?i)new\s+Function\s*\(' },
+    @{ Name = "remote script tag"; Pattern = '(?i)<script[^>]+src\s*=\s*[''\"]https?://' },
+    @{ Name = "remote JavaScript import"; Pattern = '(?i)(?:import\s*\(|from\s*)\s*[''\"]https?://' }
 )
 
 $FilesToShip = New-Object System.Collections.Generic.List[string]
