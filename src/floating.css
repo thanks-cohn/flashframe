@@ -248,6 +248,22 @@ body.toolbar-hidden .workspace {
   display: none !important;
 }
 
+/* Workspace-level enforcement for dynamically-created blocks. These rules
+   deliberately target only the URL/custom blocks and directory gallery that
+   can be rebuilt after the footer visibility module has already initialized. */
+#workspace[data-video-footer-mode="hide"] .remote-video-block > .block-toolbar,
+#workspace[data-video-footer-mode="hide"] .block[data-custom-kind="remote-video"] > .block-toolbar {
+  display: none !important;
+}
+
+#workspace[data-other-footer-mode="hide"] .gallery-block > .gallery-toolbar,
+#workspace[data-other-footer-mode="hide"] .custom-flashframe-block:not(.remote-video-block) > .block-toolbar,
+#workspace[data-other-footer-mode="hide"] .block[data-custom-kind="image"] > .block-toolbar,
+#workspace[data-other-footer-mode="hide"] .block[data-custom-kind="web"] > .block-toolbar,
+#workspace[data-other-footer-mode="hide"] .block[data-custom-kind="youtube"] > .block-toolbar {
+  display: none !important;
+}
+
 .local-source-controls {
   display: flex;
   align-items: center;
