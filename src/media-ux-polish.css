@@ -1,0 +1,93 @@
+/* Focused RC2 media UX polish. Loaded after workspace.css so these rules intentionally override it. */
+
+body.hide-block-headers .compact-drag-handle {
+  top: 8px;
+  left: 8px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  gap: 0;
+  justify-content: center;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .22);
+  opacity: 1;
+  animation: flashframe-grab-idle 220ms ease 2.6s forwards;
+  transition: opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+body.hide-block-headers .compact-drag-handle > span {
+  display: none;
+}
+
+body.hide-block-headers .compact-drag-handle svg {
+  width: 25px;
+  height: 21px;
+}
+
+body.hide-block-headers .compact-drag-handle:hover,
+body.hide-block-headers .compact-drag-handle:focus-visible,
+body.hide-block-headers .compact-drag-handle:active,
+body.hide-block-headers .compact-drag-handle.is-dragging {
+  animation: none;
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .26);
+}
+
+@keyframes flashframe-grab-idle {
+  to {
+    opacity: .14;
+  }
+}
+
+.audio-block.audio-polished {
+  min-width: 420px;
+  min-height: 142px;
+}
+
+.audio-block.audio-polished .audio-player {
+  display: block;
+  width: calc(100% - 24px);
+  height: 54px;
+  min-height: 54px;
+  flex: 0 0 54px;
+  margin: 10px 12px 4px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.audio-block.audio-polished .audio-toolbar {
+  min-height: 38px;
+  padding: 5px 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.audio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  opacity: .82;
+  white-space: nowrap;
+}
+
+.audio-option select {
+  min-height: 30px;
+}
+
+.audio-loop-control input {
+  margin: 0;
+}
+
+.audio-block.audio-polished .reconnect-source {
+  margin-left: auto;
+}
+
+.audio-fade:not(:hover):not(:focus-within) .audio-player,
+.audio-fade:not(:hover):not(:focus-within) .block-toolbar {
+  opacity: .08;
+  transition: opacity .7s ease;
+}
