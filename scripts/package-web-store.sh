@@ -48,6 +48,7 @@ for size, expected in required_icons.items():
 
 include_roots = [
     pathlib.Path("manifest.json"),
+    pathlib.Path("LICENSE"),
     pathlib.Path("src"),
     pathlib.Path("rules"),
     pathlib.Path("icons"),
@@ -77,6 +78,8 @@ with zipfile.ZipFile(output, "r") as archive:
     names = set(archive.namelist())
     if "manifest.json" not in names:
         raise SystemExit("Packaging error: manifest.json is not at ZIP root")
+    if "LICENSE" not in names:
+        raise SystemExit("Packaging error: proprietary LICENSE is missing")
     for expected in required_icons.values():
         if expected not in names:
             raise SystemExit(f"Packaging error: {expected} is missing")
