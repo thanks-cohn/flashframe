@@ -98,15 +98,15 @@ Based on the current candidate, certify the applicable statements that:
 
 Paste or adapt:
 
-> No external setup is required. Flashframe is self-contained in Chrome and requires no desktop companion, EXE, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend. Install the extension and click its toolbar icon to open the workspace. Create a note, move/resize it, optionally open a local PDF/video/gallery through Chrome's native picker, save a named Flashframe, close/reopen the workspace, and restore it. A YouTube URL can be added through Open URL to test the narrowly scoped YouTube feature.
+> No external setup is required. Flashframe is self-contained in Chrome and requires no desktop companion, EXE, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend. Install the extension and click its toolbar icon to open the workspace. Create a note, move/resize it, optionally open a local PDF/video/gallery through Chrome's native picker, or deliberately drag a local PDF, video, text/code file, image, or image directory into the workspace. Dropped image directories use the gallery/lightbox flow. Save a named Flashframe, close/reopen the workspace, and restore it. A YouTube URL can be added through Open URL to test the narrowly scoped YouTube feature.
 
 ## Release reference
 
 Reference prerelease tag:
 
-`flashframe-chrome-v1.0.4-rc1`
+`flashframe-chrome-v1.0.5-rc1`
 
-The prerelease is for reproducibility and reviewer/support reference. The Chrome Web Store upload must still be the exact tested `flashframe-chrome-web-store-v1.0.4.zip` candidate produced by the green Windows release workflow.
+The prerelease is for reproducibility and reviewer/support reference. The Chrome Web Store upload must still be the exact tested `flashframe-chrome-web-store-v1.0.5.zip` candidate produced by the green Windows release workflow.
 
 ## Do not submit until
 
