@@ -100,7 +100,12 @@ foreach ($File in $FilesToShip) {
     $Text = Get-Content $File -Raw
     foreach ($Rule in $ForbiddenText) {
         if ($Text -match $Rule.Pattern) {
-            $Relative = [IO.Path]::GetRelativePath($Root, $File)
+            $Prefix = $Root.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+            $Relative = if ($File.StartsWith($Prefix, [StringComparison]::OrdinalIgnoreCase)) {
+                $File.Substring($Prefix.Length)
+            } else {
+                $File
+            }
             throw "Release gate failed: $($Rule.Name) found in $Relative"
         }
     }
