@@ -1,6 +1,6 @@
 # Flashframe Privacy Policy
 
-**Last updated: August 22, 2026**
+**Last updated: August 23, 2026**
 
 Flashframe is designed as a local-first spatial workspace for Chrome and Chromium. This policy explains what the extension handles, what it stores, and when it uses the network.
 
@@ -9,6 +9,10 @@ Flashframe is designed as a local-first spatial workspace for Chrome and Chromiu
 Flashframe lets users build, arrange, save, and restore spatial workspaces made from notes, local files, local media, images, web pages, and supported web media.
 
 Flashframe does not use workspace information for advertising, profiling, data brokerage, or unrelated analytics.
+
+## Chrome-only architecture
+
+The current Chrome Web Store candidate is self-contained in the browser. It does not require a desktop companion, Windows executable, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend for normal operation.
 
 ## Local files and folders
 
@@ -20,7 +24,7 @@ Flashframe does not silently crawl the user's filesystem.
 
 ## Saved Flashframes
 
-Named Flashframes and related local state are stored in extension-local browser storage and, when the user chooses a Flashframe data directory, in that user-selected local directory.
+Named Flashframes and related local state are stored in extension-local browser storage and, when the user explicitly chooses a Flashframe data directory, in that user-selected local directory.
 
 A saved workspace can contain lightweight restoration state such as block geometry, names, text content, current PDF page, gallery position, video timestamp, playback settings, URLs, and browser-managed references to local sources selected by the user.
 
@@ -30,7 +34,7 @@ Flashframe does not upload saved Flashframes to a Flashframe-operated cloud serv
 
 When the user explicitly pastes or drops an HTTP or HTTPS URL into Flashframe, the browser may connect directly to that URL's host to display the requested webpage, image, or direct video stream.
 
-Remote video is loaded in the browser's native media element. Playback, pause, forward, and rewind operate locally in the workspace when the remote source itself exposes seekable media. A truly live stream with no DVR or seekable history cannot be rewound beyond the range exposed by that stream.
+Remote video is loaded in the browser's native media element. Playback, pause, forward, and rewind operate locally in the workspace when the remote source exposes seekable media. A truly live stream with no DVR or seekable history cannot be rewound beyond the range exposed by that stream.
 
 The destination website or media host receives the network information normally sent by the browser when loading that resource, such as the user's IP address and standard request metadata. Flashframe does not proxy that request through a Flashframe server.
 
@@ -45,6 +49,8 @@ YouTube receives information according to its own service and privacy practices 
 ## Analytics, ads, accounts, and remote code
 
 The current build does not include Flashframe analytics, advertising, telemetry, account login, Flashframe cloud sync, or remotely hosted executable extension code.
+
+All executable extension JavaScript is packaged with the extension. Remote webpages, images, videos, and YouTube embeds are user-selected content, not remotely hosted extension code.
 
 Flashframe does not sell user data or use user data for personalized, retargeted, or interest-based advertising.
 
