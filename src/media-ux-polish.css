@@ -1,5 +1,26 @@
 /* Focused RC2 media UX polish. Loaded after workspace.css so these rules intentionally override it. */
 
+.grab-image-slot {
+  overflow: visible;
+}
+
+.grab-art-image,
+.grab-fallback-art {
+  pointer-events: none;
+  object-fit: contain;
+}
+
+.grab-art-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.grab-art-image[hidden],
+.grab-fallback-art[hidden] {
+  display: none !important;
+}
+
 body.hide-block-headers .compact-drag-handle {
   top: 8px;
   left: 8px;
@@ -12,33 +33,35 @@ body.hide-block-headers .compact-drag-handle {
   border-radius: 999px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, .22);
   opacity: 1;
-  animation: flashframe-grab-idle 220ms ease 2.6s forwards;
   transition: opacity 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 }
 
-body.hide-block-headers .compact-drag-handle > span {
+body.hide-block-headers .compact-drag-handle .grab-text-label {
   display: none;
 }
 
-body.hide-block-headers .compact-drag-handle svg {
+body.hide-block-headers .compact-drag-handle .grab-fallback-art {
   width: 25px;
   height: 21px;
+}
+
+body.hide-block-headers .compact-drag-handle .grab-art-image {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+}
+
+body.hide-block-headers .compact-drag-handle.is-fully-faded {
+  opacity: 0;
 }
 
 body.hide-block-headers .compact-drag-handle:hover,
 body.hide-block-headers .compact-drag-handle:focus-visible,
 body.hide-block-headers .compact-drag-handle:active,
 body.hide-block-headers .compact-drag-handle.is-dragging {
-  animation: none;
   opacity: 1;
   transform: scale(1.05);
   box-shadow: 0 5px 16px rgba(0, 0, 0, .26);
-}
-
-@keyframes flashframe-grab-idle {
-  to {
-    opacity: .14;
-  }
 }
 
 .audio-block.audio-polished {
@@ -90,4 +113,118 @@ body.hide-block-headers .compact-drag-handle.is-dragging {
 .audio-fade:not(:hover):not(:focus-within) .block-toolbar {
   opacity: .08;
   transition: opacity .7s ease;
+}
+
+.grab-art-setting {
+  gap: 8px;
+}
+
+.grab-art-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.grab-art-controls button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 11px;
+}
+
+.media-dock-polished {
+  width: min(360px, calc(100vw - 28px));
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, CanvasText 14%, transparent);
+  background: color-mix(in srgb, Canvas 94%, CanvasText 6%);
+  box-shadow: 0 14px 38px color-mix(in srgb, CanvasText 18%, transparent);
+  overflow: hidden;
+}
+
+.media-dock-polished .player-head {
+  min-height: 54px;
+  padding: 7px 9px;
+  gap: 8px;
+  background: color-mix(in srgb, #f7cf4b 12%, Canvas);
+}
+
+.media-dock-polished .player-middle {
+  gap: 7px;
+}
+
+.media-dock-title {
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .02em;
+  margin-right: 2px;
+}
+
+.media-dock-polished #media-scope {
+  min-width: 96px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.media-dock-polished .player-control,
+.media-dock-polished .dock-expand {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.media-dock-polished .player-play {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  background: #f7cf4b;
+  color: #171717;
+  border-color: color-mix(in srgb, #171717 25%, transparent);
+}
+
+.media-dock-polished .media-dock-grab {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-radius: 999px;
+  background: #f7cf4b;
+  color: #171717;
+  border-color: color-mix(in srgb, #171717 25%, transparent);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .16);
+}
+
+.media-dock-polished .media-dock-grab .grab-fallback-art {
+  width: 27px;
+  height: 22px;
+  fill: #fff;
+  stroke: #171717;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.media-dock-polished .media-dock-grab .grab-art-image {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.media-dock-polished .video-dock-body {
+  padding: 9px 11px 11px;
+  background: Canvas;
+}
+
+.media-dock-polished .rewind-amount {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.media-dock-polished .rewind-amount input {
+  width: 70px;
 }
