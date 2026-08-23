@@ -1,6 +1,6 @@
 # Flashframe Chrome Web Store Listing Draft
 
-Use this as the source text for the Chrome Web Store listing. Keep it synchronized with the actual uploaded build.
+Use this as the source text for the Chrome Web Store listing. Keep it synchronized with the exact uploaded build.
 
 ## Name
 
@@ -34,11 +34,17 @@ Current features include:
 - Shrink-to-fit behavior where supported.
 - Right-click block controls for **Bring to front** and **Send to back**.
 - Named Flashframes that save and restore workspace state.
-- Optional local Flashframe data folder for durable session files.
+- Optional user-selected local Flashframe data folder for durable session files.
+
+### Works inside Chrome
+
+The Chrome edition is self-contained. It does not require a desktop companion, Windows executable, Python installation, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend.
+
+Local files and folders are opened only after the user chooses them through Chrome's browser-native file or directory picker.
 
 ### Local-first by design
 
-Flashframe does not require a Flashframe account or developer-operated cloud service. Local sources are chosen through browser-native pickers and workspace state is stored locally.
+Flashframe stores workspace state locally. It does not require a Flashframe account or developer-operated cloud service.
 
 When you explicitly add remote web content, your browser connects directly to the selected website or media host in order to display it. See the Flashframe privacy policy for full details.
 
@@ -60,7 +66,7 @@ Productivity
 
 ## Screenshot sequence
 
-Use screenshots from the exact submitted build.
+Use screenshots from the exact tested submitted build.
 
 1. **Your browser, spatial** - several blocks arranged cleanly in one workspace.
 2. **Mix local and web content** - PDF/image/local video beside a webpage or web image.
@@ -81,4 +87,4 @@ Do not submit until the privacy-policy URL is publicly reachable and accurately 
 - Do not claim every live stream can rewind. Rewind depends on the source exposing seekable/DVR history.
 - Do not claim YouTube behaves identically to local/native video; it uses its supported embed control path.
 - Do not add unrelated keywords or competitor names solely for search ranking.
-- Keep listing text, screenshots, permissions, and privacy disclosures consistent.
+- Keep listing text, screenshots, permissions, reviewer notes, and privacy disclosures consistent.
