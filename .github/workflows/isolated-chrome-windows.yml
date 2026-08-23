@@ -11,11 +11,17 @@ on:
       - rules/**
       - icons/**
       - LICENSE
+      - PRIVACY.md
+      - docs/CHROME_WEB_STORE.md
+      - docs/STORE_LISTING.md
+      - docs/REVIEWER_NOTES.md
+      - docs/RELEASE_READINESS.md
+      - docs/WINDOWS_STORE_TEST.md
       - scripts/package-web-store.ps1
       - .github/workflows/isolated-chrome-windows.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows-candidate:
@@ -54,12 +60,86 @@ jobs:
           Write-Host "PASS: exact candidate unpacks with manifest at root"
           Write-Host "PASS: no companion/native messaging/broad-host dependency allowed by release gate"
 
+      - name: Create Store ZIP checksum
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $zip = Get-ChildItem dist/flashframe-chrome-web-store-v*.zip | Select-Object -First 1
+          if (-not $zip) { throw "Store ZIP missing" }
+          $hash = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($zip.Name)" | Out-File "$($zip.FullName).sha256" -Encoding ascii
+          Write-Host "SHA256: $hash"
+
       - name: Upload Windows test candidate
         uses: actions/upload-artifact@v4
         with:
           name: Flashframe-Isolated-Windows-Test
           path: |
             dist/flashframe-chrome-web-store-v*.zip
+            dist/flashframe-chrome-web-store-v*.zip.sha256
             dist/test-unpacked/**
+            PRIVACY.md
+            docs/CHROME_WEB_STORE.md
+            docs/STORE_LISTING.md
+            docs/REVIEWER_NOTES.md
+            docs/RELEASE_READINESS.md
+            docs/WINDOWS_STORE_TEST.md
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish candidate reference prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $manifest = Get-Content manifest.json -Raw | ConvertFrom-Json
+          $version = [string]$manifest.version
+          $tag = "flashframe-chrome-v$version-rc1"
+          $title = "Flashframe Chrome v$version RC1"
+          $zip = Get-ChildItem dist/flashframe-chrome-web-store-v*.zip | Select-Object -First 1
+          $checksum = "$($zip.FullName).sha256"
+
+          @"
+          # Flashframe Chrome v$version RC1
+
+          Chrome-only release candidate for the `isolated-windows-exe` branch.
+
+          This candidate is intentionally self-contained inside Chrome:
+
+          - no Windows companion
+          - no EXE or Python runtime
+          - no localhost service
+          - no native messaging
+          - no broad host access
+          - Manifest V3
+          - host access limited to YouTube and YouTube-nocookie for the packaged YouTube embed compatibility behavior
+
+          The attached ZIP is the exact candidate produced by the Windows release gate. It is accompanied by a SHA-256 checksum and the submission/reviewer reference documents.
+
+          **Status:** prerelease reference only. Do not treat this as Chrome Web Store approval. Manual Windows testing and real Store screenshots are still required before submission.
+          "@ | Out-File release-notes.md -Encoding utf8
+
+          $assets = @(
+            $zip.FullName,
+            $checksum,
+            "PRIVACY.md",
+            "docs/CHROME_WEB_STORE.md",
+            "docs/STORE_LISTING.md",
+            "docs/REVIEWER_NOTES.md",
+            "docs/RELEASE_READINESS.md",
+            "docs/WINDOWS_STORE_TEST.md"
+          )
+
+          $savedPreference = $ErrorActionPreference
+          $ErrorActionPreference = "SilentlyContinue"
+          gh release view $tag *> $null
+          $exists = $LASTEXITCODE -eq 0
+          $ErrorActionPreference = $savedPreference
+
+          if ($exists) {
+            gh release edit $tag --title $title --notes-file release-notes.md --prerelease
+            gh release upload $tag @assets --clobber
+          } else {
+            gh release create $tag @assets --target $env:GITHUB_SHA --title $title --notes-file release-notes.md --prerelease
+          }
