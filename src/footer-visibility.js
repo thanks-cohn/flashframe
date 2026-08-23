@@ -1,5 +1,7 @@
 import "./local-source-links.js";
 import "./remote-video-loop.js";
+import "./web-drop.js";
+import "./drop-local-sources.js";
 
 const STORAGE_KEY = "flashframe.block-controls.v1";
 const FADE_DELAY_KEY = "flashframe.fade-delay-seconds.v1";
