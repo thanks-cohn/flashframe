@@ -119,9 +119,15 @@ function bindAllToolbars() {
   }
 }
 
+function applyWorkspaceModes() {
+  workspace.dataset.videoFooterMode = preferences.video;
+  workspace.dataset.otherFooterMode = preferences.other;
+}
+
 function applyPreferences() {
   if (videoFooterSelect) videoFooterSelect.value = preferences.video;
   if (otherFootersSelect) otherFootersSelect.value = preferences.other;
+  applyWorkspaceModes();
   bindAllToolbars();
 }
 
