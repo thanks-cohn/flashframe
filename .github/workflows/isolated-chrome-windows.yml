@@ -14,6 +14,7 @@ on:
       - PRIVACY.md
       - docs/CHROME_WEB_STORE.md
       - docs/STORE_LISTING.md
+      - docs/DASHBOARD_ANSWERS.md
       - docs/REVIEWER_NOTES.md
       - docs/RELEASE_READINESS.md
       - docs/WINDOWS_STORE_TEST.md
@@ -81,6 +82,7 @@ jobs:
             PRIVACY.md
             docs/CHROME_WEB_STORE.md
             docs/STORE_LISTING.md
+            docs/DASHBOARD_ANSWERS.md
             docs/REVIEWER_NOTES.md
             docs/RELEASE_READINESS.md
             docs/WINDOWS_STORE_TEST.md
@@ -126,6 +128,7 @@ jobs:
             "PRIVACY.md",
             "docs/CHROME_WEB_STORE.md",
             "docs/STORE_LISTING.md",
+            "docs/DASHBOARD_ANSWERS.md",
             "docs/REVIEWER_NOTES.md",
             "docs/RELEASE_READINESS.md",
             "docs/WINDOWS_STORE_TEST.md"
