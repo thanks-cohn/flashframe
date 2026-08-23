@@ -23,13 +23,14 @@ Current features include:
 - Free-positioned, resizable workspace blocks.
 - Editable text notes.
 - Local text and PDF sources chosen explicitly by the user.
-- Image-folder galleries.
+- Image-folder galleries with previous/next and keyboard navigation.
 - Local video blocks with restorable playback position.
 - Direct HTTP/HTTPS video URLs using the browser's native video player.
 - Global play, pause, rewind, and forward controls for native video blocks.
 - YouTube URL blocks with supported playback control and timestamp restoration.
 - Webpage and web-image blocks.
-- Drag-and-drop support for images, text, and URLs.
+- Drag-and-drop support for local images, PDFs, videos, text/code files, generic files, image directories, text, and URLs.
+- Dropped image directories open in the gallery/lightbox flow.
 - Custom workspace background color or image.
 - Shrink-to-fit behavior where supported.
 - Right-click block controls for **Bring to front** and **Send to back**.
@@ -40,7 +41,7 @@ Current features include:
 
 The Chrome edition is self-contained. It does not require a desktop companion, Windows executable, Python installation, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend.
 
-Local files and folders are opened only after the user chooses them through Chrome's browser-native file or directory picker.
+Local files and folders are opened only after explicit user action, either by choosing them through Chrome's browser-native file/directory picker or by dragging them into the Flashframe workspace.
 
 ### Local-first by design
 
@@ -70,8 +71,8 @@ Use screenshots from the exact tested submitted build.
 
 1. **Your browser, spatial** - several blocks arranged cleanly in one workspace.
 2. **Mix local and web content** - PDF/image/local video beside a webpage or web image.
-3. **Control video together** - multiple native video blocks with the global player sticky visible.
-4. **Layer it your way** - right-click menu showing Bring to front / Send to back.
+3. **Drop files and folders directly** - a dropped PDF/video/text file and an image-directory gallery.
+4. **Control video together** - multiple native video blocks with the global player sticky visible.
 5. **Come back exactly where you left off** - saved Flashframe selection and restore workflow.
 
 ## Privacy policy
