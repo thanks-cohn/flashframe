@@ -1,3 +1,8 @@
+import "./local-source-links.js";
+import "./remote-video-loop.js";
+import "./web-drop.js";
+import "./drop-local-sources.js";
+
 const STORAGE_KEY = "flashframe.block-controls.v1";
 const FADE_DELAY_KEY = "flashframe.fade-delay-seconds.v1";
 
@@ -40,8 +45,19 @@ function fadeDelayMs() {
   }
 }
 
+function isVideoToolbar(toolbar) {
+  const block = toolbar.closest(".block");
+  if (!block) return false;
+
+  return block.dataset.blockType === "video"
+    || block.dataset.customKind === "remote-video"
+    || block.dataset.customLocalKind === "video"
+    || block.classList.contains("remote-video-block")
+    || block.classList.contains("video-block");
+}
+
 function modeFor(toolbar) {
-  return toolbar.closest('.block[data-block-type="video"]') ? preferences.video : preferences.other;
+  return isVideoToolbar(toolbar) ? preferences.video : preferences.other;
 }
 
 function clearTimer(toolbar) {
@@ -59,13 +75,16 @@ function schedule(toolbar) {
   clearTimer(toolbar);
 
   const mode = modeFor(toolbar);
-  toolbar.classList.toggle("is-control-hidden", mode === "hide");
+  const hidden = mode === "hide";
+  toolbar.hidden = hidden;
+  toolbar.classList.toggle("is-control-hidden", hidden);
 
   if (mode !== "fade") {
     toolbar.classList.remove("is-control-faded");
     return;
   }
 
+  toolbar.hidden = false;
   toolbar.classList.remove("is-control-hidden");
 
   const timer = setTimeout(() => {
@@ -105,9 +124,15 @@ function bindAllToolbars() {
   }
 }
 
+function applyWorkspaceModes() {
+  workspace.dataset.videoFooterMode = preferences.video;
+  workspace.dataset.otherFooterMode = preferences.other;
+}
+
 function applyPreferences() {
   if (videoFooterSelect) videoFooterSelect.value = preferences.video;
   if (otherFootersSelect) otherFootersSelect.value = preferences.other;
+  applyWorkspaceModes();
   bindAllToolbars();
 }
 

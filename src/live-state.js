@@ -110,6 +110,15 @@ async function storedHandlesByName() {
 }
 
 function inferredSource(block, sourceMap, handlesByName) {
+  const exactHandleKey = block.dataset.sourceHandleKey;
+  if (exactHandleKey) {
+    return {
+      kind: block.dataset.sourceKind || (block.dataset.blockType === "gallery" ? "directory" : "file"),
+      handleKey: exactHandleKey,
+      displayName: block.dataset.sourceDisplayName || block.querySelector(".block-name")?.value?.trim() || "Local source"
+    };
+  }
+
   const id = block.dataset.blockId;
   if (sourceMap.has(id)) return sourceMap.get(id);
 
