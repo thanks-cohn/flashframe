@@ -3,7 +3,8 @@
   min-height: 220px;
 }
 
-.custom-state-store {
+.custom-state-store,
+.remote-video-state {
   display: none !important;
 }
 
