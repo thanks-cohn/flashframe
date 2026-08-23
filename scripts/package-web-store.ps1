@@ -27,7 +27,7 @@ if ([string]::IsNullOrWhiteSpace($Description) -or $Description.Length -gt 132) 
 # This isolated Chrome edition deliberately has no desktop companion and no broad
 # website access. If this list changes, review the new permission before changing
 # this release gate.
-$AllowedPermissions = @("declarativeNetRequestWithHostAccess")
+$AllowedPermissions = @()
 $ActualPermissions = @($Manifest.permissions | ForEach-Object { [string]$_ })
 $UnexpectedPermissions = @($ActualPermissions | Where-Object { $_ -notin $AllowedPermissions })
 $MissingPermissions = @($AllowedPermissions | Where-Object { $_ -notin $ActualPermissions })
@@ -35,15 +35,12 @@ if ($UnexpectedPermissions.Count -or $MissingPermissions.Count) {
     throw "Permission gate failed. Expected only: $($AllowedPermissions -join ', '). Actual: $($ActualPermissions -join ', ')"
 }
 
-$AllowedHosts = @(
-    "https://www.youtube.com/*",
-    "https://www.youtube-nocookie.com/*"
-)
+$AllowedHosts = @()
 $ActualHosts = @($Manifest.host_permissions | ForEach-Object { [string]$_ })
 $UnexpectedHosts = @($ActualHosts | Where-Object { $_ -notin $AllowedHosts })
 $MissingHosts = @($AllowedHosts | Where-Object { $_ -notin $ActualHosts })
 if ($UnexpectedHosts.Count -or $MissingHosts.Count) {
-    throw "Host-permission gate failed. Expected only the two YouTube hosts. Actual: $($ActualHosts -join ', ')"
+    throw "Host-permission gate failed. Expected no host permissions. Actual: $($ActualHosts -join ', ')"
 }
 if ($ActualHosts -contains "http://*/*" -or $ActualHosts -contains "https://*/*" -or $ActualHosts -contains "<all_urls>") {
     throw "Broad host access is forbidden in the isolated Chrome edition"

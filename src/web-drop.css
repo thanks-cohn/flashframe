@@ -9,7 +9,6 @@
 }
 
 .web-frame,
-.youtube-frame,
 .image-frame {
   display: block;
   width: 100%;
@@ -30,9 +29,6 @@
   background-position: 0 0, 0 9px, 9px -9px, -9px 0;
 }
 
-.youtube-frame {
-  background: #000;
-}
 
 .custom-block-toolbar {
   display: flex;

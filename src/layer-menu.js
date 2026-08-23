@@ -39,6 +39,11 @@ menu.innerHTML = `
   <button type="button" data-layer-action="front" role="menuitem">Bring to front</button>
   <button type="button" data-layer-action="back" role="menuitem">Send to back</button>
   <div class="flashframe-layer-menu-separator" role="separator"></div>
+  <button type="button" data-layer-action="sync" role="menuitem">Sync with…</button>
+  <button type="button" data-layer-action="independent" role="menuitem">Make independent</button>
+  <div class="flashframe-layer-menu-separator" role="separator"></div>
+  <button type="button" data-layer-action="show-toolbar" role="menuitem">Show top bar</button>
+  <button type="button" data-layer-action="show-settings" role="menuitem">Show Settings</button>
   <button type="button" data-layer-action="reveal-menus" role="menuitem">Make menus visible</button>
 `;
 document.body.append(menu);
@@ -93,6 +98,9 @@ function hideMenu() {
 function showMenu(block, x, y) {
   targetBlock = block;
   menu.hidden = false;
+  const timed = block.dataset.timedMedia === "true" || Boolean(block.querySelector("video, audio"));
+  menu.querySelector('[data-layer-action="sync"]').hidden = !timed;
+  menu.querySelector('[data-layer-action="independent"]').hidden = !timed;
 
   const margin = 8;
   const rect = menu.getBoundingClientRect();
@@ -130,6 +138,23 @@ menu.addEventListener("click", (event) => {
 
   if (button.dataset.layerAction === "reveal-menus") {
     makeMenusVisible();
+    hideMenu();
+    return;
+  }
+  if (button.dataset.layerAction === "show-toolbar") {
+    window.dispatchEvent(new CustomEvent("flashframe:show-toolbar"));
+    hideMenu();
+    return;
+  }
+  if (button.dataset.layerAction === "show-settings") {
+    window.dispatchEvent(new CustomEvent("flashframe:show-settings"));
+    hideMenu();
+    return;
+  }
+  if (button.dataset.layerAction === "sync" || button.dataset.layerAction === "independent") {
+    window.dispatchEvent(new CustomEvent("flashframe:media-link-request", {
+      detail: { block: targetBlock, independent: button.dataset.layerAction === "independent" }
+    }));
     hideMenu();
     return;
   }

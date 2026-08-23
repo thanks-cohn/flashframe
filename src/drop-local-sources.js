@@ -7,6 +7,7 @@ import {
   resolveHandle,
   storeHandle
 } from "./file-access.js";
+import { classifyLocalFile, extensionOf } from "./media-types.js";
 
 const MARKER = "__FLASHFRAME_LOCAL_DROP_V1__";
 const workspace = document.querySelector("#workspace");
@@ -29,11 +30,6 @@ function setStatus(message) {
   if (status) status.textContent = message;
 }
 
-function extensionOf(name = "") {
-  const index = name.lastIndexOf(".");
-  return index >= 0 ? name.slice(index + 1).toLowerCase() : "";
-}
-
 function isTextFile(file) {
   if (file.type.startsWith("text/")) return true;
   return new Set([
@@ -45,12 +41,15 @@ function isTextFile(file) {
 }
 
 function isPdfFile(file) {
-  return file.type === "application/pdf" || extensionOf(file.name) === "pdf";
+  return classifyLocalFile(file) === "pdf";
 }
 
 function isVideoFile(file) {
-  if (file.type.startsWith("video/")) return true;
-  return new Set(["mp4", "webm", "ogv", "mov", "m4v", "mkv"]).has(extensionOf(file.name));
+  return classifyLocalFile(file) === "video";
+}
+
+function isAudioFile(file) {
+  return classifyLocalFile(file) === "audio";
 }
 
 function formatTime(seconds) {
@@ -79,6 +78,7 @@ function placementFor(kind, point = null, offset = 0) {
     pdf: { width: 620, height: 680 },
     gallery: { width: 560, height: 560 },
     video: { width: 640, height: 430 },
+    audio: { width: 480, height: 180 },
     file: { width: 480, height: 230 }
   };
   const size = sizes[kind] ?? sizes.file;
@@ -128,11 +128,11 @@ function releaseBlock(block) {
   const url = objectUrls.get(block);
   if (url) URL.revokeObjectURL(url);
   objectUrls.delete(block);
-  const video = block.querySelector("video");
-  if (video) {
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
+  const media = block.querySelector("video, audio");
+  if (media) {
+    media.pause();
+    media.removeAttribute("src");
+    media.load();
   }
 }
 
@@ -499,6 +499,7 @@ async function loadVideo(block, payload) {
 
   const player = block.querySelector(".video-player");
   player.src = url;
+  player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this video, but Chromium cannot decode its codec."), { once: true });
   player.volume = Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1;
   player.muted = Boolean(payload.muted);
   player.playbackRate = Number.isFinite(payload.playbackRate) ? payload.playbackRate : 1;
@@ -521,6 +522,8 @@ async function loadVideo(block, payload) {
 
 function renderVideo(payload, options = {}) {
   const block = buildShell(payload, options);
+  block.dataset.timedMedia = "true";
+  block.dataset.syncGroup = payload.syncGroup ?? "all";
   const message = document.createElement("div");
   message.className = "source-message";
   message.hidden = true;
@@ -557,6 +560,7 @@ function renderVideo(payload, options = {}) {
     payload.muted = player.muted;
     payload.playbackRate = player.playbackRate;
     payload.loop = player.loop;
+    payload.syncGroup = block.dataset.syncGroup || "all";
     time.textContent = formatTime(payload.currentTime);
     const now = Date.now();
     if (force || now - lastPersist > 1200) {
@@ -583,6 +587,82 @@ function renderVideo(payload, options = {}) {
   void loadVideo(block, payload).then(() => {
     player.loop = Boolean(payload.loop);
   });
+  return block;
+}
+
+async function loadAudio(block, payload) {
+  const handle = await readableHandle(payload);
+  if (!handle || handle.kind !== "file") {
+    setUnavailable(block, `Source needs permission again: ${payload.displayName || "this audio"}.`);
+    return;
+  }
+  const file = await fileFromHandle(handle);
+  const url = URL.createObjectURL(file);
+  replaceObjectUrl(block, url);
+  clearUnavailable(block);
+  const player = block.querySelector(".audio-player");
+  player.src = url;
+  player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this audio file, but Chromium cannot decode its codec."), { once: true });
+  player.volume = Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1;
+  player.muted = Boolean(payload.muted);
+  player.playbackRate = Number.isFinite(payload.playbackRate) ? payload.playbackRate : 1;
+  player.loop = Boolean(payload.loop);
+  player.addEventListener("loadedmetadata", async () => {
+    player.currentTime = Math.min(payload.currentTime || 0, player.duration || payload.currentTime || 0);
+    if (payload.paused === false) try { await player.play(); } catch { setStatus("Audio restored; click play to resume."); }
+  }, { once: true });
+}
+
+function renderAudio(payload, options = {}) {
+  const block = buildShell(payload, options);
+  block.dataset.timedMedia = "true";
+  block.dataset.syncGroup = payload.syncGroup ?? "all";
+  block.dataset.audioVisibility = payload.visibility ?? "visible";
+  block.classList.add(`audio-${block.dataset.audioVisibility}`);
+  const message = document.createElement("div");
+  message.className = "source-message";
+  message.hidden = true;
+  const player = document.createElement("audio");
+  player.className = "audio-player";
+  player.controls = true;
+  player.preload = "metadata";
+  const toolbar = document.createElement("div");
+  toolbar.className = "block-toolbar source-toolbar";
+  const mode = document.createElement("select");
+  mode.className = "audio-visibility";
+  mode.setAttribute("aria-label", "Audio visibility");
+  mode.innerHTML = '<option value="visible">Visible</option><option value="fade">Fade</option><option value="hidden">Hidden</option>';
+  mode.value = block.dataset.audioVisibility;
+  const reconnect = reconnectButton();
+  reconnect.hidden = true;
+  toolbar.append("Audio display", mode, reconnect);
+  block.append(message, player, toolbar);
+
+  let lastPersist = 0;
+  const capture = (force = false) => {
+    Object.assign(payload, {
+      currentTime: Number.isFinite(player.currentTime) ? player.currentTime : 0,
+      paused: player.paused, volume: player.volume, muted: player.muted,
+      playbackRate: player.playbackRate, loop: player.loop,
+      syncGroup: block.dataset.syncGroup || "all",
+      visibility: block.dataset.audioVisibility || "visible"
+    });
+    if (force || Date.now() - lastPersist > 1200) { writeMarker(block, payload, true); lastPersist = Date.now(); }
+    else writeMarker(block, payload, false);
+  };
+  for (const name of ["play", "pause", "volumechange", "ratechange", "ended"]) player.addEventListener(name, () => capture(true));
+  player.addEventListener("timeupdate", () => capture(false));
+  mode.addEventListener("change", () => {
+    block.classList.remove("audio-visible", "audio-fade", "audio-hidden");
+    block.dataset.audioVisibility = mode.value;
+    block.classList.add(`audio-${mode.value}`);
+    capture(true);
+  });
+  reconnect.addEventListener("click", async () => {
+    const handle = await reconnectHandle(block, payload, "file");
+    if (handle) await loadAudio(block, payload);
+  });
+  void loadAudio(block, payload);
   return block;
 }
 
@@ -643,6 +723,7 @@ function createCustomBlock(payload, options = {}) {
   if (payload.kind === "gallery") block = renderGallery(payload, options);
   if (payload.kind === "pdf") block = renderPdf(payload, options);
   if (payload.kind === "video") block = renderVideo(payload, options);
+  if (payload.kind === "audio") block = renderAudio(payload, options);
   if (payload.kind === "file") block = renderGenericFile(payload, options);
   if (!block) return null;
   if (options.replace) options.replace.replaceWith(block);
@@ -750,7 +831,7 @@ async function addHandle(handle, file, point, offset = 0) {
     return "text";
   }
 
-  const kind = isPdfFile(localFile) ? "pdf" : isVideoFile(localFile) ? "video" : "file";
+  const kind = isPdfFile(localFile) ? "pdf" : isAudioFile(localFile) ? "audio" : isVideoFile(localFile) ? "video" : "file";
   const handleKey = makeHandleKey(kind);
   await storeHandle(handleKey, handle);
   const payload = {
@@ -761,13 +842,15 @@ async function addHandle(handle, file, point, offset = 0) {
     mimeType: localFile.type || ""
   };
   if (kind === "pdf") payload.page = 1;
-  if (kind === "video") {
+  if (kind === "video" || kind === "audio") {
     payload.currentTime = 0;
     payload.paused = true;
     payload.volume = 1;
     payload.muted = false;
     payload.playbackRate = 1;
     payload.loop = false;
+    payload.syncGroup = "all";
+    if (kind === "audio") payload.visibility = "visible";
   }
   createCustomBlock(payload, { point, offset });
   return kind;

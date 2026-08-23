@@ -52,7 +52,7 @@
       </label>
       <label class="setting-row">
         <input id="setting-loop-videos" type="checkbox">
-        <span><strong>Loop all videos automatically</strong><small>Individual local videos can still turn looping off.</small></span>
+        <span><strong>Loop local videos by default</strong><small>Individual local videos can still turn looping off.</small></span>
       </label>
       <label class="setting-row">
         <input id="setting-fade-settings" type="checkbox">
@@ -78,7 +78,7 @@
       </label>
 
       <label class="setting-choice-row">
-        <span><strong>Other block controls</strong><small>PDF, gallery, YouTube and web control bars.</small></span>
+        <span><strong>Other block controls</strong><small>PDF, gallery, image, and web control bars.</small></span>
         <select id="setting-other-footers" aria-label="Other block control behavior">
           <option value="show">Always show</option>
           <option value="fade">Fade until hover</option>
@@ -98,15 +98,16 @@
     <div class="player-head">
       <button id="video-dock-grip" class="dock-drag" type="button" title="Drag player" aria-label="Drag player"><span class="spinner-mark" aria-hidden="true">✣</span></button>
       <div class="player-middle" aria-label="Global video controls">
-        <button id="video-rewind-all" class="player-control" type="button" title="Rewind all videos">↶</button>
-        <button id="video-play-all" class="player-control player-play" type="button" title="Play or pause all videos">▶</button>
-        <button id="video-forward-all" class="player-control" type="button" title="Forward all videos">↷</button>
+        <select id="media-scope" aria-label="Timed media scope"><option value="all">All media</option></select>
+        <button id="video-rewind-all" class="player-control" type="button" title="Rewind timed media">↶</button>
+        <button id="video-play-all" class="player-control player-play" type="button" title="Play or pause timed media">▶</button>
+        <button id="video-forward-all" class="player-control" type="button" title="Forward timed media">↷</button>
       </div>
       <button id="video-expand" class="dock-expand" type="button" title="Minimize player" aria-label="Minimize player">−</button>
     </div>
     <div class="dock-body video-dock-body">
       <label class="rewind-amount"><span>Step</span><input id="video-rewind-seconds" type="number" min="0.1" max="3600" step="0.1" value="10" inputmode="decimal"><span>seconds</span></label>
-      <small>Controls loaded local videos and YouTube blocks together.</small>
+      <small>Controls eligible local and direct-URL timed media together.</small>
     </div>
   </aside>
 
@@ -120,14 +121,6 @@
 
   <template id="video-block-template"><section class="block video-block" data-block-type="video"><div class="block-header"><input class="block-name" value="Video" aria-label="Block name"><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div><div class="source-message" hidden></div><video class="video-player" controls preload="metadata"></video><div class="block-toolbar source-toolbar"><span class="video-time">0:00</span><label class="video-loop-control" title="Override the global loop setting for this video"><input class="video-loop" type="checkbox"><span>Loop</span></label><button class="reconnect-source" type="button" hidden>Reconnect</button></div></section></template>
 
-  <template id="youtube-block-template">
-    <section class="block youtube-block" data-block-type="youtube">
-      <div class="block-header"><input class="block-name" value="YouTube" aria-label="Block name"><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div>
-      <iframe class="youtube-frame" title="YouTube player" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
-      <div class="block-toolbar youtube-toolbar"><span class="youtube-time">0:00</span><span class="url-host">YouTube</span><button class="open-external" type="button">Open page</button></div>
-    </section>
-  </template>
-
   <template id="web-block-template">
     <section class="block web-block" data-block-type="web">
       <div class="block-header"><input class="block-name" value="Web page" aria-label="Block name"><div class="block-actions"><button class="maximize-block" type="button" title="Maximize">□</button><button class="remove-block" type="button" title="Remove from workspace">×</button></div></div>
@@ -138,10 +131,11 @@
 
   <script type="module" src="workspace.js"></script>
   <script type="module" src="controls.js"></script>
-  <script type="module" src="youtube-controller.js"></script>
+  <script type="module" src="workspace-extras.js"></script>
   <script type="module" src="dock-fade.js"></script>
   <script type="module" src="footer-visibility.js"></script>
   <script type="module" src="reconnect-all.js"></script>
+  <script type="module" src="media-sync.js"></script>
   <script type="module" src="archive-bridge.js"></script>
 </body>
 </html>

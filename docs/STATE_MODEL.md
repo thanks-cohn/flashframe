@@ -339,3 +339,8 @@ For every block type ask:
 Store that.
 
 Do not turn Flashframe into a general application-state capture system merely because more properties exist.
+## 17. Schema v2 appearance and archive assets
+
+Schema v2 adds workspace-specific `appearance` containing background color, fit mode, and browser-local image content. Global dock positions and default UI preferences remain outside the snapshot. Schema v1 remains valid and simply has no workspace appearance to apply.
+
+Optional JSON disk archives replace background `Blob` content with `backgroundImageAsset` metadata and write the bytes to a sibling `assets/` directory. Import rehydrates the Blob when possible and tolerates missing/corrupt sidecars. Hidden audio remains in the document and geometry capture falls back to its explicit CSS dimensions while it has no layout box.

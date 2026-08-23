@@ -342,12 +342,7 @@ body.toolbar-hidden .workspace {
   min-height: 42px;
   padding: 6px 7px 6px 9px;
   border-bottom: 1px solid color-mix(in srgb, CanvasText 12%, transparent);
-  cursor: grab;
   user-select: none;
-}
-
-.block-header:active {
-  cursor: grabbing;
 }
 
 body.hide-block-headers .block-header {
@@ -356,31 +351,74 @@ body.hide-block-headers .block-header {
 
 .compact-drag-handle {
   position: absolute;
-  top: 7px;
+  top: 5px;
   left: 7px;
-  z-index: 20;
-  display: none;
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
-  padding: 0;
-  border-radius: 999px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 76px;
+  height: 34px;
+  min-height: 34px;
+  padding: 1px 8px 1px 5px;
+  border-radius: 9px;
   cursor: grab;
-  opacity: 0;
+  color: #171717;
+  background: #f7cf4b;
   touch-action: none;
   user-select: none;
-  transition: opacity 120ms ease;
+  font-size: 11px;
+  font-weight: 800;
 }
 
-body.hide-block-headers .block:hover > .compact-drag-handle,
-body.hide-block-headers .compact-drag-handle:focus-visible,
-body.hide-block-headers .compact-drag-handle.is-dragging {
-  display: block;
-  opacity: 0.62;
+body:not(.hide-block-headers) .block-header {
+  padding-left: 91px;
 }
 
-body.hide-block-headers .compact-drag-handle:active {
+body.hide-block-headers .compact-drag-handle {
+  top: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .24);
+}
+
+.coarse-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  width: 32px;
+  height: 32px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.coarse-resize-handle::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 11px;
+  height: 11px;
+  border-right: 2px solid color-mix(in srgb, CanvasText 42%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, CanvasText 42%, transparent);
+}
+
+.coarse-resize-handle.is-resizing { cursor: nwse-resize; }
+.block.is-maximized > .coarse-resize-handle { display: none; }
+
+.compact-drag-handle svg {
+  width: 34px;
+  height: 26px;
+  fill: #fff;
+  stroke: #171717;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.compact-drag-handle:active,
+.compact-drag-handle.is-dragging {
   cursor: grabbing;
+  background: #ffe47d;
 }
 
 .block-name {
@@ -549,6 +587,12 @@ body.hide-block-headers .compact-drag-handle:active {
 .video-loop-control input {
   margin: 0;
 }
+
+.audio-block { min-width: 360px; min-height: 150px; }
+.audio-player { width: 100%; padding: 14px; flex: 1; }
+.audio-fade:not(:hover):not(:focus-within) .audio-player,
+.audio-fade:not(:hover):not(:focus-within) .block-toolbar { opacity: .08; transition: opacity .7s ease; }
+.audio-hidden { display: none; }
 
 .source-message {
   padding: 12px 14px;

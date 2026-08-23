@@ -19,8 +19,8 @@ function readGeometry(block) {
   return {
     x: numberFromStyle(block.style.left, block.offsetLeft),
     y: numberFromStyle(block.style.top, block.offsetTop),
-    width: block.offsetWidth,
-    height: block.offsetHeight,
+    width: block.offsetWidth || numberFromStyle(block.style.width, 480),
+    height: block.offsetHeight || numberFromStyle(block.style.height, 180),
     z: Number.parseInt(block.style.zIndex, 10) || 1
   };
 }
@@ -57,7 +57,9 @@ function captureState(block) {
       paused: player?.paused ?? true,
       volume: Number.isFinite(player?.volume) ? player.volume : 1,
       muted: Boolean(player?.muted),
-      playbackRate: Number.isFinite(player?.playbackRate) ? player.playbackRate : 1
+      playbackRate: Number.isFinite(player?.playbackRate) ? player.playbackRate : 1,
+      loop: Boolean(player?.loop),
+      syncGroup: block.dataset.syncGroup || "all"
     };
   }
 
@@ -143,11 +145,14 @@ async function captureLiveSnapshot() {
     storedHandlesByName()
   ]);
 
+  const detail = {};
+  window.dispatchEvent(new CustomEvent("flashframe:capture-appearance", { detail }));
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: LIVE_ID,
     name: "Current workspace",
     createdAt: new Date().toISOString(),
+    appearance: detail.appearance ?? null,
     blocks: [...workspace.querySelectorAll(".block")].map((block) => ({
       id: block.dataset.blockId,
       type: block.dataset.blockType,

@@ -37,6 +37,49 @@ async function writeJsonFile(directory, filename, value) {
   }
 }
 
+async function writeBlobFile(directory, filename, blob) {
+  const handle = await directory.getFileHandle(filename, { create: true });
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(blob);
+  } finally {
+    await writable.close();
+  }
+}
+
+function imageExtension(blob) {
+  const fromName = String(blob?.name || "").match(/\.([a-z0-9]{2,5})$/i)?.[1]?.toLowerCase();
+  if (fromName) return fromName;
+  return ({ "image/jpeg": "jpg", "image/png": "png", "image/gif": "gif", "image/webp": "webp", "image/avif": "avif", "image/svg+xml": "svg", "image/bmp": "bmp" })[blob?.type] || "bin";
+}
+
+async function archiveSafeSnapshot(directory, snapshot, stem) {
+  const copy = { ...snapshot, appearance: snapshot.appearance ? { ...snapshot.appearance } : null };
+  const image = copy.appearance?.backgroundImage;
+  if (!(image instanceof Blob)) return copy;
+  const assets = await directory.getDirectoryHandle("assets", { create: true });
+  const filename = `${safePart(stem)}-background.${imageExtension(image)}`;
+  await writeBlobFile(assets, filename, image);
+  copy.appearance.backgroundImage = null;
+  copy.appearance.backgroundImageAsset = { file: filename, mimeType: image.type || "application/octet-stream", name: image.name || filename };
+  return copy;
+}
+
+async function hydrateBackgroundAsset(directory, snapshot) {
+  const reference = snapshot?.appearance?.backgroundImageAsset;
+  if (!reference?.file || snapshot.appearance.backgroundImage instanceof Blob) return snapshot;
+  try {
+    const assets = await directory.getDirectoryHandle("assets");
+    const handle = await assets.getFileHandle(reference.file);
+    const file = await handle.getFile();
+    snapshot.appearance.backgroundImage = new File([file], reference.name || reference.file, { type: reference.mimeType || file.type });
+  } catch (error) {
+    console.warn(`Background archive asset ${reference.file} is unavailable:`, error);
+    snapshot.appearance.backgroundImage = null;
+  }
+  return snapshot;
+}
+
 async function readJsonFile(fileHandle) {
   const file = await fileHandle.getFile();
   return JSON.parse(await file.text());
@@ -116,7 +159,8 @@ export async function writeNamedSnapshot(snapshot) {
   await ensureLayout(root);
   const sessions = await root.getDirectoryHandle("sessions", { create: true });
   const filename = `${timestampForFilename(snapshot.createdAt)}--${safePart(snapshot.name)}--${safePart(snapshot.id).slice(0, 12)}${SESSION_SUFFIX}`;
-  await writeJsonFile(sessions, filename, snapshot);
+  const archived = await archiveSafeSnapshot(sessions, snapshot, safePart(snapshot.id).slice(0, 24));
+  await writeJsonFile(sessions, filename, archived);
   return true;
 }
 
@@ -126,7 +170,8 @@ export async function writeLiveSnapshot(snapshot) {
 
   await ensureLayout(root);
   const live = await root.getDirectoryHandle("live", { create: true });
-  await writeJsonFile(live, `current${SESSION_SUFFIX}`, snapshot);
+  const archived = await archiveSafeSnapshot(live, snapshot, "current");
+  await writeJsonFile(live, `current${SESSION_SUFFIX}`, archived);
   return true;
 }
 
@@ -147,7 +192,7 @@ export async function readNamedSnapshots() {
     if (handle.kind !== "file" || !name.endsWith(SESSION_SUFFIX)) continue;
 
     try {
-      const snapshot = await readJsonFile(handle);
+      const snapshot = await hydrateBackgroundAsset(sessions, await readJsonFile(handle));
       if (validSnapshot(snapshot)) snapshots.push(snapshot);
     } catch (error) {
       console.warn(`Could not read archived Flashframe ${name}:`, error);
@@ -165,7 +210,7 @@ export async function readLiveSnapshot() {
   try {
     const live = await root.getDirectoryHandle("live");
     const file = await live.getFileHandle(`current${SESSION_SUFFIX}`);
-    const snapshot = await readJsonFile(file);
+    const snapshot = await hydrateBackgroundAsset(live, await readJsonFile(file));
     return validSnapshot(snapshot) ? snapshot : null;
   } catch {
     return null;

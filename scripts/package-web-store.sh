@@ -33,7 +33,7 @@ if not isinstance(description, str) or not description.strip():
 if len(description) > 132:
     raise SystemExit(f"Manifest description is {len(description)} characters; Chrome allows at most 132")
 
-allowed_permissions = {"declarativeNetRequestWithHostAccess"}
+allowed_permissions = set()
 actual_permissions = set(manifest.get("permissions", []))
 if actual_permissions != allowed_permissions:
     raise SystemExit(
@@ -43,14 +43,11 @@ if actual_permissions != allowed_permissions:
         + repr(sorted(actual_permissions))
     )
 
-allowed_hosts = {
-    "https://www.youtube.com/*",
-    "https://www.youtube-nocookie.com/*",
-}
+allowed_hosts = set()
 actual_hosts = set(manifest.get("host_permissions", []))
 if actual_hosts != allowed_hosts:
     raise SystemExit(
-        "Host-permission gate failed. Expected only the two YouTube hosts; got "
+        "Host-permission gate failed. Expected no host permissions; got "
         + repr(sorted(actual_hosts))
     )
 

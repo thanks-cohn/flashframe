@@ -169,6 +169,36 @@ function applyBackground() {
   }
 }
 
+// Workspace appearance is checkpoint state, while shrink-to-fit remains a
+// global preference. These events keep that boundary explicit without making
+// the workspace module own appearance storage.
+window.addEventListener("flashframe:capture-appearance", (event) => {
+  event.detail.appearance = {
+    backgroundColor: preferences.backgroundColor,
+    backgroundMode: preferences.backgroundMode,
+    backgroundImage: backgroundBlob instanceof Blob ? backgroundBlob : null
+  };
+});
+
+window.addEventListener("flashframe:restore-appearance", (event) => {
+  const appearance = event.detail?.appearance;
+  if (!appearance) return; // schema v1: retain the user's current appearance.
+  preferences.backgroundColor = appearance.backgroundColor ?? null;
+  preferences.backgroundMode = ["cover", "contain", "tile"].includes(appearance.backgroundMode)
+    ? appearance.backgroundMode
+    : "cover";
+  backgroundBlob = appearance.backgroundImage instanceof Blob ? appearance.backgroundImage : null;
+  savePreferences();
+  applyBackground();
+  const color = document.querySelector("#setting-background-color");
+  const mode = document.querySelector("#setting-background-mode");
+  const status = document.querySelector("#setting-background-status");
+  if (color) color.value = preferences.backgroundColor || defaultColor();
+  if (mode) mode.value = preferences.backgroundMode;
+  if (status) status.textContent = backgroundBlob?.name || (backgroundBlob ? "Saved image" : "None");
+  event.detail.tasks?.push(putContent(BACKGROUND_CONTENT_ID, backgroundBlob));
+});
+
 function intrinsicSize(media) {
   if (media instanceof HTMLImageElement) {
     return { width: media.naturalWidth, height: media.naturalHeight };
@@ -260,6 +290,7 @@ async function chooseBackgroundImage() {
   const status = document.querySelector("#setting-background-status");
   if (status) status.textContent = file.name;
   applyBackground();
+  workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
 }
 
 async function clearBackgroundImage() {
@@ -268,6 +299,7 @@ async function clearBackgroundImage() {
   const status = document.querySelector("#setting-background-status");
   if (status) status.textContent = "None";
   applyBackground();
+  workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
 }
 
 function bindControls() {
@@ -292,6 +324,7 @@ function bindControls() {
     preferences.backgroundColor = color.value;
     savePreferences();
     applyBackground();
+    workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
   });
 
   resetColor?.addEventListener("click", () => {
@@ -299,6 +332,7 @@ function bindControls() {
     if (color) color.value = defaultColor();
     savePreferences();
     applyBackground();
+    workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
   });
 
   image?.addEventListener("click", () => void chooseBackgroundImage());
@@ -308,6 +342,7 @@ function bindControls() {
     preferences.backgroundMode = mode.value;
     savePreferences();
     applyBackground();
+    workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
   });
 }
 

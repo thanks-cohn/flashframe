@@ -40,19 +40,15 @@ Remote video is loaded in the browser's native media element. Playback, pause, f
 
 The destination website or media host receives the network information normally sent by the browser when loading that resource, such as the user's IP address and standard request metadata. Flashframe does not proxy that request through a Flashframe server.
 
-## YouTube
+## External links
 
-When the user explicitly adds a YouTube URL, Flashframe uses a YouTube embed and the YouTube player messaging interface so the workspace can restore and control supported playback state.
-
-The extension requests narrowly scoped host access to `www.youtube.com` and `www.youtube-nocookie.com` for its YouTube embed compatibility behavior. It does not request broad access to all websites.
-
-YouTube receives information according to its own service and privacy practices when a YouTube player is loaded.
+Video-site URLs, including YouTube URLs, are ordinary web/link blocks. Flashframe preserves the exact URL and offers **Open page**; it does not create a special player or request host access for those sites.
 
 ## Analytics, ads, accounts, and remote code
 
 The current build does not include Flashframe analytics, advertising, telemetry, account login, Flashframe cloud sync, or remotely hosted executable extension code.
 
-All executable extension JavaScript is packaged with the extension. Remote webpages, images, videos, and YouTube embeds are user-selected content, not remotely hosted extension code.
+All executable extension JavaScript is packaged with the extension. Remote webpages, images, and videos are user-selected content, not remotely hosted extension code.
 
 Flashframe does not sell user data or use user data for personalized, retargeted, or interest-based advertising.
 
@@ -60,10 +56,7 @@ Flashframe does not sell user data or use user data for personalized, retargeted
 
 Flashframe follows a narrow-permission model.
 
-The current manifest uses:
-
-- `declarativeNetRequestWithHostAccess`, solely for the packaged YouTube embed compatibility rule; and
-- host access limited to `https://www.youtube.com/*` and `https://www.youtube-nocookie.com/*`.
+The current manifest requests no extension API permissions and no host permissions.
 
 Local file and directory access occurs through explicit user interaction with browser-native pickers or drag-and-drop, rather than broad filesystem permission.
 

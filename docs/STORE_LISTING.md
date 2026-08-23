@@ -14,7 +14,7 @@ A spatial workspace for Chrome and Chromium.
 
 Flashframe turns a browser tab into a persistent visual workspace.
 
-Arrange notes, PDFs, image folders, local videos, webpages, images, YouTube videos, and direct video URLs as movable, resizable blocks. Save the workspace as a Flashframe, close it, and restore it later with positions and supported viewing/playback state intact.
+Arrange notes, PDFs, image folders, local audio/video, webpages, images, ordinary external links, and direct video URLs as movable, resizable blocks. Save the workspace as a Flashframe, close it, and restore it later with positions and supported viewing/playback state intact.
 
 Flashframe is designed around direct manipulation. Put the things you are working with in one place, move them where you want them, resize them, layer them, and return to the same arrangement later.
 
@@ -26,8 +26,8 @@ Current features include:
 - Image-folder galleries with previous/next and keyboard navigation.
 - Local video blocks with restorable playback position.
 - Direct HTTP/HTTPS video URLs using the browser's native video player.
-- Global play, pause, rewind, and forward controls for native video blocks.
-- YouTube URL blocks with supported playback control and timestamp restoration.
+- Group-aware play, pause, rewind, and forward controls for eligible native timed media.
+- Ordinary URL blocks preserve complete external links, including YouTube timestamp parameters.
 - Webpage and web-image blocks.
 - Drag-and-drop support for local images, PDFs, videos, text/code files, generic files, image directories, text, and URLs.
 - Dropped image directories open in the gallery/lightbox flow.
@@ -53,9 +53,9 @@ When you explicitly add remote web content, your browser connects directly to th
 
 Direct video URLs use the browser's native media player and participate in Flashframe's global video controls. Rewind and forward work when the source exposes seekable media. A genuinely live stream can only rewind within the DVR/seekable history made available by that stream.
 
-### YouTube
+### External video-site links
 
-YouTube links are displayed through a YouTube embed with narrowly scoped extension permissions for the supported embed behavior. Flashframe does not request access to every website you visit.
+Video-site page URLs are preserved as ordinary web/link blocks with an **Open page** action. Flashframe does not present them as controllable timed media or request site-specific permissions.
 
 ## Single-purpose statement
 
@@ -86,6 +86,6 @@ Do not submit until the privacy-policy URL is publicly reachable and accurately 
 - Do not advertise planned features as shipped features.
 - Do not claim arbitrary websites will always embed; some sites block iframe embedding.
 - Do not claim every live stream can rewind. Rewind depends on the source exposing seekable/DVR history.
-- Do not claim YouTube behaves identically to local/native video; it uses its supported embed control path.
+- Do not describe video-site page links as controllable native media.
 - Do not add unrelated keywords or competitor names solely for search ranking.
 - Keep listing text, screenshots, permissions, reviewer notes, and privacy disclosures consistent.

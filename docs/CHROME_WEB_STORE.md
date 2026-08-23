@@ -27,13 +27,7 @@ It requires no:
 - Flashframe account; or
 - developer-operated cloud backend for normal operation.
 
-Current extension permissions are deliberately narrow:
-
-- `declarativeNetRequestWithHostAccess`
-- `https://www.youtube.com/*`
-- `https://www.youtube-nocookie.com/*`
-
-Flashframe does not request broad access to all websites.
+Current extension permissions: **none**. Flashframe requests no host permissions and no broad access to websites.
 
 ## Single purpose
 
@@ -45,21 +39,13 @@ All shipped features must remain part of this workspace purpose.
 
 ## Permission justifications
 
-Use the exact copy in `docs/DASHBOARD_ANSWERS.md`.
-
-The short form is:
-
-- `declarativeNetRequestWithHostAccess`: one static packaged rule for user-initiated YouTube embed compatibility.
-- `www.youtube.com`: only the user-initiated YouTube block and packaged compatibility behavior.
-- `www.youtube-nocookie.com`: only the privacy-enhanced YouTube embed and packaged compatibility behavior.
-
-Local sources are opened only after explicit user action through browser-native file/directory pickers or deliberate drag-and-drop into the workspace, rather than broad filesystem permission.
+None are required for this candidate. Local sources are opened only after explicit browser-picker or drag-and-drop action.
 
 ## Remote code
 
 Dashboard answer: **No remotely hosted executable code.**
 
-All executable extension JavaScript ships inside the extension ZIP. User-selected remote webpages, images, direct videos, and YouTube embeds are displayed content; they are not downloaded and executed as extension JavaScript or WebAssembly.
+All executable extension JavaScript ships inside the extension ZIP. User-selected remote webpages, images, direct videos, and ordinary video-site links are displayed content; they are not downloaded and executed as extension JavaScript or WebAssembly.
 
 Both Store package scripts reject common remote-code patterns plus localhost, native messaging, companion/EXE dependencies, and broad host access.
 
@@ -78,7 +64,7 @@ The current candidate:
 
 ## Reviewer path
 
-No setup outside Chrome is required. The reviewer can install Flashframe, click the toolbar icon, create/move/resize a note, optionally open a local PDF/video/gallery through Chrome's picker, drag local files or an image directory into the workspace, save a Flashframe, close/reopen the workspace, restore it, and optionally test a YouTube URL.
+No setup outside Chrome is required. The reviewer can install Flashframe, click the toolbar icon, create/move/resize a note, optionally open a local PDF/video/gallery through Chrome's picker, drag local files or an image directory into the workspace, save a Flashframe, close/reopen the workspace, restore it, and optionally test a video-site URL.
 
 Use `docs/REVIEWER_NOTES.md` for the exact reviewer text.
 
@@ -129,7 +115,7 @@ Recommended screenshot sequence:
 1. clean Flashframe workspace with several arranged blocks;
 2. local PDF/image/video content;
 3. a file/folder drop resulting in blocks or an image-directory gallery;
-4. URL or YouTube block beside local content;
+4. URL or ordinary link block beside local content;
 5. save/restore workflow or global video controls.
 
 ## Pre-submission gate

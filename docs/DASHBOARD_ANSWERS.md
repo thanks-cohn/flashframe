@@ -1,6 +1,6 @@
 # Flashframe Chrome Web Store Dashboard answers
 
-Use these answers for the exact tested candidate from `isolated-windows-exe`. If the implementation changes, re-audit before copying them into the Dashboard.
+Use these answers for the exact tested v1.0.6 candidate from `codex/prepare-flashframe-v1.0.6-rc2-for-review`. If the implementation changes, re-audit before copying them into the Dashboard.
 
 ## Store listing
 
@@ -42,23 +42,9 @@ Paste:
 
 > Flashframe is a spatial browser workspace that lets users arrange, save, restore, and directly manipulate notes, local files, local media, web content, and supported web media in one visual canvas.
 
-## Permission justification: `declarativeNetRequestWithHostAccess`
+## Permissions
 
-Paste:
-
-> Flashframe uses this permission only for one static declarative network rule packaged with the extension for YouTube embed compatibility. The rule applies only to user-initiated YouTube embeds and is not downloaded or changed remotely.
-
-## Host permission justification: `https://www.youtube.com/*`
-
-Paste:
-
-> Used only for Flashframe's user-initiated YouTube block and its packaged YouTube embed compatibility behavior. Flashframe does not use this access for advertising, analytics, profiling, or background collection of browsing activity.
-
-## Host permission justification: `https://www.youtube-nocookie.com/*`
-
-Paste:
-
-> Used only for Flashframe's privacy-enhanced YouTube embed and its packaged YouTube embed compatibility behavior. Flashframe does not use this access for advertising, analytics, profiling, or background collection of browsing activity.
+The candidate requests no extension API permissions and no host permissions.
 
 ## Remote code
 
@@ -68,7 +54,7 @@ Select:
 
 Explanation if the Dashboard provides a text box:
 
-> All executable extension JavaScript is packaged in the submitted extension. Flashframe can display user-selected remote webpages, images, videos, and YouTube embeds, but it does not download JavaScript or WebAssembly from a remote server and execute it as extension code.
+> All executable extension JavaScript is packaged in the submitted extension. Flashframe can display user-selected remote webpages, images, videos, but it does not download JavaScript or WebAssembly from a remote server and execute it as extension code.
 
 ## Data usage
 
@@ -98,7 +84,7 @@ Based on the current candidate, certify the applicable statements that:
 
 Paste or adapt:
 
-> No external setup is required. Flashframe is self-contained in Chrome and requires no desktop companion, EXE, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend. Install the extension and click its toolbar icon to open the workspace. Create a note, move/resize it, optionally open a local PDF/video/gallery through Chrome's native picker, or deliberately drag a local PDF, video, text/code file, image, or image directory into the workspace. Dropped image directories use the gallery/lightbox flow. Save a named Flashframe, close/reopen the workspace, and restore it. A YouTube URL can be added through Open URL to test the narrowly scoped YouTube feature.
+> No external setup is required. Flashframe is self-contained in Chrome and requires no desktop companion, EXE, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend. Install the extension and click its toolbar icon to open the workspace. Create a note, move/resize it, optionally open a local PDF/video/gallery through Chrome's native picker, or deliberately drag a local PDF, video, text/code file, image, or image directory into the workspace. Dropped image directories use the gallery/lightbox flow. Save a named Flashframe, close/reopen the workspace, and restore it. YouTube URLs can be added as ordinary web/link blocks and opened externally without special permissions.
 
 ## Release reference
 

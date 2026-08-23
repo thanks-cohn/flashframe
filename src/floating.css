@@ -104,7 +104,15 @@ body.toolbar-hidden .workspace {
 }
 
 .settings-mini {
-  display: none;
+  display: grid;
+  width: 42px;
+  height: 38px;
+  min-height: 38px;
+  font-size: 23px;
+  color: #171717;
+  background: #f7cf4b;
+  border-color: color-mix(in srgb, #171717 30%, transparent);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .16);
 }
 
 .dock-title {
@@ -152,7 +160,7 @@ body.toolbar-hidden .workspace {
 .settings-dock.is-collapsed .settings-mini {
   display: grid;
   flex: 1;
-  width: 34px;
+  width: 42px;
 }
 
 .settings-dock.is-collapsed .dock-head {
@@ -259,8 +267,7 @@ body.toolbar-hidden .workspace {
 #workspace[data-other-footer-mode="hide"] .gallery-block > .gallery-toolbar,
 #workspace[data-other-footer-mode="hide"] .custom-flashframe-block:not(.remote-video-block) > .block-toolbar,
 #workspace[data-other-footer-mode="hide"] .block[data-custom-kind="image"] > .block-toolbar,
-#workspace[data-other-footer-mode="hide"] .block[data-custom-kind="web"] > .block-toolbar,
-#workspace[data-other-footer-mode="hide"] .block[data-custom-kind="youtube"] > .block-toolbar {
+#workspace[data-other-footer-mode="hide"] .block[data-custom-kind="web"] > .block-toolbar {
   display: none !important;
 }
 

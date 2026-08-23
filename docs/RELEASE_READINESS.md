@@ -1,10 +1,12 @@
 # Flashframe Chrome release readiness
 
-Branch: `isolated-windows-exe`
+Branch: `windows-ux-audio-restore-pass`
 
-Target manifest version: `1.0.5`
+Target manifest version: `1.0.6`
 
-Reference prerelease tag: `flashframe-chrome-v1.0.5-rc1`
+Historical tested prerelease (unchanged): `flashframe-chrome-v1.0.5-rc1`
+
+Candidate: v1.0.6 RC2 source; no RC2 tag is created by this preparation pass.
 
 ## Ready before hands-on Windows testing
 
@@ -13,9 +15,9 @@ Reference prerelease tag: `flashframe-chrome-v1.0.5-rc1`
 - [x] No desktop companion architecture.
 - [x] No `.exe`, Python runtime, localhost service, or native messaging requirement.
 - [x] No broad host access.
-- [x] Host permissions limited to `www.youtube.com` and `www.youtube-nocookie.com`.
-- [x] Only one extension API permission: `declarativeNetRequestWithHostAccess`.
-- [x] Packaged static YouTube rule present.
+- [x] No host permissions.
+- [x] No extension API permissions.
+- [x] No site-specific declarative network rules.
 - [x] Windows Store packager rejects companion/native-messaging/broad-host dependencies and common remote executable-code patterns.
 - [x] Required 16, 32, 48, and 128 pixel icons present in the manifest/package gate.
 - [x] Privacy policy written for the Chrome-only architecture.
@@ -30,12 +32,15 @@ Reference prerelease tag: `flashframe-chrome-v1.0.5-rc1`
 - [x] Reference prerelease workflow is configured to publish the candidate package and review documentation.
 - [x] Universal drag/drop routes images, PDFs, local videos, text/code files, generic files, URLs, and dropped image directories into workspace blocks.
 - [x] Dropped image directories use the gallery/lightbox flow with previous/next and keyboard navigation.
+- [x] Schema v2 named checkpoints and live autosave include workspace appearance and remain backward compatible with v1.
+- [x] Native audio drops, visible/fade/hidden modes, mixed audio/video sync groups, and group-aware transport are implemented without new permissions.
+- [x] Blocks use a standardized generous grab-hand affordance; context menus recover the toolbar and Settings.
 
 ## Must still be completed before submission
 
 - [ ] Latest Windows CI run is green after all release-prep changes.
 - [ ] Exact `test-unpacked` candidate is manually tested in current stable Chrome on Windows.
-- [ ] Notes, local text, PDF, gallery, local video, drag/drop, URL blocks, direct remote video, YouTube, save/restore, reconnect behavior, appearance/background, and shrink-to-fit are tested as applicable to the exact build.
+- [ ] Notes, local text, PDF, gallery, local video, drag/drop, URL blocks, direct remote video, ordinary URL/link behavior, save/restore, reconnect behavior, appearance/background, and shrink-to-fit are tested as applicable to the exact build.
 - [ ] Dropped PDF, video, text/code file, generic file, image, URL, and image-directory flows are tested on the exact Windows candidate.
 - [ ] `chrome://extensions` shows no reproducible Flashframe errors after the test pass.
 - [ ] Workspace DevTools shows no reproducible uncaught extension exceptions in tested flows.

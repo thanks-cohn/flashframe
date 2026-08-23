@@ -6,10 +6,7 @@ Use this test before any Chrome Web Store submission from `isolated-windows-exe`
 
 The Store candidate is a normal Manifest V3 extension. It has no Windows companion, no `.exe`, no Python runtime, no localhost service, and no native messaging dependency.
 
-The only extension permission is `declarativeNetRequestWithHostAccess`, used by the packaged YouTube embed compatibility rule. Host access is limited to:
-
-- `https://www.youtube.com/*`
-- `https://www.youtube-nocookie.com/*`
+The candidate requests no extension API permissions and no host permissions.
 
 The release gate fails if broad host access, localhost/native messaging, a desktop companion dependency, remote executable JavaScript, `eval`, or a Function constructor is introduced into shipped files.
 
@@ -60,7 +57,7 @@ Test all of these in current stable Chrome on Windows:
 - In the dropped directory gallery, test previous/next buttons and left/right keyboard navigation.
 - Paste or drop a normal HTTPS URL.
 - Add a direct remote video URL if you have one available.
-- Add a YouTube URL and verify the embed actually loads and the global media controls behave reasonably.
+- Paste or drop a YouTube URL and verify it remains an exact ordinary URL/web block with **Open page**, no special player, and no sync action.
 - Save a named Flashframe.
 - Close the Flashframe tab completely.
 - Open Flashframe again and restore the saved Flashframe.
@@ -87,10 +84,39 @@ Do not submit until all of the following are true:
 - Exact `test-unpacked` artifact passes the test above.
 - No companion/EXE/Python/local-service step is required.
 - No reproducible extension errors remain.
-- YouTube permission is still genuinely required by the tested YouTube feature. If YouTube is removed, remove its permission and host access too.
+- The final manifest has no API permissions or host permissions.
 - `PRIVACY.md` matches the exact candidate.
 - Store listing describes only tested features.
 - Screenshots come from the exact candidate.
 - Dashboard permission and data-use answers match the exact candidate.
 
 Only after that should `flashframe-chrome-web-store-v<version>.zip` from the same green artifact be uploaded to the Chrome Web Store.
+
+
+## v1.0.6 RC2 exact acceptance additions
+
+### General
+- Start without an archive directory; confirm the blank workspace and obvious Settings gear.
+- Move blocks with the Grab hand with headers both shown and hidden; edit titles independently.
+- Verify the generous lower-right resize target is easy to use and persists geometry.
+
+### Images
+Where available, drop JPG, JPEG, PNG, GIF, WebP, AVIF, SVG, BMP, ICO, and APNG. For each, verify render, move, resize, named save/restore, live restore, and reconnect. TIFF/TIF has no bundled decoder in RC2: verify it remains represented with honest unsupported-rendering feedback.
+
+### Audio and video
+- Test MP3, WAV, and one of OGG/OGA/Opus/FLAC/AAC/M4A/WebM/WEBA. Verify native controls, time, volume, mute, rate, loop, Visible/Fade/Hidden, Show hidden audio, and hidden geometry restoration.
+- Test MP4, WebM, and another recognized container where available. Verify time restoration/reconnect and that an unsupported codec leaves its block intact with an honest error.
+
+### Sync
+- Create Group A with one MP3 and one MP4; link a second MP3, then a fourth timed-media block. Verify 2-, 3-, and 4-member play/pause/rewind/forward, individual controls, and restored membership.
+- Make one member independent; verify only it leaves group/global control and the remaining members stay linked.
+
+### Background and live state
+- Save red plus an optional background image, blocks, hidden audio, and groups; change to blue/delete content, then restore and verify all workspace state returns.
+- Without manually saving, modify, close Chrome fully, reopen, and verify appearance, hidden geometry, groups, and reconnect placeholders return without an archive directory.
+
+### Optional archive
+- Configure a directory separately. Verify named/live JSON and background binary sidecars are written and restore correctly. Rename or corrupt a sidecar and verify the rest of the snapshot still imports.
+
+### Video-site URL behavior
+- Paste/drop a YouTube watch URL containing query timestamp parameters and a fragment. Verify the exact URL survives, **Open page** works, no special player appears, and no sync action is offered.
