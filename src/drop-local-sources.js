@@ -7,6 +7,7 @@ import {
   resolveHandle,
   storeHandle
 } from "./file-access.js";
+import { classifyLocalFile, extensionOf } from "./media-types.js";
 
 const MARKER = "__FLASHFRAME_LOCAL_DROP_V1__";
 const workspace = document.querySelector("#workspace");
@@ -29,11 +30,6 @@ function setStatus(message) {
   if (status) status.textContent = message;
 }
 
-function extensionOf(name = "") {
-  const index = name.lastIndexOf(".");
-  return index >= 0 ? name.slice(index + 1).toLowerCase() : "";
-}
-
 function isTextFile(file) {
   if (file.type.startsWith("text/")) return true;
   return new Set([
@@ -45,17 +41,15 @@ function isTextFile(file) {
 }
 
 function isPdfFile(file) {
-  return file.type === "application/pdf" || extensionOf(file.name) === "pdf";
+  return classifyLocalFile(file) === "pdf";
 }
 
 function isVideoFile(file) {
-  if (file.type.startsWith("video/")) return true;
-  return new Set(["mp4", "webm", "ogv", "mov", "m4v", "mkv"]).has(extensionOf(file.name));
+  return classifyLocalFile(file) === "video";
 }
 
 function isAudioFile(file) {
-  if (file.type.startsWith("audio/")) return true;
-  return new Set(["mp3", "wav", "ogg", "oga", "m4a", "aac", "flac", "weba", "webm"]).has(extensionOf(file.name));
+  return classifyLocalFile(file) === "audio";
 }
 
 function formatTime(seconds) {
@@ -505,6 +499,7 @@ async function loadVideo(block, payload) {
 
   const player = block.querySelector(".video-player");
   player.src = url;
+  player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this video, but Chromium cannot decode its codec."), { once: true });
   player.volume = Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1;
   player.muted = Boolean(payload.muted);
   player.playbackRate = Number.isFinite(payload.playbackRate) ? payload.playbackRate : 1;
@@ -607,6 +602,7 @@ async function loadAudio(block, payload) {
   clearUnavailable(block);
   const player = block.querySelector(".audio-player");
   player.src = url;
+  player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this audio file, but Chromium cannot decode its codec."), { once: true });
   player.volume = Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1;
   player.muted = Boolean(payload.muted);
   player.playbackRate = Number.isFinite(payload.playbackRate) ? payload.playbackRate : 1;

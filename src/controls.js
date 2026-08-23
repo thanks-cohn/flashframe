@@ -182,7 +182,7 @@ function bringBlockForward(block) {
 }
 
 function attachCompactBlockDrag(block) {
-  if (block.querySelector(":scope > .compact-drag-handle")) return;
+  if (block.querySelector(".compact-drag-handle")) return;
 
   const handle = document.createElement("button");
   handle.type = "button";
@@ -190,7 +190,7 @@ function attachCompactBlockDrag(block) {
   handle.innerHTML = `<svg viewBox="0 0 48 32" aria-hidden="true"><path d="M9 24c-3-3-5-8-2-10 2-1 4 2 5 3V5c0-4 5-4 5 0v8-9c0-4 5-4 5 0v9-8c0-4 5-4 5 0v9-6c0-4 5-4 5 0v10c3-4 8-3 9 0-4 9-10 13-20 13-5 0-9-2-12-7Z"/><path d="M13 24c7 3 14 3 22 0"/></svg><span>Grab</span>`;
   handle.title = "Grab here to move block";
   handle.setAttribute("aria-label", "Grab here to move block");
-  block.querySelector(":scope > .block-header")?.prepend(handle);
+  block.append(handle);
 
   handle.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
@@ -220,6 +220,44 @@ function attachCompactBlockDrag(block) {
       workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
     };
 
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
+  });
+}
+
+function attachResizeHandle(block) {
+  if (block.querySelector(":scope > .coarse-resize-handle")) return;
+  const handle = document.createElement("div");
+  handle.className = "coarse-resize-handle";
+  handle.setAttribute("role", "separator");
+  handle.setAttribute("aria-label", "Resize block");
+  block.append(handle);
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || block.classList.contains("is-maximized")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    bringBlockForward(block);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = block.getBoundingClientRect().width;
+    const startHeight = block.getBoundingClientRect().height;
+    const minimum = getComputedStyle(block);
+    const minWidth = Number.parseFloat(minimum.minWidth) || 280;
+    const minHeight = Number.parseFloat(minimum.minHeight) || 190;
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add("is-resizing");
+    const move = (moveEvent) => {
+      block.style.width = `${Math.max(minWidth, startWidth + moveEvent.clientX - startX)}px`;
+      block.style.height = `${Math.max(minHeight, startHeight + moveEvent.clientY - startY)}px`;
+    };
+    const finish = () => {
+      handle.classList.remove("is-resizing");
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", finish);
+      handle.removeEventListener("pointercancel", finish);
+      workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+    };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", finish);
     handle.addEventListener("pointercancel", finish);
@@ -267,6 +305,7 @@ function prepareVideoBlock(block) {
 function prepareBlock(block) {
   if (!(block instanceof HTMLElement) || !block.classList.contains("block")) return;
   attachCompactBlockDrag(block);
+  attachResizeHandle(block);
   if (block.dataset.blockType === "video") prepareVideoBlock(block);
 }
 
@@ -329,8 +368,8 @@ function updateStepSetting() {
   const seconds = videoStepSeconds();
   stepInput.value = String(seconds);
   writeJson(VIDEO_STEP_KEY, seconds);
-  rewindButton.title = `Rewind all videos ${seconds} seconds`;
-  forwardButton.title = `Forward all videos ${seconds} seconds`;
+  rewindButton.title = `Rewind timed media ${seconds} seconds`;
+  forwardButton.title = `Forward timed media ${seconds} seconds`;
   rewindButton.setAttribute("aria-label", rewindButton.title);
   forwardButton.setAttribute("aria-label", forwardButton.title);
 }
@@ -432,9 +471,7 @@ loopVideosInput.addEventListener("change", () => {
 });
 
 settingsMini.addEventListener("click", () => {
-  if (settingsDock.classList.contains("is-collapsed")) {
-    setDockCollapsed(settingsDock, settingsExpand, SETTINGS_DOCK_KEY, false);
-  }
+  setDockCollapsed(settingsDock, settingsExpand, SETTINGS_DOCK_KEY, !settingsDock.classList.contains("is-collapsed"));
 });
 
 playButton.addEventListener("click", () => void toggleAllPlayback());

@@ -1,11 +1,5 @@
 import { getHandle, putHandle } from "./persistence.js";
-
-const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "avif", "svg", "bmp"]);
-
-function extensionOf(name = "") {
-  const index = name.lastIndexOf(".");
-  return index >= 0 ? name.slice(index + 1).toLowerCase() : "";
-}
+import { isNativeImageName } from "./media-types.js";
 
 export function makeHandleKey(prefix = "source") {
   return `${prefix}:${crypto.randomUUID()}`;
@@ -100,7 +94,7 @@ export async function listImages(directoryHandle) {
 
   for await (const [name, handle] of directoryHandle.entries()) {
     if (handle.kind !== "file") continue;
-    if (!IMAGE_EXTENSIONS.has(extensionOf(name))) continue;
+    if (!isNativeImageName(name)) continue;
     entries.push({ name, handle });
   }
 

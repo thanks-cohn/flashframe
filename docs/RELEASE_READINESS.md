@@ -15,9 +15,9 @@ Candidate: v1.0.6 RC2 source; no RC2 tag is created by this preparation pass.
 - [x] No desktop companion architecture.
 - [x] No `.exe`, Python runtime, localhost service, or native messaging requirement.
 - [x] No broad host access.
-- [x] Host permissions limited to `www.youtube.com` and `www.youtube-nocookie.com`.
-- [x] Only one extension API permission: `declarativeNetRequestWithHostAccess`.
-- [x] Packaged static YouTube rule present.
+- [x] No host permissions.
+- [x] No extension API permissions.
+- [x] No site-specific declarative network rules.
 - [x] Windows Store packager rejects companion/native-messaging/broad-host dependencies and common remote executable-code patterns.
 - [x] Required 16, 32, 48, and 128 pixel icons present in the manifest/package gate.
 - [x] Privacy policy written for the Chrome-only architecture.
@@ -40,7 +40,7 @@ Candidate: v1.0.6 RC2 source; no RC2 tag is created by this preparation pass.
 
 - [ ] Latest Windows CI run is green after all release-prep changes.
 - [ ] Exact `test-unpacked` candidate is manually tested in current stable Chrome on Windows.
-- [ ] Notes, local text, PDF, gallery, local video, drag/drop, URL blocks, direct remote video, YouTube, save/restore, reconnect behavior, appearance/background, and shrink-to-fit are tested as applicable to the exact build.
+- [ ] Notes, local text, PDF, gallery, local video, drag/drop, URL blocks, direct remote video, ordinary URL/link behavior, save/restore, reconnect behavior, appearance/background, and shrink-to-fit are tested as applicable to the exact build.
 - [ ] Dropped PDF, video, text/code file, generic file, image, URL, and image-directory flows are tested on the exact Windows candidate.
 - [ ] `chrome://extensions` shows no reproducible Flashframe errors after the test pass.
 - [ ] Workspace DevTools shows no reproducible uncaught extension exceptions in tested flows.

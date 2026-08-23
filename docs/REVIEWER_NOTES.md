@@ -33,32 +33,20 @@ Install the extension, click the Flashframe toolbar icon, and the workspace open
 5. Drag a local PDF, video, text/code file, image, and image directory into the workspace. A dropped image directory should open in the gallery/lightbox flow with previous/next and keyboard navigation.
 6. Save a named Flashframe.
 7. Close the workspace tab, reopen Flashframe, and restore the saved Flashframe.
-8. Use **Open URL** with a normal HTTPS URL or a YouTube URL.
-9. If testing YouTube, verify the YouTube block loads and the supported playback controls operate.
+8. Use **Open URL** with a normal HTTPS URL or a video-site URL.
+9. Verify video-site URLs remain exact ordinary links and open externally.
 
 Local file/folder access occurs only after explicit user action through a browser picker or deliberate drag-and-drop into the workspace. Chrome may require the user to renew access to a previously selected local source after a browser restart; Flashframe exposes reconnect controls for that case.
 
 ## Permissions
 
-### `declarativeNetRequestWithHostAccess`
-
-Used only for one packaged static rule that adjusts the request identity for Flashframe's YouTube embed compatibility behavior. The rule ships inside the extension package. It is not downloaded remotely.
-
-### `https://www.youtube.com/*`
-
-Used only for the user-initiated YouTube block and the packaged YouTube embed compatibility rule.
-
-### `https://www.youtube-nocookie.com/*`
-
-Used only for Flashframe's privacy-enhanced YouTube embed and the packaged YouTube embed compatibility rule.
-
-Flashframe does not request `http://*/*`, `https://*/*`, `<all_urls>`, `tabs`, `activeTab`, `scripting`, `nativeMessaging`, or broad browsing-history access.
+The candidate requests no extension API permissions and no host permissions. Local sources use explicit browser pickers or deliberate drag-and-drop. Ordinary remote URLs are user-selected content and require no host permission.
 
 ## Remote code
 
 Dashboard answer: **No, Flashframe does not use remotely hosted executable code.**
 
-All extension JavaScript is packaged with the extension. Flashframe can display user-selected remote webpages, images, videos, and YouTube embeds, but it does not fetch JavaScript or WebAssembly from a remote server and execute it as extension code.
+All extension JavaScript is packaged with the extension. Flashframe can display user-selected remote webpages, images, videos, and ordinary video-site links, but it does not fetch JavaScript or WebAssembly from a remote server and execute it as extension code.
 
 ## Data handling summary
 

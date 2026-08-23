@@ -2,6 +2,7 @@ const workspace = document.querySelector("#workspace");
 const settingsBody = document.querySelector("#settings-dock .settings-body");
 const scope = document.querySelector("#media-scope");
 const MARKER = "__FLASHFRAME_LOCAL_DROP_V1__";
+const REMOTE_MARKER = "__FLASHFRAME_REMOTE_VIDEO_V1__";
 
 function timedBlocks() {
   return [...workspace.querySelectorAll(".block")].filter((block) =>
@@ -18,6 +19,14 @@ function persistMetadata(block) {
       payload.visibility = block.dataset.audioVisibility || payload.visibility;
       store.value = MARKER + JSON.stringify(payload);
     } catch { /* A malformed legacy marker remains restorable as a note. */ }
+  }
+  const remoteStore = block.querySelector(".remote-video-state");
+  if (remoteStore?.value.startsWith(REMOTE_MARKER)) {
+    try {
+      const payload = JSON.parse(remoteStore.value.slice(REMOTE_MARKER.length));
+      payload.syncGroup = block.dataset.syncGroup || "all";
+      remoteStore.value = REMOTE_MARKER + JSON.stringify(payload);
+    } catch { /* Preserve malformed legacy state for manual recovery. */ }
   }
   workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
 }
@@ -70,10 +79,13 @@ window.addEventListener("flashframe:media-link-request", (event) => {
   const existing = [block.dataset.syncGroup, other.dataset.syncGroup]
     .find((group) => group && group !== "all" && group !== "independent");
   const group = existing || `sync-${crypto.randomUUID().slice(0, 8)}`;
-  block.dataset.syncGroup = group;
-  other.dataset.syncGroup = group;
-  persistMetadata(block);
-  persistMetadata(other);
+  const groupsToMerge = new Set([block.dataset.syncGroup, other.dataset.syncGroup]
+    .filter((candidate) => candidate && candidate !== "all" && candidate !== "independent"));
+  const members = timedBlocks().filter((candidate) => candidate === block || candidate === other || groupsToMerge.has(candidate.dataset.syncGroup));
+  for (const member of members) {
+    member.dataset.syncGroup = group;
+    persistMetadata(member);
+  }
   updateIndicators();
 });
 

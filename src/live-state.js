@@ -19,8 +19,8 @@ function readGeometry(block) {
   return {
     x: numberFromStyle(block.style.left, block.offsetLeft),
     y: numberFromStyle(block.style.top, block.offsetTop),
-    width: block.offsetWidth,
-    height: block.offsetHeight,
+    width: block.offsetWidth || numberFromStyle(block.style.width, 480),
+    height: block.offsetHeight || numberFromStyle(block.style.height, 180),
     z: Number.parseInt(block.style.zIndex, 10) || 1
   };
 }

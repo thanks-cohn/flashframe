@@ -297,7 +297,7 @@ function updateGlobalPlayButtons() {
   const playing = anyVideoPlaying();
   videoPlayAll.textContent = playing ? "Pause all" : "Play all";
   videoMiniPlay.textContent = playing ? "❚❚" : "▶";
-  videoMiniPlay.title = playing ? "Pause all videos" : "Play all videos";
+  videoMiniPlay.title = playing ? "Pause timed media" : "Play timed media";
 }
 
 async function toggleAllVideos() {

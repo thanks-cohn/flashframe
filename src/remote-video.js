@@ -1,10 +1,11 @@
+import { looksLikeDirectVideoUrl } from "./media-types.js";
+
 const REMOTE_VIDEO_MARKER = "__FLASHFRAME_REMOTE_VIDEO_V1__";
 const WEB_MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
 const workspace = document.querySelector("#workspace");
 const openUrlButton = document.querySelector("#open-url");
 const status = document.querySelector("#status");
 
-const VIDEO_URL_RE = /\.(?:mp4|m4v|webm|ogv|ogg|mov)(?:$|[?#])/i;
 let offset = 0;
 
 function setStatus(message) {
@@ -24,7 +25,7 @@ function normalizeUrl(value) {
 }
 
 function looksLikeDirectVideo(url) {
-  return VIDEO_URL_RE.test(url.pathname + url.search + url.hash);
+  return looksLikeDirectVideoUrl(url);
 }
 
 function formatTime(seconds) {
@@ -182,7 +183,8 @@ function createRemoteVideoBlock(payload, options = {}) {
     volume: Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1,
     muted: Boolean(payload.muted),
     playbackRate: Number.isFinite(payload.playbackRate) ? payload.playbackRate : 1,
-    loop: Boolean(payload.loop)
+    loop: Boolean(payload.loop),
+    syncGroup: payload.syncGroup || "all"
   };
 
   const block = document.createElement("section");
@@ -190,6 +192,8 @@ function createRemoteVideoBlock(payload, options = {}) {
   block.dataset.blockType = "text";
   block.dataset.blockId = options.id || crypto.randomUUID();
   block.dataset.customKind = "remote-video";
+  block.dataset.timedMedia = "true";
+  block.dataset.syncGroup = payload.syncGroup;
 
   const place = placement();
   block.style.left = options.style?.left || `${place.x}px`;
@@ -226,6 +230,7 @@ function createRemoteVideoBlock(payload, options = {}) {
   player.muted = payload.muted;
   player.playbackRate = payload.playbackRate;
   player.loop = payload.loop;
+  player.addEventListener("error", () => setStatus("Remote video kept in the workspace, but Chromium cannot decode or load this media URL."), { once: true });
 
   const footer = document.createElement("div");
   footer.className = "block-toolbar source-toolbar";
@@ -269,6 +274,7 @@ function createRemoteVideoBlock(payload, options = {}) {
     state.muted = player.muted;
     state.playbackRate = player.playbackRate;
     state.loop = player.loop;
+    state.syncGroup = block.dataset.syncGroup || "all";
     const now = Date.now();
     serialize(block, state, force || now - lastPersist > 1800);
     if (force || now - lastPersist > 1800) lastPersist = now;
@@ -402,7 +408,7 @@ function scheduleRestoreCheck(block) {
 function interceptOpenUrl(event) {
   if (event.button !== 0) return;
   const originalPrompt = window.prompt;
-  const value = originalPrompt.call(window, "Paste a webpage, image, YouTube, or direct video URL");
+  const value = originalPrompt.call(window, "Paste a webpage, image, or direct video URL");
   if (value == null) {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -423,7 +429,7 @@ function interceptOpenUrl(event) {
     return;
   }
 
-  // Reuse the same answer for the existing Web/YouTube/image handler without
+  // Reuse the same answer for the existing web/image handler without
   // showing the user a second prompt.
   window.prompt = () => {
     window.prompt = originalPrompt;
@@ -455,7 +461,7 @@ workspace.addEventListener("drop", (event) => {
       paused: true,
       currentTime: 0
     });
-    setStatus("Remote video dropped into Flashframe. Global video controls include it.");
+    setStatus("Remote video dropped into Flashframe. Global timed-media controls include it.");
     return;
   }
 }, true);

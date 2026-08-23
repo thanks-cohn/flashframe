@@ -151,14 +151,13 @@ This is only a syntax gate. A person still needs to run the browser smoke tests 
 ## Next work in priority order
 
 1. Run and repair the full Chrome smoke test.
-2. Add live-workspace crash/reload autosave separate from named Flashframes.
+2. Run the v1.0.6 Windows persistence, media, archive-sidecar, and usability checklist.
 3. Add snapshot rename/delete controls.
 4. Decide the final PDF viewer approach and make page restoration exact.
 5. Improve missing-source/relink UX.
-6. Add icons and Chrome Web Store listing assets.
-7. Package a release candidate ZIP from the repository root.
+6. Capture final Chrome Web Store listing assets from the exact accepted build.
 
-Do not expand the feature set until the four core block types restore reliably.
+Do not expand the feature set until the core block types restore reliably.
 
 ## Product rule
 
@@ -167,3 +166,15 @@ Flashframe owns spatial state.
 Each block owns the smallest useful content state needed to return to where the user was.
 
 That simplicity is intentional.
+
+## v1.0.6 media compatibility model
+
+Flashframe classifies local sources centrally by MIME type and normalized extension, then uses Chromium's native renderers and codecs. Native image candidates include JPG/JPEG, PNG, GIF (including animation), WebP (including animation), AVIF, BMP, SVG, ICO, and APNG. Audio candidates include MP3, WAV, OGG/OGA, Opus, FLAC, AAC, M4A, WebM audio, WEBA, and other `audio/*` files. Video candidates include MP4/M4V, WebM, OGV/Ogg video, MOV, MKV, and other `video/*` files.
+
+Recognition of an image format, audio format, or video container is not a guarantee that the installed Chromium build includes the required decoder. Media load failures retain the source block and report that Chromium could not render or decode it. No codec service, native executable, or remote executable code is used.
+
+TIFF/TIF, HEIC/HEIF, and JPEG XL do not have bundled decoders in RC2. Adding a decoder was deliberately deferred rather than materially increasing package size and security/maintenance surface. Such files remain represented with honest unsupported-rendering feedback when the browser identifies them as images, or as generic source blocks otherwise.
+
+## Archive appearance assets
+
+Browser-local schema-v2 snapshots retain background image `Blob` data directly in IndexedDB. Optional disk archives instead store JSON-safe background metadata and a binary file under the corresponding `sessions/assets/` or `live/assets/` directory. Import hydrates the image when the sidecar is readable; a missing/corrupt sidecar is warned about and does not prevent block or background-color restoration.

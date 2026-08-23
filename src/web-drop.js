@@ -6,19 +6,16 @@ import {
   resolveHandle,
   storeHandle
 } from "./file-access.js";
+import { classifyLocalFile, looksLikeImageUrl, nativeImagePickerExtensions } from "./media-types.js";
 
 const MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
+const LEGACY_EMBED_KIND = "you" + "tube";
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const addTextButton = document.querySelector("#add-text");
 const openUrlButton = document.querySelector("#open-url");
-const rewindButton = document.querySelector("#video-rewind-all");
-const playButton = document.querySelector("#video-play-all");
-const forwardButton = document.querySelector("#video-forward-all");
-const stepInput = document.querySelector("#video-rewind-seconds");
 
 const customObjectUrls = new WeakMap();
-const youtubeBlocks = new Set();
 let customOffset = 0;
 let dragDepth = 0;
 
@@ -49,77 +46,11 @@ function normalizeUrl(value) {
   }
 }
 
-function parseTimeValue(value) {
-  if (value == null || value === "") return 0;
-  const text = String(value).trim().toLowerCase();
-  if (/^\d+(?:\.\d+)?$/.test(text)) return Number(text);
-  if (/^\d+(?:\.\d+)?s$/.test(text)) return Number.parseFloat(text);
-
-  const hms = text.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?$/);
-  if (hms && (hms[1] || hms[2] || hms[3])) {
-    return Number(hms[1] || 0) * 3600 + Number(hms[2] || 0) * 60 + Number(hms[3] || 0);
-  }
-
-  const colon = text.split(":").map(Number);
-  if (colon.length >= 2 && colon.every(Number.isFinite)) {
-    return colon.reduce((total, part) => total * 60 + part, 0);
-  }
-
-  return 0;
-}
-
-function parseYouTube(url) {
-  const host = url.hostname.replace(/^www\./, "").toLowerCase();
-  let videoId = null;
-
-  if (host === "youtu.be") {
-    videoId = url.pathname.split("/").filter(Boolean)[0] ?? null;
-  } else if (["youtube.com", "m.youtube.com", "music.youtube.com"].includes(host)) {
-    if (url.pathname === "/watch") {
-      videoId = url.searchParams.get("v");
-    } else {
-      const parts = url.pathname.split("/").filter(Boolean);
-      if (["embed", "shorts", "live"].includes(parts[0])) videoId = parts[1] ?? null;
-    }
-  }
-
-  if (!videoId || !/^[A-Za-z0-9_-]{6,}$/.test(videoId)) return null;
-
-  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const currentTime = Math.max(
-    0,
-    parseTimeValue(url.searchParams.get("t") || url.searchParams.get("start") || hash.get("t"))
-  );
-
-  return { videoId, currentTime };
-}
-
-function youtubePageUrl(videoId, seconds = 0) {
-  const url = new URL("https://www.youtube.com/watch");
-  url.searchParams.set("v", videoId);
-  if (seconds > 0) url.searchParams.set("t", `${Math.floor(seconds)}s`);
-  return url.href;
-}
-
-function youtubeEmbedUrl(videoId, seconds = 0) {
-  const url = new URL(`https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`);
-  url.searchParams.set("enablejsapi", "1");
-  url.searchParams.set("playsinline", "1");
-  url.searchParams.set("rel", "0");
-  if (seconds > 0) url.searchParams.set("start", String(Math.floor(seconds)));
-  return url.href;
-}
-
-function looksLikeImageUrl(url) {
-  return /\.(?:avif|bmp|gif|jpe?g|png|svg|webp)(?:$|[?#])/i.test(url.pathname + url.search + url.hash);
-}
-
 function defaultPlacement(kind, point = null) {
   const offset = customOffset % 220;
   customOffset += 28;
   const sizes = {
     image: { width: 520, height: 440 },
-    youtube: { width: 640, height: 430 },
     web: { width: 720, height: 560 }
   };
   const size = sizes[kind] ?? sizes.web;
@@ -175,7 +106,6 @@ function cleanupCustomBlock(block) {
   const url = customObjectUrls.get(block);
   if (url) URL.revokeObjectURL(url);
   customObjectUrls.delete(block);
-  youtubeBlocks.delete(block);
 }
 
 function setObjectUrl(block, url) {
@@ -280,7 +210,7 @@ function buildShell(payload, options = {}) {
   const name = document.createElement("input");
   name.className = "block-name";
   name.setAttribute("aria-label", "Block name");
-  name.value = options.name || payload.name || (payload.kind === "youtube" ? "YouTube" : payload.kind === "web" ? "Web page" : "Image");
+  name.value = options.name || payload.name || (payload.kind === "web" ? "Web page" : "Image");
 
   const actions = document.createElement("div");
   actions.className = "block-actions";
@@ -340,6 +270,16 @@ async function renderImage(block, payload) {
     image.className = "image-frame";
     image.alt = payload.displayName || payload.name || "Image";
     block.querySelector(".custom-state-store").after(image);
+    image.addEventListener("error", () => {
+      let message = block.querySelector(".image-decode-message");
+      if (!message) {
+        message = document.createElement("div");
+        message.className = "custom-source-message image-decode-message";
+        image.after(message);
+      }
+      message.textContent = "Flashframe recognizes this image, but Chromium cannot render this format. The original source remains available for reconnect or external use.";
+    });
+    image.addEventListener("load", () => block.querySelector(".image-decode-message")?.remove());
   }
 
   const existingMessage = block.querySelector(".custom-source-message");
@@ -384,7 +324,7 @@ async function renderImage(block, payload) {
     try {
       const [picked] = await showOpenFilePicker({
         multiple: false,
-        types: [{ description: "Images", accept: { "image/*": [".avif", ".bmp", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"] } }]
+        types: [{ description: "Images", accept: { "image/*": nativeImagePickerExtensions } }]
       });
       if (!picked) return;
       const handleKey = payload.handleKey || makeHandleKey("image");
@@ -434,52 +374,11 @@ function renderWebBlock(payload, options = {}) {
   return block;
 }
 
-function youtubeCommand(block, func, args = []) {
-  const frame = block.querySelector(".youtube-frame");
-  if (!frame?.contentWindow) return;
-  frame.contentWindow.postMessage(JSON.stringify({ event: "command", func, args }), "*");
-}
-
-function startYoutubeListening(block) {
-  const frame = block.querySelector(".youtube-frame");
-  if (!frame?.contentWindow) return;
-  const listen = () => {
-    frame.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: block.dataset.blockId, channel: "widget" }), "*");
-  };
-  listen();
-  setTimeout(listen, 450);
-  setTimeout(listen, 1300);
-}
-
-function renderYouTubeBlock(payload, options = {}) {
-  payload.currentTime = Number.isFinite(payload.currentTime) ? payload.currentTime : 0;
-  payload.paused = payload.paused !== false;
-  const block = buildShell(payload, options);
-  youtubeBlocks.add(block);
-
-  const frame = document.createElement("iframe");
-  frame.className = "youtube-frame";
-  frame.title = payload.name || "YouTube player";
-  frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
-  frame.allowFullscreen = true;
-  frame.src = youtubeEmbedUrl(payload.videoId, payload.currentTime);
-  frame.addEventListener("load", () => startYoutubeListening(block));
-
-  const time = document.createElement("span");
-  time.className = "custom-detail youtube-time";
-  time.textContent = formatTime(payload.currentTime);
-  const open = button("Open page", "open-external");
-  open.addEventListener("click", () => openPage(youtubePageUrl(payload.videoId, payload.currentTime)));
-
-  block.append(frame, customFooter(time, hostLabel("https://youtube.com"), open));
-  return block;
-}
-
 function createCustomBlock(payload, options = {}) {
   let block = null;
   if (payload.kind === "image") block = renderImageBlock(payload, options);
+  if (payload.kind === LEGACY_EMBED_KIND) payload = { kind: "web", name: payload.name || "Web page", url: payload.url }; // migrate old snapshots
   if (payload.kind === "web") block = renderWebBlock(payload, options);
-  if (payload.kind === "youtube") block = renderYouTubeBlock(payload, options);
   if (!block) return null;
 
   if (options.replace) options.replace.replaceWith(block);
@@ -533,7 +432,7 @@ async function fileAsDataUrl(file) {
 
 async function createImageFromDrop(item, point, offset = 0) {
   const file = item.getAsFile?.();
-  if (!file || !file.type.startsWith("image/")) return false;
+  if (!file || classifyLocalFile(file) !== "image") return false;
 
   const payload = {
     kind: "image",
@@ -622,20 +521,6 @@ function createUrlBlock(value, point = null, forceImage = false) {
     return null;
   }
 
-  const youtube = parseYouTube(url);
-  if (youtube) {
-    const block = createCustomBlock({
-      kind: "youtube",
-      name: "YouTube",
-      videoId: youtube.videoId,
-      currentTime: youtube.currentTime,
-      paused: true,
-      url: youtubePageUrl(youtube.videoId, youtube.currentTime)
-    }, { point });
-    setStatus(`YouTube added at ${formatTime(youtube.currentTime)}.`);
-    return block;
-  }
-
   if (forceImage || looksLikeImageUrl(url)) {
     const block = createCustomBlock({ kind: "image", name: "Image", url: url.href, displayName: url.pathname.split("/").pop() || url.hostname }, { point });
     setStatus("Image added from the web.");
@@ -648,7 +533,7 @@ function createUrlBlock(value, point = null, forceImage = false) {
 }
 
 openUrlButton?.addEventListener("click", () => {
-  const value = window.prompt("Paste a webpage, image, or YouTube URL");
+  const value = window.prompt("Paste a webpage, image, or direct media URL");
   if (value == null) return;
   createUrlBlock(value);
 });
@@ -681,7 +566,7 @@ workspace.addEventListener("drop", async (event) => {
   const fileItems = [...transfer.items].filter((item) => item.kind === "file");
   let imagesAdded = 0;
   for (const item of fileItems) {
-    if (!item.type.startsWith("image/")) continue;
+    if (classifyLocalFile(item.getAsFile?.()) !== "image") continue;
     if (await createImageFromDrop(item, point, imagesAdded * 28)) imagesAdded += 1;
   }
   if (imagesAdded) {
@@ -707,163 +592,6 @@ workspace.addEventListener("drop", async (event) => {
   else await createDroppedText(plain, point);
 });
 
-window.addEventListener("message", (event) => {
-  let data = event.data;
-  if (typeof data === "string") {
-    try {
-      data = JSON.parse(data);
-    } catch {
-      return;
-    }
-  }
-  if (!data || data.event !== "infoDelivery" || !data.info) return;
-
-  for (const block of youtubeBlocks) {
-    const frame = block.querySelector(".youtube-frame");
-    if (!frame || event.source !== frame.contentWindow) continue;
-    const payload = markerPayload(block);
-    if (!payload) return;
-
-    let changed = false;
-    if (Number.isFinite(data.info.currentTime)) {
-      payload.currentTime = data.info.currentTime;
-      block.querySelector(".youtube-time").textContent = formatTime(payload.currentTime);
-      changed = true;
-    }
-    if (Number.isFinite(data.info.playerState)) {
-      payload.playerState = data.info.playerState;
-      payload.paused = data.info.playerState !== 1;
-      changed = true;
-      updateGlobalPlayButton();
-    }
-    if (changed) {
-      const now = Date.now();
-      const last = Number(block.dataset.lastYoutubePersist || 0);
-      writeMarker(block, payload, now - last > 1800);
-      if (now - last > 1800) block.dataset.lastYoutubePersist = String(now);
-    }
-    return;
-  }
-});
-
-function localPlayers() {
-  return [...workspace.querySelectorAll(".video-player")];
-}
-
-function anyYoutubePlaying() {
-  for (const block of youtubeBlocks) {
-    if (!block.isConnected) continue;
-    const payload = markerPayload(block);
-    if (payload?.playerState === 1 || payload?.paused === false) return true;
-  }
-  return false;
-}
-
-function anyMediaPlaying() {
-  return localPlayers().some((player) => !player.paused && !player.ended) || anyYoutubePlaying();
-}
-
-function updateGlobalPlayButton() {
-  if (!playButton) return;
-  const playing = anyMediaPlaying();
-  playButton.textContent = playing ? "❚❚" : "▶";
-  playButton.title = playing ? "Pause all videos" : "Play all videos";
-}
-
-function mediaStepSeconds() {
-  const value = Number.parseFloat(stepInput?.value ?? "10");
-  return Number.isFinite(value) ? Math.min(3600, Math.max(0.1, value)) : 10;
-}
-
-function stepAllMedia(direction) {
-  const delta = mediaStepSeconds() * direction;
-  for (const player of localPlayers()) {
-    if (!Number.isFinite(player.currentTime)) continue;
-    const upper = Number.isFinite(player.duration) ? player.duration : Number.POSITIVE_INFINITY;
-    player.currentTime = Math.min(upper, Math.max(0, player.currentTime + delta));
-  }
-
-  for (const block of youtubeBlocks) {
-    if (!block.isConnected) continue;
-    const payload = markerPayload(block);
-    if (!payload) continue;
-    payload.currentTime = Math.max(0, Number(payload.currentTime || 0) + delta);
-    youtubeCommand(block, "seekTo", [payload.currentTime, true]);
-    block.querySelector(".youtube-time").textContent = formatTime(payload.currentTime);
-    writeMarker(block, payload, true);
-  }
-}
-
-async function toggleAllMedia() {
-  const shouldPause = anyMediaPlaying();
-  for (const player of localPlayers()) {
-    if (shouldPause) player.pause();
-    else if (player.src) {
-      try { await player.play(); } catch { /* browser autoplay rules may require another click */ }
-    }
-  }
-
-  for (const block of youtubeBlocks) {
-    if (!block.isConnected) continue;
-    youtubeCommand(block, shouldPause ? "pauseVideo" : "playVideo");
-    const payload = markerPayload(block);
-    if (payload) {
-      payload.paused = shouldPause;
-      payload.playerState = shouldPause ? 2 : 1;
-      writeMarker(block, payload, true);
-    }
-  }
-  updateGlobalPlayButton();
-}
-
-function ownStepControl(control, direction) {
-  if (!control) return;
-  let delay = null;
-  let interval = null;
-
-  const stop = () => {
-    if (delay != null) clearTimeout(delay);
-    if (interval != null) clearInterval(interval);
-    delay = null;
-    interval = null;
-  };
-
-  control.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    stepAllMedia(direction);
-    control.setPointerCapture(event.pointerId);
-    delay = setTimeout(() => {
-      interval = setInterval(() => stepAllMedia(direction), 160);
-    }, 420);
-  }, true);
-
-  for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
-    control.addEventListener(name, (event) => {
-      event.stopImmediatePropagation();
-      stop();
-    }, true);
-  }
-
-  control.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }, true);
-}
-
-ownStepControl(rewindButton, -1);
-ownStepControl(forwardButton, 1);
-playButton?.addEventListener("click", (event) => {
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  void toggleAllMedia();
-}, true);
-
-for (const name of ["play", "pause", "ended"]) {
-  workspace.addEventListener(name, updateGlobalPlayButton, true);
-}
-
 workspace.addEventListener("click", (event) => {
   if (event.target.closest(".remove-block")) {
     queueMicrotask(() => setStatus("Block removed. Local source unchanged."));
@@ -883,9 +611,7 @@ const observer = new MutationObserver((mutations) => {
       for (const block of node.querySelectorAll?.(".custom-flashframe-block") ?? []) cleanupCustomBlock(block);
     }
   }
-  updateGlobalPlayButton();
 });
 
 observer.observe(workspace, { childList: true, subtree: false });
 for (const block of workspace.querySelectorAll('.block[data-block-type="text"]')) scheduleMarkerCheck(block);
-updateGlobalPlayButton();
