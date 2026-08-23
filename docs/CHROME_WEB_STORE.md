@@ -1,141 +1,161 @@
 # Chrome Web Store Submission Checklist
 
-This document is the release checklist for publishing Flashframe in the Chrome Web Store.
+This is the release checklist for publishing the Chrome-only Flashframe candidate from `isolated-windows-exe`.
 
-The repository can prepare the extension package, privacy disclosures, permission justifications, listing copy, and assets. The publisher must still complete account-level steps in the Chrome Web Store Developer Dashboard.
+The repository prepares the exact extension package, privacy policy, permission justifications, listing copy, reviewer notes, Dashboard answers, reproducibility release, and test instructions. The publisher must still complete account-level requirements and the final manual Windows test before submission.
 
-## Current submission shape
+## Source-of-truth documents
 
-Flashframe uses Manifest V3.
+- `PRIVACY.md` — privacy policy.
+- `docs/STORE_LISTING.md` — Store Listing copy.
+- `docs/DASHBOARD_ANSWERS.md` — exact Dashboard field answers and permission justifications.
+- `docs/REVIEWER_NOTES.md` — reviewer setup and test path.
+- `docs/WINDOWS_STORE_TEST.md` — required hands-on Windows test of the exact candidate.
+- `docs/RELEASE_READINESS.md` — go/no-go status.
 
-Current required extension permissions are deliberately narrow:
+## Candidate architecture
+
+Flashframe uses Manifest V3 and is self-contained inside Chrome.
+
+It requires no:
+
+- desktop companion;
+- Windows executable;
+- Python installation;
+- localhost service;
+- native messaging host;
+- Flashframe account; or
+- developer-operated cloud backend for normal operation.
+
+Current extension permissions are deliberately narrow:
 
 - `declarativeNetRequestWithHostAccess`
 - `https://www.youtube.com/*`
 - `https://www.youtube-nocookie.com/*`
 
-Flashframe does **not** request access to all websites.
-
-The manifest includes 16, 32, 48, and 128 pixel extension icons.
+Flashframe does not request broad access to all websites.
 
 ## Single purpose
 
-Use this as the single-purpose statement:
+Use:
 
 > Flashframe is a spatial browser workspace that lets users arrange, save, restore, and directly manipulate notes, local files, local media, web content, and supported web media in one visual canvas.
 
-The features belong to one workspace purpose. Avoid describing Flashframe as a bundle of unrelated browser utilities.
+All shipped features must remain part of this workspace purpose.
 
 ## Permission justifications
 
-### `declarativeNetRequestWithHostAccess`
+Use the exact copy in `docs/DASHBOARD_ANSWERS.md`.
 
-Flashframe uses one packaged declarative network rule for YouTube embed compatibility. The rule is static, ships with the extension, and is not downloaded as remote code.
+The short form is:
 
-### `https://www.youtube.com/*`
+- `declarativeNetRequestWithHostAccess`: one static packaged rule for user-initiated YouTube embed compatibility.
+- `www.youtube.com`: only the user-initiated YouTube block and packaged compatibility behavior.
+- `www.youtube-nocookie.com`: only the privacy-enhanced YouTube embed and packaged compatibility behavior.
 
-Required only for the packaged YouTube embed compatibility behavior when a user explicitly adds a YouTube URL to a Flashframe workspace.
+Local sources are selected through browser-native file/directory pickers after explicit user action, rather than broad filesystem permission.
 
-### `https://www.youtube-nocookie.com/*`
+## Remote code
 
-Required only for the YouTube privacy-enhanced embed used by Flashframe's supported YouTube block.
+Dashboard answer: **No remotely hosted executable code.**
 
-### Local files and folders
+All executable extension JavaScript ships inside the extension ZIP. User-selected remote webpages, images, direct videos, and YouTube embeds are displayed content; they are not downloaded and executed as extension JavaScript or WebAssembly.
 
-Flashframe does not request broad filesystem access. Local sources are selected through browser-native file and directory pickers after explicit user interaction.
+Both Store package scripts reject common remote-code patterns plus localhost, native messaging, companion/EXE dependencies, and broad host access.
 
-### Remote direct video
+## Privacy and data use
 
-Direct HTTP/HTTPS video URLs are loaded by the browser's normal media element. Flashframe does not require broad host permissions merely to play those user-selected media URLs.
+Use `PRIVACY.md` and `docs/DASHBOARD_ANSWERS.md` together.
 
-## Privacy
+The current candidate:
 
-Use the root [`PRIVACY.md`](../PRIVACY.md) as the privacy-policy source of truth.
+- stores workspace state locally;
+- opens local files/folders only after explicit user selection;
+- connects to a remote host only when the user deliberately places remote content in a workspace;
+- has no developer analytics, ads, telemetry, account system, or cloud sync;
+- does not sell user data; and
+- does not collect browsing history.
 
-The Developer Dashboard privacy disclosures must match the submitted build. In particular:
+## Reviewer path
 
-- workspace contents remain local unless the user deliberately loads remote web content;
-- local files are selected explicitly;
-- saved workspace state is stored locally;
-- pasted/dropped remote URLs cause the browser to connect to the selected remote host;
-- YouTube blocks load YouTube content;
-- Flashframe currently has no developer-operated cloud sync, analytics, advertising, account system, or telemetry; and
-- Flashframe does not sell user data or use it for personalized advertising.
+No setup outside Chrome is required. The reviewer can install Flashframe, click the toolbar icon, create/move/resize a note, optionally open a local PDF/video/gallery through Chrome's picker, save a Flashframe, close/reopen the workspace, restore it, and optionally test a YouTube URL.
 
-If implementation behavior changes, update the privacy policy and Dashboard disclosures before releasing that version.
+Use `docs/REVIEWER_NOTES.md` for the exact reviewer text.
 
-## Store listing
+## Reference prerelease
 
-Use [`STORE_LISTING.md`](STORE_LISTING.md) as the starting point for the Store Listing tab.
+The Windows release workflow publishes/updates the candidate reference prerelease:
 
-The listing must describe only features present in the exact uploaded build.
+`https://github.com/thanks-cohn/flashframe/releases/tag/flashframe-chrome-v1.0.4-rc1`
 
-## Graphic assets
+The prerelease is for reproducibility, reviewer/support reference, and our own audit trail. It is not a substitute for Chrome Web Store review and must remain labeled prerelease until the candidate has passed manual Windows testing.
 
-The package contains the required extension icon sizes, including 128x128.
+Expected release assets include:
 
-Before submission, capture real screenshots from the exact release build. Recommended screenshot sequence:
+- `flashframe-chrome-web-store-v1.0.4.zip`
+- its SHA-256 checksum
+- `PRIVACY.md`
+- `CHROME_WEB_STORE.md`
+- `STORE_LISTING.md`
+- `DASHBOARD_ANSWERS.md`
+- `REVIEWER_NOTES.md`
+- `RELEASE_READINESS.md`
+- `WINDOWS_STORE_TEST.md`
 
-1. A clean Flashframe workspace with several arranged blocks.
-2. A local image/PDF/video workspace.
-3. A URL or YouTube block beside local content.
-4. The global video controls controlling multiple video blocks.
-5. Right-clicking a block and showing **Bring to front** / **Send to back**.
-6. Appearance/settings controls, if useful to the listing.
+## Build the exact upload ZIP
 
-Do not use mock screenshots that show capabilities absent from the uploaded build.
+### Windows
 
-Chrome's current Store listing guidance should be checked before final submission for exact promotional-asset dimensions.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-web-store.ps1
+```
 
-## Publisher account
-
-Before publishing, complete the publisher requirements shown in the Chrome Web Store Developer Dashboard, including 2-Step Verification for the publishing Google Account.
-
-Account verification and identity/trader disclosures, when requested, are account-level actions and cannot be completed by source code in this repository.
-
-## Build the upload ZIP
-
-Run:
+### Linux/macOS build environment
 
 ```bash
 sh scripts/package-web-store.sh
 ```
 
-The script validates the manifest and required icons, then creates a versioned ZIP under `dist/` with `manifest.json` at the ZIP root.
+Both paths enforce the isolated Chrome release contract. The Windows CI workflow is the preferred source for the exact candidate that will be manually tested and later uploaded.
 
-## Pre-submission checklist
+## Graphic assets
 
-- [ ] Test the exact release build in current stable Chrome.
-- [ ] Confirm `manifest_version` is `3`.
-- [ ] Confirm the manifest description is 132 characters or fewer.
-- [ ] Confirm all requested permissions are still required by a shipped feature.
-- [ ] Confirm no broad host permission has been added unnecessarily.
-- [ ] Confirm no remote executable code is loaded.
-- [ ] Confirm all four extension icon files exist and render correctly.
-- [ ] Test notes, PDFs, galleries, local video, URL blocks, and save/restore.
-- [ ] Test direct remote video playback and global play/rewind/forward.
-- [ ] For a live stream, confirm rewind is limited to the stream's actual seekable/DVR window.
-- [ ] Test YouTube playback controls and restoration.
-- [ ] Test right-click layer ordering on local and web blocks.
-- [ ] Test the appearance/background and shrink-to-fit settings that ship in the release.
-- [ ] Confirm `PRIVACY.md` matches the build.
-- [ ] Host the privacy policy at a stable public URL and enter it in the Dashboard.
-- [ ] Capture current screenshots from the release build.
-- [ ] Fill the Store Listing using `docs/STORE_LISTING.md`.
-- [ ] Complete the Dashboard privacy questionnaire truthfully.
-- [ ] Confirm the publisher account satisfies 2-Step Verification and any verification requirements.
-- [ ] Run `sh scripts/package-web-store.sh`.
-- [ ] Load/test the resulting packaged contents once more.
-- [ ] Upload the ZIP and review all permission warnings.
-- [ ] Submit for review.
+The package contains manifest icons at 16, 32, 48, and 128 pixels.
+
+Real Store screenshots must be captured from the exact manually tested candidate. Do not use mock screenshots or screenshots from a different branch/build.
+
+Recommended screenshot sequence:
+
+1. clean Flashframe workspace with several arranged blocks;
+2. local PDF/image/video content;
+3. URL or YouTube block beside local content;
+4. global video controls;
+5. block layer ordering or save/restore workflow.
+
+## Pre-submission gate
+
+Everything below must be true before pressing Submit:
+
+- [ ] Latest Windows candidate workflow is green.
+- [ ] Exact `test-unpacked` candidate passes `docs/WINDOWS_STORE_TEST.md` on current stable Chrome for Windows.
+- [ ] `chrome://extensions` shows no reproducible Flashframe errors.
+- [ ] No reproducible uncaught extension exceptions remain in the workspace console.
+- [ ] Every feature advertised in `docs/STORE_LISTING.md` passed the exact-candidate test or was removed from the listing.
+- [ ] Real screenshots come from that candidate.
+- [ ] Privacy policy URL is public and stable.
+- [ ] Dashboard fields are filled from `docs/DASHBOARD_ANSWERS.md` and still match the build.
+- [ ] Reviewer notes are filled from `docs/REVIEWER_NOTES.md`.
+- [ ] Publisher contact email, 2-Step Verification, and any identity/trader requirements shown by the Dashboard are complete.
+- [ ] Exact Store ZIP from the same tested green candidate is uploaded.
+- [ ] All Dashboard blockers are cleared and any warnings have been understood.
 
 ## If Google rejects the item
 
-Use the exact rejection reason as the next debugging input. Fix the underlying implementation, listing, permission, or disclosure mismatch rather than trying to route around the review.
+Use the exact rejection reason as debugging input. Fix the implementation, permission, listing, privacy disclosure, or reviewer path that caused it. Do not attempt to route around Store enforcement.
 
-Useful official references:
+Official references:
 
 - Chrome Web Store Program Policies: https://developer.chrome.com/docs/webstore/program-policies/
 - Quality guidelines: https://developer.chrome.com/docs/webstore/program-policies/quality-guidelines
-- Limited Use: https://developer.chrome.com/docs/webstore/program-policies/limited-use/
-- User data / minimum permission guidance: https://developer.chrome.com/docs/webstore/user_data
+- Minimum functionality: https://developer.chrome.com/docs/webstore/program-policies/minimum-functionality
+- Manifest V3 remote hosted code guidance: https://developer.chrome.com/docs/extensions/develop/migrate/remote-hosted-code
