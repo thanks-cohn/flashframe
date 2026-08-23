@@ -47,17 +47,24 @@ Test all of these in current stable Chrome on Windows:
 
 - Create a note and type into it.
 - Drag, resize, maximize, rename, and remove blocks.
-- Open a local text file.
-- Open a local PDF.
-- Open a local video and play/seek it.
-- Open an image directory/gallery.
-- Drop at least one local image directly into the workspace.
+- Open a local text file through the picker.
+- Open a local PDF through the picker.
+- Open a local video through the picker and play/seek it.
+- Open an image directory/gallery through the picker.
+- Drop a local image directly into the workspace.
+- Drop a local PDF and verify a PDF block opens.
+- Drop a local video and verify playback and seeking work.
+- Drop a local text or code file and verify its text is readable/editable in a text block.
+- Drop a generic unsupported local file and verify Flashframe creates a usable file block rather than silently ignoring it.
+- Drop an image directory and verify it becomes the gallery/lightbox flow.
+- In the dropped directory gallery, test previous/next buttons and left/right keyboard navigation.
 - Paste or drop a normal HTTPS URL.
 - Add a direct remote video URL if you have one available.
 - Add a YouTube URL and verify the embed actually loads and the global media controls behave reasonably.
 - Save a named Flashframe.
 - Close the Flashframe tab completely.
 - Open Flashframe again and restore the saved Flashframe.
+- Verify dropped PDF/video/directory sources either restore directly or present a clear reconnect path if Chrome requires renewed permission.
 - If local-file permission must be renewed after restart, verify the reconnect UI explains that clearly and works after a user gesture.
 - Choose a Flashframe data folder, save again, close/reopen, and verify the archive behavior that ships in this build.
 - Test appearance/background controls and shrink-to-fit if visible in the candidate.
