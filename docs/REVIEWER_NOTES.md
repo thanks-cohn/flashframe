@@ -30,12 +30,13 @@ Install the extension, click the Flashframe toolbar icon, and the workspace open
 2. Create a note and type text into it.
 3. Move and resize the note.
 4. Use **Open PDF**, **Open video**, or **Open gallery** and choose a local source through Chrome's browser-native picker.
-5. Save a named Flashframe.
-6. Close the workspace tab, reopen Flashframe, and restore the saved Flashframe.
-7. Use **Open URL** with a normal HTTPS URL or a YouTube URL.
-8. If testing YouTube, verify the YouTube block loads and the supported playback controls operate.
+5. Drag a local PDF, video, text/code file, image, and image directory into the workspace. A dropped image directory should open in the gallery/lightbox flow with previous/next and keyboard navigation.
+6. Save a named Flashframe.
+7. Close the workspace tab, reopen Flashframe, and restore the saved Flashframe.
+8. Use **Open URL** with a normal HTTPS URL or a YouTube URL.
+9. If testing YouTube, verify the YouTube block loads and the supported playback controls operate.
 
-Local file/folder access occurs only after an explicit user selection through a browser picker. Chrome may require the user to renew access to a previously selected local source after a browser restart; Flashframe exposes reconnect controls for that case.
+Local file/folder access occurs only after explicit user action through a browser picker or deliberate drag-and-drop into the workspace. Chrome may require the user to renew access to a previously selected local source after a browser restart; Flashframe exposes reconnect controls for that case.
 
 ## Permissions
 
@@ -71,6 +72,6 @@ Use the repository root `PRIVACY.md` as the privacy-policy source of truth.
 
 The candidate reference release is intended to be published as a GitHub prerelease with tag:
 
-`flashframe-chrome-v1.0.4-rc1`
+`flashframe-chrome-v1.0.5-rc1`
 
 The prerelease should contain the exact Store ZIP, SHA-256 checksum, privacy policy, listing copy, these reviewer notes, the Windows test sheet, and the release-readiness report. It is a reference/testing release, not a claim of Chrome Web Store approval.

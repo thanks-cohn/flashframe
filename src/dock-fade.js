@@ -56,6 +56,7 @@ function clearFadeTimer(dock) {
 }
 
 function revealDock(dock) {
+  if (!dock) return;
   clearFadeTimer(dock);
   dock.classList.remove("is-faded");
 }
@@ -65,6 +66,7 @@ function fadeEnabledFor(dock) {
 }
 
 function scheduleFade(dock) {
+  if (!dock) return;
   clearFadeTimer(dock);
 
   if (!fadeEnabledFor(dock)) {
@@ -83,6 +85,14 @@ function scheduleFade(dock) {
   }, readFadeDelaySeconds() * 1000);
 
   timers.set(dock, timer);
+}
+
+function revealMenusTemporarily() {
+  for (const dock of [settingsDock, videoDock]) {
+    if (!dock) continue;
+    revealDock(dock);
+    scheduleFade(dock);
+  }
 }
 
 function bindDock(dock) {
@@ -140,6 +150,8 @@ fadeDelayInput?.addEventListener("change", () => {
   saveFadeDelaySeconds(seconds);
   applyPreferences();
 });
+
+window.addEventListener("flashframe:reveal-menus", revealMenusTemporarily);
 
 bindDock(settingsDock);
 bindDock(videoDock);

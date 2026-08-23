@@ -53,7 +53,7 @@ The short form is:
 - `www.youtube.com`: only the user-initiated YouTube block and packaged compatibility behavior.
 - `www.youtube-nocookie.com`: only the privacy-enhanced YouTube embed and packaged compatibility behavior.
 
-Local sources are selected through browser-native file/directory pickers after explicit user action, rather than broad filesystem permission.
+Local sources are opened only after explicit user action through browser-native file/directory pickers or deliberate drag-and-drop into the workspace, rather than broad filesystem permission.
 
 ## Remote code
 
@@ -70,7 +70,7 @@ Use `PRIVACY.md` and `docs/DASHBOARD_ANSWERS.md` together.
 The current candidate:
 
 - stores workspace state locally;
-- opens local files/folders only after explicit user selection;
+- opens local files/folders only after explicit user action through a picker or drag-and-drop;
 - connects to a remote host only when the user deliberately places remote content in a workspace;
 - has no developer analytics, ads, telemetry, account system, or cloud sync;
 - does not sell user data; and
@@ -78,7 +78,7 @@ The current candidate:
 
 ## Reviewer path
 
-No setup outside Chrome is required. The reviewer can install Flashframe, click the toolbar icon, create/move/resize a note, optionally open a local PDF/video/gallery through Chrome's picker, save a Flashframe, close/reopen the workspace, restore it, and optionally test a YouTube URL.
+No setup outside Chrome is required. The reviewer can install Flashframe, click the toolbar icon, create/move/resize a note, optionally open a local PDF/video/gallery through Chrome's picker, drag local files or an image directory into the workspace, save a Flashframe, close/reopen the workspace, restore it, and optionally test a YouTube URL.
 
 Use `docs/REVIEWER_NOTES.md` for the exact reviewer text.
 
@@ -86,13 +86,13 @@ Use `docs/REVIEWER_NOTES.md` for the exact reviewer text.
 
 The Windows release workflow publishes/updates the candidate reference prerelease:
 
-`https://github.com/thanks-cohn/flashframe/releases/tag/flashframe-chrome-v1.0.4-rc1`
+`https://github.com/thanks-cohn/flashframe/releases/tag/flashframe-chrome-v1.0.5-rc1`
 
 The prerelease is for reproducibility, reviewer/support reference, and our own audit trail. It is not a substitute for Chrome Web Store review and must remain labeled prerelease until the candidate has passed manual Windows testing.
 
 Expected release assets include:
 
-- `flashframe-chrome-web-store-v1.0.4.zip`
+- `flashframe-chrome-web-store-v1.0.5.zip`
 - its SHA-256 checksum
 - `PRIVACY.md`
 - `CHROME_WEB_STORE.md`
@@ -128,9 +128,9 @@ Recommended screenshot sequence:
 
 1. clean Flashframe workspace with several arranged blocks;
 2. local PDF/image/video content;
-3. URL or YouTube block beside local content;
-4. global video controls;
-5. block layer ordering or save/restore workflow.
+3. a file/folder drop resulting in blocks or an image-directory gallery;
+4. URL or YouTube block beside local content;
+5. save/restore workflow or global video controls.
 
 ## Pre-submission gate
 

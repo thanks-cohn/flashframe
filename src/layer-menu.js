@@ -27,6 +27,10 @@ function sendToBack(block) {
   applyLayerOrder(ordered);
 }
 
+function makeMenusVisible() {
+  window.dispatchEvent(new CustomEvent("flashframe:reveal-menus"));
+}
+
 const menu = document.createElement("div");
 menu.className = "flashframe-layer-menu";
 menu.hidden = true;
@@ -34,6 +38,8 @@ menu.setAttribute("role", "menu");
 menu.innerHTML = `
   <button type="button" data-layer-action="front" role="menuitem">Bring to front</button>
   <button type="button" data-layer-action="back" role="menuitem">Send to back</button>
+  <div class="flashframe-layer-menu-separator" role="separator"></div>
+  <button type="button" data-layer-action="reveal-menus" role="menuitem">Make menus visible</button>
 `;
 document.body.append(menu);
 
@@ -68,6 +74,11 @@ style.textContent = `
   .flashframe-layer-menu button:focus-visible {
     background: rgba(255,255,255,.10);
     outline: none;
+  }
+  .flashframe-layer-menu-separator {
+    height: 1px;
+    margin: 5px 4px;
+    background: rgba(255,255,255,.14);
   }
 `;
 document.head.append(style);
@@ -115,8 +126,15 @@ workspace.addEventListener("contextmenu", (event) => {
 
 menu.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-layer-action]");
-  if (!button || !targetBlock) return;
+  if (!button) return;
 
+  if (button.dataset.layerAction === "reveal-menus") {
+    makeMenusVisible();
+    hideMenu();
+    return;
+  }
+
+  if (!targetBlock) return;
   if (button.dataset.layerAction === "front") bringToFront(targetBlock);
   if (button.dataset.layerAction === "back") sendToBack(targetBlock);
   hideMenu();

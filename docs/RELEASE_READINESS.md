@@ -2,9 +2,9 @@
 
 Branch: `isolated-windows-exe`
 
-Target manifest version: `1.0.4`
+Target manifest version: `1.0.5`
 
-Reference prerelease tag: `flashframe-chrome-v1.0.4-rc1`
+Reference prerelease tag: `flashframe-chrome-v1.0.5-rc1`
 
 ## Ready before hands-on Windows testing
 
@@ -28,12 +28,15 @@ Reference prerelease tag: `flashframe-chrome-v1.0.4-rc1`
 - [x] CI workflow builds the exact candidate on `windows-latest`.
 - [x] CI artifact includes the Store ZIP and exact unpacked test copy.
 - [x] Reference prerelease workflow is configured to publish the candidate package and review documentation.
+- [x] Universal drag/drop routes images, PDFs, local videos, text/code files, generic files, URLs, and dropped image directories into workspace blocks.
+- [x] Dropped image directories use the gallery/lightbox flow with previous/next and keyboard navigation.
 
 ## Must still be completed before submission
 
 - [ ] Latest Windows CI run is green after all release-prep changes.
 - [ ] Exact `test-unpacked` candidate is manually tested in current stable Chrome on Windows.
 - [ ] Notes, local text, PDF, gallery, local video, drag/drop, URL blocks, direct remote video, YouTube, save/restore, reconnect behavior, appearance/background, and shrink-to-fit are tested as applicable to the exact build.
+- [ ] Dropped PDF, video, text/code file, generic file, image, URL, and image-directory flows are tested on the exact Windows candidate.
 - [ ] `chrome://extensions` shows no reproducible Flashframe errors after the test pass.
 - [ ] Workspace DevTools shows no reproducible uncaught extension exceptions in tested flows.
 - [ ] Any feature that fails the Windows test is fixed or removed from the Store listing before submission.
