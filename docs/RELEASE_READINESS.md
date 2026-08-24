@@ -1,61 +1,78 @@
-# Flashframe Chrome release readiness
+# FrameChute Chrome Web Store Release Readiness
 
-Branch: `windows-ux-audio-restore-pass`
+Branch: `chrome-web-store-submission-2026-08-24`
 
-Target manifest version: `1.0.6`
+Target version: **1.0.8**
 
-Historical tested prerelease (unchanged): `flashframe-chrome-v1.0.5-rc1`
+Runtime baseline: August 24, 2026 Windows-tested FrameChute `main`, including the packaged Default Grab fixes, media-player Default Grab fix, serialized Windows file pickers, and lower-memory observer cleanup.
 
-Candidate: v1.0.6 RC2 source; no RC2 tag is created by this preparation pass.
-
-## Ready before hands-on Windows testing
+## Already satisfied in source
 
 - [x] Manifest V3.
-- [x] Extension-owned workspace opens from the toolbar action.
-- [x] No desktop companion architecture.
-- [x] No `.exe`, Python runtime, localhost service, or native messaging requirement.
-- [x] No broad host access.
+- [x] Visible product name is FrameChute.
+- [x] Toolbar action opens the extension-owned workspace.
+- [x] One narrow disclosed purpose: spatial workspace.
+- [x] No Chrome extension API permissions.
 - [x] No host permissions.
-- [x] No extension API permissions.
-- [x] No site-specific declarative network rules.
-- [x] Windows Store packager rejects companion/native-messaging/broad-host dependencies and common remote executable-code patterns.
-- [x] Required 16, 32, 48, and 128 pixel icons present in the manifest/package gate.
-- [x] Privacy policy written for the Chrome-only architecture.
-- [x] Store listing copy prepared.
-- [x] Single-purpose statement prepared.
-- [x] Permission justifications prepared.
-- [x] Remote-code answer prepared.
-- [x] Reviewer setup/test instructions prepared.
-- [x] Windows exact-candidate test instructions prepared.
-- [x] CI workflow builds the exact candidate on `windows-latest`.
-- [x] CI artifact includes the Store ZIP and exact unpacked test copy.
-- [x] Reference prerelease workflow is configured to publish the candidate package and review documentation.
-- [x] Universal drag/drop routes images, PDFs, local videos, text/code files, generic files, URLs, and dropped image directories into workspace blocks.
-- [x] Dropped image directories use the gallery/lightbox flow with previous/next and keyboard navigation.
-- [x] Schema v2 named checkpoints and live autosave include workspace appearance and remain backward compatible with v1.
-- [x] Native audio drops, visible/fade/hidden modes, mixed audio/video sync groups, and group-aware transport are implemented without new permissions.
-- [x] Blocks use a standardized generous grab-hand affordance; context menus recover the toolbar and Settings.
+- [x] No content-script access to arbitrary browsing tabs.
+- [x] No native messaging.
+- [x] No desktop companion / EXE / Python / localhost requirement.
+- [x] No developer account/login required.
+- [x] No developer cloud backend required for core operation.
+- [x] No analytics/ad network/behavioral telemetry in the submitted build.
+- [x] No remotely hosted executable extension code.
+- [x] Local file/folder access is explicit through native picker or drag/drop.
+- [x] Required 16, 32, 48, and 128 pixel manifest icons are present.
+- [x] Current privacy policy prepared for FrameChute.
+- [x] Current Store listing copy prepared.
+- [x] Current single-purpose wording prepared.
+- [x] Current Privacy practices / Dashboard answers prepared.
+- [x] Reviewer notes prepared.
+- [x] Windows exact-package smoke test prepared.
+- [x] Runtime was manually tested successfully on Windows immediately before submission prep.
 
-## Must still be completed before submission
+## Automated gate still required for this branch
 
-- [ ] Latest Windows CI run is green after all release-prep changes.
-- [ ] Exact `test-unpacked` candidate is manually tested in current stable Chrome on Windows.
-- [ ] Notes, local text, PDF, gallery, local video, drag/drop, URL blocks, direct remote video, ordinary URL/link behavior, save/restore, reconnect behavior, appearance/background, and shrink-to-fit are tested as applicable to the exact build.
-- [ ] Dropped PDF, video, text/code file, generic file, image, URL, and image-directory flows are tested on the exact Windows candidate.
-- [ ] `chrome://extensions` shows no reproducible Flashframe errors after the test pass.
-- [ ] Workspace DevTools shows no reproducible uncaught extension exceptions in tested flows.
-- [ ] Any feature that fails the Windows test is fixed or removed from the Store listing before submission.
-- [ ] Real Chrome Web Store screenshots are captured from the exact tested candidate.
-- [ ] Screenshot and promotional-asset dimensions are checked against the current Developer Dashboard requirements.
-- [ ] Stable public privacy-policy URL is entered in the Dashboard.
-- [ ] Store Listing tab is filled from `docs/STORE_LISTING.md`.
-- [ ] Privacy/Data Use answers are filled from `PRIVACY.md` and `docs/REVIEWER_NOTES.md` and checked against the exact candidate.
-- [ ] Publisher contact email and all required account verification are complete.
-- [ ] The exact Store ZIP from the same tested green candidate is uploaded.
-- [ ] All Developer Dashboard warnings/blockers are reviewed before Submit.
+- [ ] JavaScript syntax check passes.
+- [ ] Chrome package script passes.
+- [ ] v1.0.8 ZIP has manifest at archive root.
+- [ ] Packaged ZIP contains critical current runtime files and packaged Grab assets.
+- [ ] CI for this branch is green.
 
-## Release rule
+## Manual exact-candidate gate
 
-Do not submit merely because the ZIP builds. A successful submission candidate requires both the automated release gate and the manual Windows test above.
+- [ ] Extract/load the exact v1.0.8 ZIP on stable Chrome for Windows.
+- [ ] Workspace opens normally.
+- [ ] Normal Default Grab artwork works.
+- [ ] Media-player Default Grab has no broken-image icon.
+- [ ] PDF/gallery native pickers behave one-at-a-time.
+- [ ] Note create/move/resize works.
+- [ ] Local media works.
+- [ ] Save/reopen/restore works.
+- [ ] Settings/context UI is readable.
+- [ ] `chrome://extensions` shows no reproducible extension errors.
+- [ ] Workspace console shows no reproducible uncaught exceptions in the smoke path.
 
-If manual testing disproves a feature claim, prefer removing the claim or feature over adding unnecessary permissions or an external companion.
+## Store/Dashboard gate
+
+- [ ] Submission branch is merged so the stable main-branch privacy URL shows the current policy.
+- [ ] Privacy URL verified in an incognito/private window.
+- [ ] Store listing copied from `docs/STORE_LISTING.md`.
+- [ ] Privacy practices copied/mapped from `docs/DASHBOARD_ANSWERS.md` and checked against current Dashboard wording.
+- [ ] Reviewer instructions copied from `docs/REVIEWER_NOTES.md`.
+- [ ] At least one real screenshot from the exact candidate is uploaded; preferably five.
+- [ ] Screenshots are 1280x800 preferred (or 640x400), square-corner/full-bleed.
+- [ ] 440x280 small promo tile is uploaded.
+- [ ] Optional 1400x560 marquee image is accurate if provided.
+- [ ] Publisher contact email is verified.
+- [ ] Publishing Google Account has 2-Step Verification enabled.
+- [ ] Developer/publisher identity requirements shown by the Dashboard are complete.
+- [ ] Any trader/non-trader disclosure shown by the Dashboard is answered accurately.
+- [ ] Google's draft pre-submission installation checks pass after ZIP upload.
+- [ ] No unresolved Dashboard warnings/blockers remain.
+
+## Go / no-go rule
+
+**GO** only when every automated, manual exact-candidate, and Dashboard gate above is complete.
+
+A passing build by itself is not enough. If a feature claim does not survive the exact-candidate test, fix it or remove the claim before submission rather than adding unnecessary permissions.
