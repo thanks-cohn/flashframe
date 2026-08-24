@@ -30,17 +30,18 @@ function pinMediaGrab() {
   image.classList.add("grab-art-image", "media-dock-grab-image");
   image.alt = "";
   image.draggable = false;
+  image.decoding = "async";
 
   const source = customDefault() || PACKAGED_DEFAULT;
   if ((image.getAttribute("src") || "") !== source) image.src = source;
-  image.hidden = false;
-  image.style.display = "block";
-  image.style.visibility = "visible";
+  if (image.hidden) image.hidden = false;
+  if (image.style.display !== "block") image.style.display = "block";
+  if (image.style.visibility !== "visible") image.style.visibility = "visible";
 
   for (const fallback of grip.querySelectorAll(":scope > .grab-fallback-art")) {
-    fallback.setAttribute("hidden", "");
-    fallback.style.display = "none";
-    fallback.style.visibility = "hidden";
+    if (!fallback.hasAttribute("hidden")) fallback.setAttribute("hidden", "");
+    if (fallback.style.display !== "none") fallback.style.display = "none";
+    if (fallback.style.visibility !== "hidden") fallback.style.visibility = "hidden";
   }
 }
 
@@ -53,14 +54,30 @@ function schedulePin() {
   });
 }
 
-// Older polish code still reacts to class changes and can blank the dock image.
-// This module loads last and is the final authority for the media-player grip.
+// Older media polish only re-renders the dock Grab when body-level UI state
+// changes. Watch that exact trigger instead of every class mutation in the
+// entire document. This keeps the final packaged Default authority while
+// avoiding needless whole-page observer churn on low-memory machines.
 new MutationObserver(schedulePin).observe(document.body, {
-  subtree: true,
-  childList: true,
   attributes: true,
   attributeFilter: ["class"]
 });
+
+const dock = document.querySelector("#video-dock");
+if (dock) {
+  new MutationObserver(schedulePin).observe(dock, {
+    childList: true,
+    subtree: true
+  });
+}
+
+for (const eventName of ["click", "change"]) {
+  document.addEventListener(eventName, (event) => {
+    if (event.target instanceof Element && event.target.closest(".grab-art-setting")) {
+      queueMicrotask(schedulePin);
+    }
+  }, true);
+}
 
 window.addEventListener("focus", schedulePin);
 window.addEventListener("storage", (event) => {
