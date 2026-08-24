@@ -1,6 +1,7 @@
 const FILECHUTE_DRAG_TYPE = "application/x-filechute-item+json";
 const FILECHUTE_PROTOCOL = "filechute-item";
 const FILECHUTE_VERSION = 1;
+const EXTENSION_GALLERY_EVENT = "framechute:add-extension-gallery";
 
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
@@ -60,19 +61,49 @@ function redispatchAsLocalFile(file, originalEvent) {
   workspace.dispatchEvent(event);
 }
 
+function galleryPoint(event) {
+  const rect = workspace.getBoundingClientRect();
+  return {
+    x: Math.max(8, event.clientX - rect.left - 80),
+    y: Math.max(8, event.clientY - rect.top - 40)
+  };
+}
+
+function openDirectoryGallery(payload, event) {
+  if (!payload.sourceExtensionId || !payload.transferToken || !payload.relativePath) {
+    throw new Error("Reload FileChute, then drag this folder again so FrameChute can connect to it.");
+  }
+
+  workspace.dispatchEvent(new CustomEvent(EXTENSION_GALLERY_EVENT, {
+    bubbles: false,
+    detail: {
+      name: payload.originalName || payload.name || "FileChute folder",
+      point: galleryPoint(event),
+      source: {
+        protocol: "chute-gallery-source-v1",
+        providerName: "FileChute",
+        extensionId: payload.sourceExtensionId,
+        token: payload.transferToken,
+        path: payload.relativePath
+      }
+    }
+  }));
+}
+
 workspace?.addEventListener("drop", (event) => {
   const payload = parseFileChutePayload(event.dataTransfer);
   if (!payload) return;
 
-  // Claim FileChute drops before the generic URL/text handlers can mistake a
-  // surviving filename for a hostname such as "screenshot_123.png".
+  // Claim FileChute drops before generic URL/text handlers can mistake a
+  // surviving filename or relative path for a web address.
   event.preventDefault();
   event.stopImmediatePropagation();
   workspace.classList.remove("is-drop-target");
 
   void (async () => {
     if (payload.kind === "directory") {
-      setStatus("FileChute directory handoff is recognized. Gallery streaming is the next bridge step.");
+      openDirectoryGallery(payload, event);
+      setStatus(`Opening ${payload.name || "FileChute folder"} as a gallery…`);
       return;
     }
 
@@ -106,6 +137,6 @@ workspace?.addEventListener("drop", (event) => {
     redispatchAsLocalFile(file, event);
   })().catch((error) => {
     console.error("FileChute → FrameChute handoff failed", error);
-    setStatus(error?.message || "Could not receive that FileChute image.");
+    setStatus(error?.message || "Could not receive that FileChute item.");
   });
 }, { capture: true });
