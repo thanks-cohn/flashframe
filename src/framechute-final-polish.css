@@ -1,0 +1,112 @@
+/* FrameChute final floating-player consistency pass.
+   Loaded last so collapsed/faded/hidden player states remain predictable. */
+
+/* The collapsed Media player is a compact three-zone strip:
+   Grab | Media | Expand. The scope and transport belong to the expanded state. */
+.video-dock.media-dock-polished.is-collapsed {
+  width: 152px;
+  min-width: 152px;
+  overflow: hidden;
+}
+
+.video-dock.media-dock-polished.is-collapsed .player-head.media-spatial-head {
+  display: grid;
+  grid-template-columns: 42px minmax(64px, 1fr) 38px;
+  align-items: center;
+  gap: 0;
+  min-height: 54px;
+  padding: 6px;
+  border-bottom: 0;
+}
+
+.video-dock.media-dock-polished.is-collapsed .media-dock-scope,
+.video-dock.media-dock-polished.is-collapsed .media-dock-transport {
+  display: none !important;
+}
+
+.video-dock.media-dock-polished.is-collapsed .media-dock-drag-zone,
+.video-dock.media-dock-polished.is-collapsed .media-dock-identity,
+.video-dock.media-dock-polished.is-collapsed .media-dock-window-zone {
+  display: flex;
+}
+
+.video-dock.media-dock-polished.is-collapsed .media-dock-identity {
+  justify-content: flex-start;
+  padding-left: 8px;
+  padding-right: 6px;
+}
+
+.video-dock.media-dock-polished.is-collapsed .media-dock-window-zone {
+  border-right: 0;
+  padding-left: 4px;
+}
+
+.video-dock.media-dock-polished.is-collapsed #video-expand {
+  display: grid !important;
+  visibility: visible !important;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* A deliberately hidden player is removed as a unit. Settings remains the
+   recovery path, so there is no orphaned floating control. */
+.video-dock.media-player-hidden {
+  display: none !important;
+}
+
+/* Fade is a property of the whole Media player, including the minimize/
+   expand affordance. No child floats outside the fade contract. */
+.video-dock.media-dock-polished.is-faded {
+  opacity: 0.045 !important;
+  filter: saturate(0.55);
+}
+
+.video-dock.media-dock-polished.is-faded:hover,
+.video-dock.media-dock-polished.is-faded:focus-within,
+.video-dock.media-dock-polished.is-dragging {
+  opacity: 1 !important;
+  filter: none;
+}
+
+.media-player-mode-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 10px;
+}
+
+.media-player-mode-row > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.media-player-mode-row strong {
+  font-size: 13px;
+}
+
+.media-player-mode-row small {
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.62;
+}
+
+.media-player-mode-row select {
+  min-width: 132px;
+}
+
+@media (max-width: 520px) {
+  .media-player-mode-row {
+    grid-template-columns: 1fr;
+  }
+
+  .media-player-mode-row select {
+    width: 100%;
+  }
+}
