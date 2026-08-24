@@ -30,6 +30,14 @@ if (![...document.styleSheets].some((sheet) => sheet.href === mediaDockHref)) {
   document.head.append(link);
 }
 
+const donationHref = new URL("./donation-card.css", import.meta.url).href;
+if (![...document.styleSheets].some((sheet) => sheet.href === donationHref)) {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = donationHref;
+  document.head.append(link);
+}
+
 await import("./web-drop.js");
 await import("./drop-local-sources.js");
 await import("./remote-video.js");
@@ -39,3 +47,4 @@ await import("./media-ux-polish.js");
 await import("./theme-customization.js");
 await import("./media-dock-layout.js");
 await import("./media-header-theme.js");
+await import("./donation-card.js");
