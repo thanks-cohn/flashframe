@@ -10,13 +10,9 @@
   pointer-events: none;
 }
 
-.framechute-mascot-hit-area {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 112px;
-  height: 112px;
-  pointer-events: auto;
+/* Keep the normal top toolbar out from under the mascot's reserved corner. */
+body.framechute-mascot-reserved .toolbar {
+  padding-right: 134px;
 }
 
 .framechute-mascot-button {
@@ -57,7 +53,7 @@
 }
 
 .framechute-mascot-zone[data-mode="always"] .framechute-mascot-button,
-.framechute-mascot-zone[data-mode="hover"]:hover .framechute-mascot-button,
+.framechute-mascot-zone[data-mode="hover"].is-corner-near .framechute-mascot-button,
 .framechute-mascot-zone[data-mode="hover"]:focus-within .framechute-mascot-button {
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -159,6 +155,10 @@
 }
 
 @media (max-width: 520px) {
+  body.framechute-mascot-reserved .toolbar {
+    padding-right: 104px;
+  }
+
   .framechute-mascot-zone {
     right: 10px;
   }
