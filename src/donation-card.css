@@ -1,0 +1,51 @@
+.flashframe-donation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, CanvasText 12%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ff-accent, #f7cf4b) 10%, Canvas);
+}
+
+.flashframe-donation-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.flashframe-donation-copy strong {
+  font-size: 13px;
+}
+
+.flashframe-donation-copy small {
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: .68;
+}
+
+.flashframe-donation-button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, CanvasText 24%, var(--ff-accent, #f7cf4b));
+  border-radius: 9px;
+  background: var(--ff-accent, #f7cf4b);
+  color: #171717;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.flashframe-donation-button:hover,
+.flashframe-donation-button:focus-visible {
+  background: color-mix(in srgb, var(--ff-accent, #f7cf4b) 82%, white 18%);
+}
+
+.flashframe-donation-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, CanvasText 38%, transparent);
+  outline-offset: 2px;
+}
