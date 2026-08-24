@@ -38,3 +38,4 @@ await import("./appearance.js");
 await import("./media-ux-polish.js");
 await import("./theme-customization.js");
 await import("./media-dock-layout.js");
+await import("./media-header-theme.js");
