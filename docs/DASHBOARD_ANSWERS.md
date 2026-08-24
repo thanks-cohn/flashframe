@@ -1,36 +1,36 @@
-# Flashframe Chrome Web Store Dashboard answers
+# FrameChute Chrome Web Store Dashboard Answers
 
-Use these answers for the exact tested v1.0.6 candidate from `codex/prepare-flashframe-v1.0.6-rc2-for-review`. If the implementation changes, re-audit before copying them into the Dashboard.
+Use these answers for the exact v1.0.8 candidate from `chrome-web-store-submission-2026-08-24`. Re-audit them if runtime behavior changes.
 
 ## Store listing
 
 **Name**
 
-Flashframe
+FrameChute
 
-**Summary / short description**
+**Summary**
 
-A spatial workspace for Chrome and Chromium.
+Arrange notes, PDFs, images, audio, video, and links in a persistent spatial workspace.
 
 **Category**
 
-Use the closest current Chrome Web Store category to **Productivity / Workflow & Planning**.
+Productivity, or the closest current Productivity / Workflow category shown by the Dashboard.
 
 **Homepage**
 
-`https://github.com/thanks-cohn/flashframe`
+`https://github.com/thanks-cohn/framechute`
 
 **Support**
 
-`https://github.com/thanks-cohn/flashframe/issues`
+`https://github.com/thanks-cohn/framechute/issues`
 
 **Privacy policy**
 
-For this isolated branch candidate:
+After this branch is merged, use:
 
-`https://github.com/thanks-cohn/flashframe/blob/isolated-windows-exe/PRIVACY.md`
+`https://github.com/thanks-cohn/framechute/blob/main/PRIVACY.md`
 
-Keep that URL public and do not delete the branch while it is the submitted policy URL. Prefer moving the same policy to a stable default-branch or project-site URL before long-term production use.
+Before pressing Submit, open that URL in a private/incognito window and confirm it displays the August 24, 2026 FrameChute policy.
 
 **Mature content**
 
@@ -40,63 +40,73 @@ No.
 
 Paste:
 
-> Flashframe is a spatial browser workspace that lets users arrange, save, restore, and directly manipulate notes, local files, local media, web content, and supported web media in one visual canvas.
+> FrameChute is a spatial browser workspace for arranging, saving, restoring, and directly manipulating user-selected notes, files, media, links, and web content in one visual canvas.
 
 ## Permissions
 
-The candidate requests no extension API permissions and no host permissions.
+The submitted manifest requests no Chrome extension API permissions and no host permissions. There are therefore no permission justifications to provide beyond explaining that local sources are chosen explicitly with browser-native pickers or drag-and-drop.
 
 ## Remote code
 
-Select:
+Select **No** for remotely hosted executable code.
 
-**No, Flashframe does not use remotely hosted executable code.**
+If a text explanation is requested, use:
 
-Explanation if the Dashboard provides a text box:
+> All executable FrameChute JavaScript is packaged in the submitted extension ZIP. FrameChute can display user-selected remote webpages, images, and browser-playable media, but it does not download remote JavaScript or WebAssembly and execute it as extension code.
 
-> All executable extension JavaScript is packaged in the submitted extension. Flashframe can display user-selected remote webpages, images, videos, but it does not download JavaScript or WebAssembly from a remote server and execute it as extension code.
+## Data handling / Privacy practices
 
-## Data usage
+Google's policy uses "handle" broadly, including local collection/use. FrameChute therefore should disclose the categories it actually handles even though normal workspace contents are not sent to the developer.
 
-Conservative disclosure for the current candidate:
+Use the current Dashboard wording, but map it conservatively as follows:
 
-- **Website content:** Yes, because Flashframe can display and locally save state related to webpages, images, URLs, text, and other content the user explicitly places in a workspace.
-- **Web history:** No. Flashframe does not collect a list of sites the user visits or monitor browsing history.
-- **User activity:** No for passive browsing/activity tracking. Flashframe handles only actions the user performs inside the workspace to provide the requested feature.
-- **Personally identifiable information:** No as a product data category; Flashframe has no account/profile system and does not request identity data. User-selected notes/files may of course contain arbitrary content, but Flashframe does not extract or transmit identity data to the developer.
-- **Health information:** No.
-- **Financial/payment information:** No.
+- **User-generated content:** Yes, if this category is presented. FrameChute stores user-entered notes and workspace state locally to provide the workspace feature.
+- **Website content / resources:** Yes, if this category is presented. FrameChute handles URLs and user-selected remote content in order to display or preserve it in the workspace.
+- **Web browsing history/activity:** No. FrameChute does not monitor the user's browsing history or collect a list of sites visited outside content the user deliberately adds to FrameChute.
+- **Personally identifiable information:** No as a product data category. There is no FrameChute account/profile system and the extension does not request identity information. User-created notes/files can contain arbitrary content, but FrameChute does not extract identity data or send it to the developer.
+- **Financial/payment information:** No. The extension does not receive or store payment-card/account data. If the user clicks the optional support link, payment information is entered on Stripe's external site and handled by Stripe.
 - **Authentication information:** No.
-- **Personal communications:** No as a product data category; Flashframe does not integrate with email/chat services or transmit communications to the developer.
+- **Health information:** No.
+- **Personal communications:** No as a dedicated product data category; FrameChute does not integrate with mail or messaging services. User-entered notes are disclosed as user-generated content.
 - **Location:** No.
 
-If Google changes the Dashboard's category wording, map the answers by behavior rather than blindly copying labels.
+If Google changes category labels, answer according to actual behavior rather than copying obsolete labels.
 
-## Data-use certifications
+## Data use certifications
 
-Based on the current candidate, certify the applicable statements that:
+For the current candidate, certify the applicable Limited Use statements:
 
-- user data is not sold or transferred outside approved use cases;
-- user data is not used or transferred for purposes unrelated to Flashframe's disclosed single purpose; and
-- user data is not used or transferred to determine creditworthiness or for lending purposes.
+- data is used only to provide or improve FrameChute's disclosed spatial-workspace purpose;
+- user data is not sold;
+- user data is not used or transferred for personalized, retargeted, or interest-based advertising;
+- user data is not used for creditworthiness or lending decisions;
+- normal workspace contents are not transmitted to the developer for human review.
 
 ## Reviewer setup
 
 Paste or adapt:
 
-> No external setup is required. Flashframe is self-contained in Chrome and requires no desktop companion, EXE, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend. Install the extension and click its toolbar icon to open the workspace. Create a note, move/resize it, optionally open a local PDF/video/gallery through Chrome's native picker, or deliberately drag a local PDF, video, text/code file, image, or image directory into the workspace. Dropped image directories use the gallery/lightbox flow. Save a named Flashframe, close/reopen the workspace, and restore it. YouTube URLs can be added as ordinary web/link blocks and opened externally without special permissions.
+> No external setup is required. FrameChute is self-contained in Chrome and requests no extension API permissions or host permissions. Install it and click the toolbar icon to open the workspace. Create a note, move and resize it, then optionally choose a local PDF, video, audio file, or image folder through Chrome's native picker. Save a named workspace, close/reopen FrameChute, and restore it. URLs may also be added deliberately by the user; sites that disallow embedding remain usable as normal links. No account, desktop companion, EXE, Python runtime, localhost service, native messaging host, or developer cloud service is required.
 
-## Release reference
+## Distribution
 
-Reference prerelease tag:
+For the initial public launch, use **Public** only when the listing, privacy fields, screenshots, promo tile, and exact candidate are ready. Private or unlisted visibility does not avoid policy review.
 
-`flashframe-chrome-v1.0.5-rc1`
+## Account-level requirements
 
-The prerelease is for reproducibility and reviewer/support reference. The Chrome Web Store upload must still be the exact tested `flashframe-chrome-web-store-v1.0.5.zip` candidate produced by the green Windows release workflow.
+Before submission confirm:
+
+- publisher identity/verification steps shown in the Dashboard are complete;
+- 2-Step Verification is enabled on the publishing Google Account;
+- publisher contact email is current and verified;
+- any trader/non-trader disclosure requested by the Dashboard is answered accurately.
 
 ## Do not submit until
 
-- the exact Windows candidate passes `docs/WINDOWS_STORE_TEST.md`;
-- `chrome://extensions` has no reproducible Flashframe errors;
-- screenshots come from that exact candidate; and
-- the Developer Dashboard shows no unresolved blocking requirements.
+- the exact v1.0.8 package passes automated validation;
+- the Windows-tested runtime matches this branch except for submission metadata/docs;
+- `chrome://extensions` shows no reproducible FrameChute errors;
+- real screenshots show the exact current FrameChute UI;
+- the 440x280 small promo tile is ready;
+- the stable privacy-policy URL displays the current FrameChute policy; and
+- the Dashboard shows no unresolved blockers.

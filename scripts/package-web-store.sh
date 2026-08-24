@@ -22,6 +22,8 @@ manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
 if manifest.get("manifest_version") != 3:
     raise SystemExit("Chrome Web Store package must use Manifest V3")
+if manifest.get("name") != "FrameChute":
+    raise SystemExit(f"Manifest name must be 'FrameChute'; got {manifest.get('name')!r}")
 
 version = str(manifest.get("version", "")).strip()
 if not version:
@@ -37,9 +39,7 @@ allowed_permissions = set()
 actual_permissions = set(manifest.get("permissions", []))
 if actual_permissions != allowed_permissions:
     raise SystemExit(
-        "Permission gate failed. Expected only "
-        + repr(sorted(allowed_permissions))
-        + "; got "
+        "Permission gate failed. Expected no extension API permissions; got "
         + repr(sorted(actual_permissions))
     )
 
@@ -52,7 +52,11 @@ if actual_hosts != allowed_hosts:
     )
 
 if {"http://*/*", "https://*/*", "<all_urls>"} & actual_hosts:
-    raise SystemExit("Broad host access is forbidden in the isolated Chrome edition")
+    raise SystemExit("Broad host access is forbidden in the Chrome Web Store candidate")
+
+background = manifest.get("background", {})
+if background.get("service_worker") != "src/service-worker.js" or background.get("type") != "module":
+    raise SystemExit("Manifest background must use packaged module service worker src/service-worker.js")
 
 required_icons = {
     "16": "icons/icon16.png",
@@ -125,18 +129,39 @@ with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             continue
         archive.write(path, relative)
 
+required_package_files = {
+    "manifest.json",
+    "LICENSE",
+    "src/service-worker.js",
+    "src/workspace.html",
+    "src/workspace-extras.js",
+    "src/picker-guard.js",
+    "src/media-dock-grab-pin.js",
+    "src/grab-art-runtime.js",
+    "assets/grab/default.png",
+    "assets/grab/hover.png",
+    "assets/grab/faded.png",
+    "assets/grab/expanded.png",
+    "assets/images/default.png",
+    "assets/images/hover.png",
+    *required_icons.values(),
+}
+
 with zipfile.ZipFile(output, "r") as archive:
     names = set(archive.namelist())
-    if "manifest.json" not in names:
-        raise SystemExit("Packaging error: manifest.json is not at ZIP root")
-    if "LICENSE" not in names:
-        raise SystemExit("Packaging error: LICENSE is missing")
-    for expected in required_icons.values():
-        if expected not in names:
-            raise SystemExit(f"Packaging error: {expected} is missing")
+    missing = sorted(required_package_files - names)
+    if missing:
+        raise SystemExit(f"Packaging error: required files missing from ZIP: {missing}")
+    packaged_manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+    if packaged_manifest != manifest:
+        raise SystemExit("Packaging error: manifest inside ZIP differs from source manifest")
 
-print("FLASHFRAME ISOLATED CHROME RELEASE GATE: PASS")
+print("FRAMECHUTE CHROME WEB STORE RELEASE GATE: PASS")
+print(f"Version: {version}")
 print(f"Store ZIP: {output}")
+print("Permissions: NONE")
+print("Host access: NONE")
+print("Remote executable code: NONE")
 print("Companion: NONE")
 print("Python/EXE: NOT REQUIRED")
 PY
