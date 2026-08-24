@@ -54,6 +54,7 @@ if (![...document.styleSheets].some((sheet) => sheet.href === handoffFixesHref))
   document.head.append(link);
 }
 
+await import("./picker-guard.js");
 await import("./web-drop.js");
 await import("./drop-local-sources.js");
 await import("./remote-video.js");
