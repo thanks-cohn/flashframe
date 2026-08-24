@@ -4,7 +4,7 @@
 
 FrameChute is a spatial workspace for Chrome and Chromium.
 
-Open notes, PDFs, image galleries, audio, video, local files, and webpages on one freeform canvas. Move them where you want. Resize them. Layer them. Save the whole arrangement. Come back later and pick up where you left off.
+Open notes, PDFs, image galleries, audio, video, local files, and webpages on one freeform canvas. Move them where you want. Resize them. Layer them. Save the arrangement. Come back later and pick up where you left off.
 
 **There should be almost no perceptible distance between wanting something and reaching it.**
 
@@ -14,21 +14,20 @@ Open notes, PDFs, image galleries, audio, video, local files, and webpages on on
 
 ## Download
 
-### [Download THE BIG RELEASE](https://github.com/thanks-cohn/framechute/releases/latest)
+### [Download the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
 
-Current release: **FrameChute v1.0.6**
-
-The downloadable ZIP works as an unpacked Chrome/Chromium extension on Windows, Linux, and other desktop Chromium systems.
+The Releases page always points to the newest published packaged build, so you do not need to hunt through old version names or branches.
 
 ### Install it
 
-1. Download **THE BIG RELEASE.zip** from Releases.
-2. Extract the ZIP.
-3. Open `chrome://extensions`.
-4. Turn on **Developer mode**.
-5. Click **Load unpacked**.
-6. Select the extracted FrameChute folder.
-7. Open FrameChute and start throwing things onto the canvas.
+1. Open the **latest release** link above.
+2. Download the packaged FrameChute ZIP.
+3. Extract the ZIP.
+4. Open `chrome://extensions`.
+5. Turn on **Developer mode**.
+6. Click **Load unpacked**.
+7. Select the extracted FrameChute folder.
+8. Open FrameChute and start throwing things onto the canvas.
 
 No native companion. No Python runtime. No localhost service. No giant permission grab.
 
@@ -58,25 +57,22 @@ The moment.
 - **Image folders / galleries** without exploding a directory into tabs
 - **Local audio** with playback state
 - **Local video** with remembered timestamps and playback state
-- **Web pages and URLs** when the site permits embedding
+- **Web pages and URLs** when the destination permits embedding
 - **Direct browser-playable media**
 - **Generic local files** with graceful reconnect behavior
 
 Every block can live beside the thing it relates to instead of being trapped in a separate application-shaped silo.
 
-## Save the whole useful state
+## Save the useful state
 
 A FrameChute workspace remembers the details that make returning feel correct:
 
-- block position
-- block size
+- block position and size
 - stacking order
-- names
-- text
+- names and note text
 - PDF position
 - gallery position
-- media timestamps
-- playback state
+- media timestamps and playback state
 - looping choices
 - media sync groups
 - workspace appearance
@@ -90,15 +86,7 @@ The goal is to recreate the useful moment.
 
 FrameChute treats audio and video as first-class timed objects rather than decorative attachments.
 
-The movable unified Media controller can operate eligible media across the workspace with:
-
-- rewind
-- play / pause
-- forward
-- configurable seek steps
-- all-media scope
-- synchronized media groups
-- global looping behavior
+The movable unified Media controller can operate eligible media across the workspace with rewind, play/pause, forward, configurable seek steps, looping, and synchronized media groups.
 
 Audio can sync with video. Video can sync with audio. Groups can grow as the workspace grows.
 
@@ -117,41 +105,21 @@ And because a drag handle apparently does not have to be boring, FrameChute ship
 - Faded
 - Expanded
 
-Users can replace those images from Settings. Packaged artwork is also just four predictable files under `assets/grab/`, so custom builds can change the personality of the interface without rewriting JavaScript.
+Users can replace those images from Settings. Packaged artwork lives under `assets/grab/`, so custom builds can change the personality of the interface without rewriting JavaScript.
 
 ## The interface gets out of the way
 
 FrameChute is built around controls being there when you need them and disappearing when you do not.
 
-You can:
+You can hide block headers, fade Settings when idle, fade or hide the Media controller, choose toolbar visibility behavior, customize Grab artwork, and change the visual character of the workspace without changing its content.
 
-- hide block headers
-- fade Settings when idle
-- fade or hide the Media controller
-- keep the top toolbar visible
-- reveal the toolbar only when approached
-- hide the toolbar entirely
-- customize Grab artwork
-
-The result can go from a full editing interface to almost nothing but the actual material you are working with.
+The result can go from a full editing interface to almost nothing but the material you are working with.
 
 ## Make it yours
 
-FrameChute exposes visual roles independently instead of giving you one giant “theme color” that poisons the whole interface.
+FrameChute exposes visual roles independently instead of giving you one giant theme color that poisons the whole interface.
 
-You can customize things such as:
-
-- top toolbar color
-- toolbar text color
-- accent / small-button color
-- block header color
-- block header text color
-- Media header color
-- floating-panel text color
-- toolbar font family
-- block-header font family
-- workspace background color
-- workspace background image
+You can customize toolbar colors, text colors, accents, block headers, Media controls, fonts, workspace background color, and workspace background imagery.
 
 So yes, you can make it tasteful.
 
@@ -163,31 +131,38 @@ Both are supported.
 
 FrameChute has a small top-right mascot because software is allowed to have a pulse.
 
-It can be:
+It can be **Reveal on hover**, **Always visible**, or **Hidden**.
 
-- **Reveal on hover**
-- **Always visible**
-- **Hidden**
-
-Hovering it reveals the optional donation prompt. It never needs broad website permissions to do that, because of course it does not.
+The optional support link is just that: optional. FrameChute's core workspace does not require an account, subscription, or external service.
 
 ## Local-first on purpose
 
 FrameChute is a Manifest V3 Chrome/Chromium extension designed around explicit user-selected files and extension-owned workspace state.
 
-It does **not** require:
+The current Store-ready build requests **no Chrome extension API permissions and no host permissions**.
 
-- broad host permissions just to function
+FrameChute does **not** require:
+
+- broad website permissions just to function
 - a native executable
 - a Python service
 - a localhost daemon
 - native messaging
 - a remote code loader
-- a bundled universe of codecs
+- a FrameChute account
+- a developer-operated cloud backend
+
+All executable extension JavaScript ships inside the extension package.
 
 If Chromium can play or render a format, FrameChute can work with it where supported. If Chromium cannot decode something, FrameChute should tell you rather than pretending the source never existed.
 
 A missing file should not destroy the workspace around it. Sources are designed to be reconnectable while the rest of the saved arrangement remains useful.
+
+## Privacy
+
+FrameChute stores normal workspace state locally and does not upload workspace contents to a FrameChute-operated cloud service.
+
+See [PRIVACY.md](PRIVACY.md) for the current privacy policy and Chrome Web Store data-handling disclosures.
 
 ## Why this exists
 
@@ -233,10 +208,10 @@ Internal compatibility identifiers such as historical `flashframe.*` storage key
 ## Repository map
 
 - `src/` — extension workspace and interaction code
-- `assets/images/` — mascot states
+- `assets/images/` — mascot artwork
 - `assets/grab/` — packaged Grab states
 - `scripts/` — Chrome Web Store packaging and validation
-- `docs/` — architecture, state model, design notes, and implementation documentation
+- `docs/` — architecture, state model, Store submission notes, and implementation documentation
 - `bugs/` — implementation handoff / regression notes
 
 Build the Chrome Web Store package on Linux/macOS with:
@@ -247,11 +222,9 @@ sh scripts/package-web-store.sh
 
 The release gate validates the extension and produces the Store ZIP under `dist/`.
 
-## FrameChute v1.0.6
+For end users, use the permanent latest-release link instead:
 
-**THE BIG RELEASE** includes the mascot interaction, four-state packaged Grab artwork, user Grab overrides, unified Media controls, media-dock drag/drop fixes, theme customization, improved Settings fading, high-contrast context menus, FrameChute branding cleanup, and Chrome Web Store-safe packaging.
-
-### [Get THE BIG RELEASE](https://github.com/thanks-cohn/framechute/releases/latest)
+### [Get the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
 
 ---
 
