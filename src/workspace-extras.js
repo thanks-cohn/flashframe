@@ -66,6 +66,6 @@ await import("./media-header-theme.js");
 await import("./donation-card.js");
 await import("./framechute-final-polish.js");
 await import("./media-dock-drop-router.js");
-await import("./grab-art-defaults.js");
+await import("./grab-art-runtime.js");
 await import("./framechute-visible-branding.js");
 await import("./mascot.js");
