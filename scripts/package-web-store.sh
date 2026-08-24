@@ -73,6 +73,7 @@ include_roots = [
     pathlib.Path("LICENSE"),
     pathlib.Path("src"),
     pathlib.Path("icons"),
+    pathlib.Path("assets"),
 ]
 
 files = []
