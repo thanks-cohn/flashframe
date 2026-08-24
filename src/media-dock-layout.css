@@ -1,0 +1,178 @@
+/* Unified media dock spatial layout.
+   This module loads after the general media/theme layers and owns only the dock's composition. */
+
+.media-dock-polished {
+  width: min(430px, calc(100vw - 28px));
+}
+
+.media-dock-polished .player-head.media-spatial-head {
+  display: grid;
+  grid-template-columns: 42px 54px minmax(110px, 1fr) 124px 38px;
+  align-items: center;
+  gap: 0;
+  min-height: 54px;
+  padding: 6px;
+}
+
+.media-dock-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 7px;
+  border-right: 1px solid color-mix(in srgb, CanvasText 9%, transparent);
+}
+
+.media-dock-zone:last-child {
+  border-right: 0;
+}
+
+.media-dock-drag-zone {
+  padding: 0 4px 0 0;
+}
+
+.media-dock-identity {
+  justify-content: flex-start;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.media-dock-identity .media-dock-title {
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.media-dock-scope {
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.media-dock-polished .media-dock-scope #media-scope {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  margin: 0;
+}
+
+.media-dock-transport {
+  display: grid;
+  grid-template-columns: 34px 40px 34px;
+  gap: 4px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.media-dock-polished .media-dock-transport .player-control {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.media-dock-polished .media-dock-transport .player-play {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  /* Unicode play triangles are mathematically centered but optically left-heavy. */
+  text-indent: 1px;
+}
+
+.media-dock-window-zone {
+  padding: 0 0 0 4px;
+}
+
+.media-dock-polished .media-dock-window-zone .dock-expand {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+}
+
+.media-dock-polished .media-dock-grab {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.media-dock-polished .media-dock-grab .grab-art-image,
+.media-dock-polished .media-dock-grab .media-dock-grab-image {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  border-radius: 8px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.media-dock-polished .media-dock-grab .grab-art-image[hidden],
+.media-dock-polished .media-dock-grab .media-dock-grab-image[hidden],
+.media-dock-polished .media-dock-grab[data-custom-grab="true"] .grab-fallback-art,
+.media-dock-polished .media-dock-grab[data-custom-grab="true"] svg:not(.media-dock-grab-image) {
+  display: none !important;
+}
+
+.media-dock-polished .video-dock-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  padding: 9px 11px 11px;
+}
+
+.media-dock-polished .rewind-amount {
+  display: grid;
+  grid-template-columns: auto 70px auto;
+  align-items: center;
+  justify-content: start;
+  gap: 7px;
+  margin: 0;
+}
+
+.media-dock-polished .rewind-amount input {
+  width: 70px;
+  margin: 0;
+}
+
+.media-dock-polished .video-dock-body > small {
+  display: block;
+  margin: 0;
+  line-height: 1.35;
+}
+
+@media (max-width: 430px) {
+  .media-dock-polished .player-head.media-spatial-head {
+    grid-template-columns: 42px minmax(92px, 1fr) 116px 38px;
+  }
+
+  .media-dock-identity {
+    display: none;
+  }
+
+  .media-dock-transport {
+    grid-template-columns: 32px 38px 32px;
+    gap: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .media-dock-polished .media-dock-transport .player-control {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .media-dock-polished .media-dock-transport .player-play {
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
+  }
+}
