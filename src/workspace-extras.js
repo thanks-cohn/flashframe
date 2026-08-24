@@ -69,3 +69,4 @@ await import("./media-dock-drop-router.js");
 await import("./grab-art-runtime.js");
 await import("./framechute-visible-branding.js");
 await import("./mascot.js");
+await import("./media-dock-grab-pin.js");
