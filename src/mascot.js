@@ -2,6 +2,7 @@ const MASCOT_MODE_KEY = "framechute.mascot-mode.v1";
 const DONATION_URL = "https://buy.stripe.com/7sI9CD0uQ96mdY43cc";
 const DEFAULT_IMAGE = chrome.runtime.getURL("assets/images/default.png");
 const HOVER_IMAGE = chrome.runtime.getURL("assets/images/hover.png");
+const CORNER_REVEAL_SIZE = 126;
 
 function readMode() {
   const stored = localStorage.getItem(MASCOT_MODE_KEY);
@@ -31,10 +32,6 @@ function makeMascot() {
   zone.id = "framechute-mascot-zone";
   zone.className = "framechute-mascot-zone";
   zone.setAttribute("aria-label", "FrameChute mascot and support link");
-
-  const hitArea = document.createElement("div");
-  hitArea.className = "framechute-mascot-hit-area";
-  hitArea.setAttribute("aria-hidden", "true");
 
   const mascot = document.createElement("button");
   mascot.type = "button";
@@ -68,7 +65,7 @@ function makeMascot() {
   donate.setAttribute("aria-label", "Donate to support FrameChute");
 
   donation.append(title, note, donate);
-  zone.append(hitArea, donation, mascot);
+  zone.append(donation, mascot);
   document.body.append(zone);
 
   function setMascotImage(src) {
@@ -100,6 +97,8 @@ function applyMode(mode = readMode()) {
   const zone = makeMascot();
   const next = ["always", "hover", "hidden"].includes(mode) ? mode : "hover";
   zone.dataset.mode = next;
+  if (next !== "hover") zone.classList.remove("is-corner-near");
+  if (next === "hidden") zone.classList.remove("is-mascot-hovered");
   document.body.classList.toggle("framechute-mascot-reserved", next !== "hidden");
 
   const select = document.querySelector("#setting-mascot-mode");
@@ -116,7 +115,7 @@ function installSetting() {
     row.className = "mascot-mode-row";
 
     const copy = document.createElement("span");
-    copy.innerHTML = "<strong>Mascot</strong><small>Show the top-right mascot, reveal it only when you approach the corner, or hide it completely.</small>";
+    copy.innerHTML = "<strong>Mascot</strong><small>Show it all the time, reveal it only when you approach the top-right corner, or hide it completely.</small>";
 
     const select = document.createElement("select");
     select.id = "setting-mascot-mode";
@@ -149,6 +148,16 @@ function installSetting() {
   return true;
 }
 
+function updateCornerProximity(event) {
+  const zone = document.querySelector("#framechute-mascot-zone");
+  if (!zone || zone.dataset.mode !== "hover") return;
+
+  const inCorner = event.clientX >= window.innerWidth - CORNER_REVEAL_SIZE &&
+    event.clientY <= CORNER_REVEAL_SIZE;
+  const interacting = zone.matches(":hover") || zone.matches(":focus-within");
+  zone.classList.toggle("is-corner-near", inCorner || interacting);
+}
+
 function install() {
   ensureStyles();
   makeMascot();
@@ -159,6 +168,12 @@ function install() {
 install();
 queueMicrotask(install);
 setTimeout(install, 150);
+
+document.addEventListener("pointermove", updateCornerProximity, { passive: true });
+window.addEventListener("blur", () => {
+  const zone = document.querySelector("#framechute-mascot-zone");
+  zone?.classList.remove("is-corner-near", "is-mascot-hovered");
+});
 
 const settingsBody = document.querySelector("#settings-dock .settings-body");
 if (settingsBody) {
