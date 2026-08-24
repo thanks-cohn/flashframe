@@ -1,0 +1,177 @@
+/* FrameChute top-right mascot and donation reveal. */
+
+.framechute-mascot-zone {
+  position: fixed;
+  top: 0;
+  right: 18px;
+  z-index: 100006;
+  width: 112px;
+  height: 112px;
+  pointer-events: none;
+}
+
+.framechute-mascot-hit-area {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 112px;
+  height: 112px;
+  pointer-events: auto;
+}
+
+.framechute-mascot-button {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  width: 88px;
+  height: 88px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  transform: translateY(-8px) scale(.96);
+  transition: opacity 140ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.framechute-mascot-button:hover,
+.framechute-mascot-button:focus-visible {
+  background: transparent;
+}
+
+.framechute-mascot-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.framechute-mascot-button img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.framechute-mascot-zone[data-mode="always"] .framechute-mascot-button,
+.framechute-mascot-zone[data-mode="hover"]:hover .framechute-mascot-button,
+.framechute-mascot-zone[data-mode="hover"]:focus-within .framechute-mascot-button {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.framechute-mascot-zone[data-mode="hidden"] {
+  display: none;
+}
+
+.framechute-mascot-donation {
+  position: absolute;
+  top: 12px;
+  right: 82px;
+  width: 254px;
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, Canvas 97%, transparent);
+  color: var(--ff-menu-text, CanvasText);
+  box-shadow: 0 12px 36px color-mix(in srgb, CanvasText 18%, transparent);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateX(10px) scale(.98);
+  transition: opacity 140ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.framechute-mascot-zone.is-mascot-hovered .framechute-mascot-donation,
+.framechute-mascot-zone:focus-within .framechute-mascot-donation {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.framechute-mascot-donation strong,
+.framechute-mascot-donation small {
+  display: block;
+}
+
+.framechute-mascot-donation strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.framechute-mascot-donation small {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.3;
+  opacity: .72;
+}
+
+.framechute-mascot-donation a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 9px;
+  background: var(--ff-accent, #f7cf4b);
+  color: #171717;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.framechute-mascot-donation a:hover,
+.framechute-mascot-donation a:focus-visible {
+  filter: brightness(1.05);
+}
+
+.mascot-mode-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 10px;
+}
+
+.mascot-mode-row > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.mascot-mode-row strong {
+  font-size: 13px;
+}
+
+.mascot-mode-row small {
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: .62;
+}
+
+.mascot-mode-row select {
+  min-width: 142px;
+}
+
+@media (max-width: 520px) {
+  .framechute-mascot-zone {
+    right: 10px;
+  }
+
+  .framechute-mascot-donation {
+    width: min(236px, calc(100vw - 116px));
+  }
+
+  .mascot-mode-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mascot-mode-row select {
+    width: 100%;
+  }
+}
