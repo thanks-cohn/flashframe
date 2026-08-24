@@ -45,8 +45,26 @@ jobs:
           if ($manifest.manifest_version -ne 3) { throw "Expected Manifest V3" }
           if ([string]$manifest.name -ne "FrameChute") { throw "Expected FrameChute manifest name" }
           if ([string]$manifest.version -ne "1.0.8") { throw "Expected v1.0.8 submission candidate" }
-          if (@($manifest.permissions).Count -ne 0) { throw "Submission candidate must request zero API permissions" }
-          if (@($manifest.host_permissions).Count -ne 0) { throw "Submission candidate must request zero host permissions" }
+
+          $apiPermissions = @()
+          if ($null -ne $manifest.PSObject.Properties["permissions"]) {
+            $apiPermissions = @(
+              $manifest.permissions |
+              ForEach-Object { [string]$_ } |
+              Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+            )
+          }
+          if ($apiPermissions.Count -ne 0) { throw "Submission candidate must request zero API permissions" }
+
+          $hostPermissions = @()
+          if ($null -ne $manifest.PSObject.Properties["host_permissions"]) {
+            $hostPermissions = @(
+              $manifest.host_permissions |
+              ForEach-Object { [string]$_ } |
+              Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+            )
+          }
+          if ($hostPermissions.Count -ne 0) { throw "Submission candidate must request zero host permissions" }
 
       - name: Create SHA-256 checksum
         shell: pwsh
