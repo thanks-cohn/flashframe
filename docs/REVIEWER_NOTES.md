@@ -1,65 +1,70 @@
-# Flashframe Chrome Web Store reviewer notes
+# FrameChute Chrome Web Store Reviewer Notes
 
-These notes are written for the exact Chrome-only candidate produced from the `isolated-windows-exe` branch.
+These notes are for the exact v1.0.8 submission candidate from `chrome-web-store-submission-2026-08-24`.
 
-## Product and single purpose
+## Product / single purpose
 
-Flashframe is a spatial browser workspace. It lets a user arrange notes, local files, local media, images, webpages, and supported web media as movable blocks in one extension-owned Chrome tab, then save and restore that workspace later.
+FrameChute is a spatial browser workspace for arranging, saving, restoring, and directly manipulating user-selected notes, files, media, links, and web content in one visual canvas.
 
-Single-purpose statement for the Developer Dashboard:
+All major features are part of that same workspace purpose.
 
-> Flashframe is a spatial browser workspace that lets users arrange, save, restore, and directly manipulate notes, local files, local media, web content, and supported web media in one visual canvas.
-
-## Reviewer setup
+## Setup
 
 No external setup is required.
 
-- No desktop companion.
-- No Windows executable.
-- No Python installation.
-- No localhost service.
-- No native messaging host.
-- No Flashframe account.
-- No developer-operated cloud service is required for the core product.
+FrameChute requires no:
 
-Install the extension, click the Flashframe toolbar icon, and the workspace opens in an extension-owned tab.
+- account or login;
+- desktop companion;
+- Windows executable;
+- Python installation;
+- localhost service;
+- native messaging host; or
+- developer-operated cloud backend.
 
-## Suggested reviewer test
+The manifest requests no Chrome extension API permissions and no host permissions.
 
-1. Install Flashframe and click its toolbar icon.
-2. Create a note and type text into it.
-3. Move and resize the note.
-4. Use **Open PDF**, **Open video**, or **Open gallery** and choose a local source through Chrome's browser-native picker.
-5. Drag a local PDF, video, text/code file, image, and image directory into the workspace. A dropped image directory should open in the gallery/lightbox flow with previous/next and keyboard navigation.
-6. Save a named Flashframe.
-7. Close the workspace tab, reopen Flashframe, and restore the saved Flashframe.
-8. Use **Open URL** with a normal HTTPS URL or a video-site URL.
-9. Verify video-site URLs remain exact ordinary links and open externally.
+Install the extension and click the FrameChute toolbar icon. The workspace opens in an extension-owned tab.
 
-Local file/folder access occurs only after explicit user action through a browser picker or deliberate drag-and-drop into the workspace. Chrome may require the user to renew access to a previously selected local source after a browser restart; Flashframe exposes reconnect controls for that case.
+## Fast reviewer test
 
-## Permissions
+1. Click the FrameChute toolbar icon.
+2. Create a text note, enter text, then move and resize the block.
+3. Click **Open PDF** and choose a local PDF with Chrome's file picker.
+4. Click **Open gallery** and choose a local image directory.
+5. Optionally open local audio/video or drag a supported local source into the workspace.
+6. Save a named workspace.
+7. Close the workspace tab, reopen FrameChute, and restore the saved workspace.
+8. Add an HTTPS URL. If the destination allows embedding it can appear in the workspace; otherwise it remains usable as a normal external link.
 
-The candidate requests no extension API permissions and no host permissions. Local sources use explicit browser pickers or deliberate drag-and-drop. Ordinary remote URLs are user-selected content and require no host permission.
+Local file and folder access occurs only after explicit user action through Chrome's native picker or deliberate drag-and-drop.
+
+## What the extension stores
+
+FrameChute stores workspace state locally so it can restore the user's arrangement. Depending on the features used, local state may include note text, block geometry, URLs explicitly added by the user, PDF/gallery position, media playback state, appearance settings, and browser-managed handles for sources the user explicitly selected.
+
+Normal workspace contents are not sent to the developer.
+
+## Network behavior
+
+FrameChute has no analytics, advertising network, behavioral telemetry, account service, or developer-operated cloud sync.
+
+When the user deliberately adds remote content, Chrome connects directly to the user-selected destination. FrameChute does not request host permissions and does not monitor unrelated browsing.
+
+The optional support/donation control opens an external Stripe-hosted checkout page only after the user clicks it. FrameChute does not receive or store payment-card data.
 
 ## Remote code
 
-Dashboard answer: **No, Flashframe does not use remotely hosted executable code.**
+Dashboard answer: **No remotely hosted executable code.**
 
-All extension JavaScript is packaged with the extension. Flashframe can display user-selected remote webpages, images, videos, and ordinary video-site links, but it does not fetch JavaScript or WebAssembly from a remote server and execute it as extension code.
+All executable extension JavaScript is inside the submitted package. User-selected webpages, images, and media are content and are not downloaded and executed as extension JavaScript or WebAssembly.
 
-## Data handling summary
+## Compatibility note
 
-Flashframe is local-first. Workspace state is stored in the browser and, only if the user chooses one, in a user-selected Flashframe data directory. The developer does not receive normal workspace contents.
+Some source files and local-storage/database keys retain the historical internal prefix `flashframe` for backward compatibility with existing local data. The visible product name and submitted manifest name are **FrameChute**. Those compatibility identifiers do not represent a second product or remotely loaded component.
 
-When a user explicitly adds remote content, Chrome connects directly to that remote host to display the requested resource. Flashframe has no analytics, advertising, telemetry, account login, developer-operated cloud sync, or data brokerage in this candidate.
+## Privacy policy
 
-Use the repository root `PRIVACY.md` as the privacy-policy source of truth.
+Use the stable public policy after this branch is merged:
 
-## Public reference release
-
-The candidate reference release is intended to be published as a GitHub prerelease with tag:
-
-`flashframe-chrome-v1.0.5-rc1`
-
-The prerelease should contain the exact Store ZIP, SHA-256 checksum, privacy policy, listing copy, these reviewer notes, the Windows test sheet, and the release-readiness report. It is a reference/testing release, not a claim of Chrome Web Store approval.
+`https://github.com/thanks-cohn/framechute/blob/main/PRIVACY.md`
