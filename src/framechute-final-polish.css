@@ -1,8 +1,67 @@
-/* FrameChute final floating-player consistency pass.
-   Loaded last so collapsed/faded/hidden player states remain predictable. */
+/* FrameChute final floating-player and theme consistency pass.
+   Loaded last so its role-based color and dock-state rules are authoritative. */
+
+:root {
+  --ff-toolbar-text: #171717;
+  --ff-block-header-text: #171717;
+  --ff-menu-text: #171717;
+}
+
+/* Text colors are independent roles. */
+.toolbar,
+.toolbar .brand,
+.toolbar button,
+.toolbar select,
+.toolbar .status,
+.toolbar-summon {
+  color: var(--ff-toolbar-text) !important;
+}
+
+.block-header,
+.block-header .block-name,
+.block-header .source-badge,
+.block-header button {
+  color: var(--ff-block-header-text) !important;
+}
+
+.floating-dock,
+.floating-dock button,
+.floating-dock select,
+.floating-dock input,
+.floating-dock label,
+.floating-dock small,
+.floating-dock strong,
+.flashframe-layer-menu,
+.flashframe-layer-menu button {
+  color: var(--ff-menu-text) !important;
+}
+
+/* Expanded Media player owns two window actions: Hide and Minimize. */
+.media-dock-polished .player-head.media-spatial-head {
+  grid-template-columns: 42px 54px minmax(110px, 1fr) 124px 76px;
+}
+
+.media-dock-window-zone {
+  display: grid;
+  grid-template-columns: 34px 34px;
+  gap: 4px;
+  padding: 0 0 0 4px;
+}
+
+.media-dock-polished .media-dock-window-zone .media-player-hide,
+.media-dock-polished .media-dock-window-zone .dock-expand {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  border-radius: 999px;
+}
 
 /* The collapsed Media player is a compact three-zone strip:
-   Grab | Media | Expand. The scope and transport belong to the expanded state. */
+   Grab | Media | Expand. Scope, transport, and Hide belong to expanded state. */
 .video-dock.media-dock-polished.is-collapsed {
   width: 152px;
   min-width: 152px;
@@ -20,7 +79,8 @@
 }
 
 .video-dock.media-dock-polished.is-collapsed .media-dock-scope,
-.video-dock.media-dock-polished.is-collapsed .media-dock-transport {
+.video-dock.media-dock-polished.is-collapsed .media-dock-transport,
+.video-dock.media-dock-polished.is-collapsed .media-player-hide {
   display: none !important;
 }
 
@@ -53,14 +113,13 @@
   z-index: 2;
 }
 
-/* A deliberately hidden player is removed as a unit. Settings remains the
+/* A deliberately hidden player is removed as a unit. Settings is the
    recovery path, so there is no orphaned floating control. */
 .video-dock.media-player-hidden {
   display: none !important;
 }
 
-/* Fade is a property of the whole Media player, including the minimize/
-   expand affordance. No child floats outside the fade contract. */
+/* Fade is a property of the entire Media player, including Hide/Minimize. */
 .video-dock.media-dock-polished.is-faded {
   opacity: 0.045 !important;
   filter: saturate(0.55);
