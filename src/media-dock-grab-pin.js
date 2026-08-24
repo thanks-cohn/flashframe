@@ -1,16 +1,4 @@
-const GRAB_ART_KEY = "flashframe.grab-art.v1";
 const PACKAGED_DEFAULT = chrome.runtime.getURL("assets/grab/default.png");
-
-function customDefault() {
-  try {
-    const raw = localStorage.getItem(GRAB_ART_KEY);
-    if (!raw) return "";
-    const art = JSON.parse(raw);
-    return typeof art?.default === "string" ? art.default : "";
-  } catch {
-    return "";
-  }
-}
 
 function pinMediaGrab() {
   const grip = document.querySelector("#video-dock-grip");
@@ -32,8 +20,10 @@ function pinMediaGrab() {
   image.draggable = false;
   image.decoding = "async";
 
-  const source = customDefault() || PACKAGED_DEFAULT;
-  if ((image.getAttribute("src") || "") !== source) image.src = source;
+  // The unified Media player intentionally uses one boring, reliable image:
+  // FrameChute's packaged Default Grab artwork. It does not inherit a custom
+  // Grab setting and it must never fall back to an empty src.
+  if ((image.getAttribute("src") || "") !== PACKAGED_DEFAULT) image.src = PACKAGED_DEFAULT;
   if (image.hidden) image.hidden = false;
   if (image.style.display !== "block") image.style.display = "block";
   if (image.style.visibility !== "visible") image.style.visibility = "visible";
@@ -54,35 +44,27 @@ function schedulePin() {
   });
 }
 
-// Older media polish only re-renders the dock Grab when body-level UI state
-// changes. Watch that exact trigger instead of every class mutation in the
-// entire document. This keeps the final packaged Default authority while
-// avoiding needless whole-page observer churn on low-memory machines.
+// Legacy Grab code can refresh after blocks are added/removed and rewrite this
+// same <img> back to an empty source. Watch only the tiny Media dock for those
+// exact mutations and immediately restore the packaged Default. This avoids the
+// old whole-document observer churn while making the Media image authoritative.
+const dock = document.querySelector("#video-dock");
+if (dock) {
+  new MutationObserver(schedulePin).observe(dock, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["src", "hidden", "style", "data-grab-state"]
+  });
+}
+
+// Body classes are another legacy refresh trigger (toolbar/header/fade modes).
 new MutationObserver(schedulePin).observe(document.body, {
   attributes: true,
   attributeFilter: ["class"]
 });
 
-const dock = document.querySelector("#video-dock");
-if (dock) {
-  new MutationObserver(schedulePin).observe(dock, {
-    childList: true,
-    subtree: true
-  });
-}
-
-for (const eventName of ["click", "change"]) {
-  document.addEventListener(eventName, (event) => {
-    if (event.target instanceof Element && event.target.closest(".grab-art-setting")) {
-      queueMicrotask(schedulePin);
-    }
-  }, true);
-}
-
 window.addEventListener("focus", schedulePin);
-window.addEventListener("storage", (event) => {
-  if (event.key === GRAB_ART_KEY) schedulePin();
-});
 
 pinMediaGrab();
 queueMicrotask(schedulePin);
