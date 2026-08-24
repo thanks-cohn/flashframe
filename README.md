@@ -12,6 +12,30 @@ Open notes, PDFs, image galleries, audio, video, local files, and webpages on on
   <img src="assets/images/default.png" alt="FrameChute mascot" width="180">
 </p>
 
+## FrameChute + Chute
+
+FrameChute works especially well with [Chute](https://github.com/thanks-cohn/chute), the local cross-browser basket for files, images, links, and text.
+
+**Chute catches things. FrameChute arranges them.**
+
+Use Chute while browsing to collect something quickly, then drag it from the Chute popup or Shelf directly onto FrameChute when you want it to become part of a persistent workspace.
+
+```text
+webpage / file / image
+        ↓
+      Chute
+        ↓ drag from popup or Shelf
+    FrameChute
+        ↓
+move · resize · layer · save · return later
+```
+
+Images dragged out of Chute expose ordinary browser drag formats, so FrameChute can accept them as image blocks without either project becoming dependent on the other.
+
+Chute remains useful by itself. FrameChute remains useful by itself. Together they make the path from **finding something** to **putting it where you want it** much shorter.
+
+### [Get Chute](https://github.com/thanks-cohn/chute)
+
 ## Download
 
 ### [Download the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
