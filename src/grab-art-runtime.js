@@ -46,8 +46,12 @@ function ensureImage(handle) {
 }
 
 function setHidden(node, hidden) {
-  if (!node) return;
-  if (node.hidden !== hidden) node.hidden = hidden;
+  if (!(node instanceof Element)) return;
+  if (hidden) {
+    if (!node.hasAttribute("hidden")) node.setAttribute("hidden", "");
+  } else if (node.hasAttribute("hidden")) {
+    node.removeAttribute("hidden");
+  }
 }
 
 function renderHandle(handle) {
@@ -59,7 +63,7 @@ function renderHandle(handle) {
   if ((image.getAttribute("src") || "") !== source) image.src = source;
   setHidden(image, false);
   setHidden(fallback, true);
-  if (fallback instanceof HTMLElement) {
+  if (fallback instanceof Element && "style" in fallback) {
     if (fallback.style.display !== "none") fallback.style.display = "none";
     if (fallback.style.visibility !== "hidden") fallback.style.visibility = "hidden";
   }
