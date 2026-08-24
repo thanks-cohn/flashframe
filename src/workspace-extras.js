@@ -57,3 +57,4 @@ await import("./media-dock-layout.js");
 await import("./media-header-theme.js");
 await import("./donation-card.js");
 await import("./framechute-final-polish.js");
+await import("./mascot.js");
