@@ -28,7 +28,14 @@ if ([string]::IsNullOrWhiteSpace($Description) -or $Description.Length -gt 132) 
 }
 
 $AllowedPermissions = @()
-$ActualPermissions = @($Manifest.permissions | ForEach-Object { [string]$_ })
+$ActualPermissions = @()
+if ($null -ne $Manifest.PSObject.Properties["permissions"]) {
+    $ActualPermissions = @(
+        $Manifest.permissions |
+        ForEach-Object { [string]$_ } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+}
 $UnexpectedPermissions = @($ActualPermissions | Where-Object { $_ -notin $AllowedPermissions })
 $MissingPermissions = @($AllowedPermissions | Where-Object { $_ -notin $ActualPermissions })
 if ($UnexpectedPermissions.Count -or $MissingPermissions.Count) {
@@ -36,7 +43,14 @@ if ($UnexpectedPermissions.Count -or $MissingPermissions.Count) {
 }
 
 $AllowedHosts = @()
-$ActualHosts = @($Manifest.host_permissions | ForEach-Object { [string]$_ })
+$ActualHosts = @()
+if ($null -ne $Manifest.PSObject.Properties["host_permissions"]) {
+    $ActualHosts = @(
+        $Manifest.host_permissions |
+        ForEach-Object { [string]$_ } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+}
 $UnexpectedHosts = @($ActualHosts | Where-Object { $_ -notin $AllowedHosts })
 $MissingHosts = @($AllowedHosts | Where-Object { $_ -notin $ActualHosts })
 if ($UnexpectedHosts.Count -or $MissingHosts.Count) {
