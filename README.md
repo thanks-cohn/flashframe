@@ -1,236 +1,276 @@
-# Flashframe
+# FrameChute
 
-Flashframe is a spatial workspace that runs on top of Chrome and Chromium.
+### Your browser has tabs. FrameChute gives it a desk.
 
-It is intended to be installed as a browser extension. Opening Flashframe gives the user a full extension-owned workspace tab containing movable, resizable blocks. A block can be a text document, PDF, image gallery, local video, or another type added later.
+FrameChute is a spatial workspace for Chrome and Chromium.
 
-The central idea is small:
+Open notes, PDFs, image galleries, audio, video, local files, and webpages on one freeform canvas. Move them where you want. Resize them. Layer them. Save the whole arrangement. Come back later and pick up where you left off.
 
-> Arrange a moment. Save it. Return to it.
+**There should be almost no perceptible distance between wanting something and reaching it.**
 
-Flashframe is not trying to replace Chromium. Chromium is the application platform. Flashframe supplies a better workspace model inside it.
+<p align="center">
+  <img src="assets/images/default.png" alt="FrameChute mascot" width="180">
+</p>
 
-## What the user sees
+## Download
 
-A Flashframe workspace is a large canvas inside a browser tab.
+### [Download THE BIG RELEASE](https://github.com/thanks-cohn/framechute/releases/latest)
 
-The user can place several independent blocks on that canvas, resize them, move them, overlap them, maximize one temporarily, and save the arrangement.
+Current release: **FrameChute v1.0.6**
 
-For example, a writing workspace might contain:
+The downloadable ZIP works as an unpacked Chrome/Chromium extension on Windows, Linux, and other desktop Chromium systems.
 
-- a text block called `Chapter 4`
-- a PDF open on page 83
-- a second PDF open on page 17
-- an image lightbox showing one image from a chosen reference directory
-- a local video paused at 31:18
+### Install it
 
-Saving the Flashframe records enough state to reopen the same useful arrangement later.
+1. Download **THE BIG RELEASE.zip** from Releases.
+2. Extract the ZIP.
+3. Open `chrome://extensions`.
+4. Turn on **Developer mode**.
+5. Click **Load unpacked**.
+6. Select the extracted FrameChute folder.
+7. Open FrameChute and start throwing things onto the canvas.
 
-The project should prefer small, obvious state over complicated simulation. A PDF does not need its entire internal state preserved: its file identity and current page are enough for the first version. A video needs its file identity and timestamp. A gallery needs its directory and current image. A text block needs its name, text, and visible position in the document, with cursor position optional.
+No native companion. No Python runtime. No localhost service. No giant permission grab.
 
-## Chrome / Chromium extension
+---
 
-The first implementation is a Manifest V3 extension.
+## Stop organizing your work around tabs
 
-The extension should have a very small browser-facing shell:
+Tabs are great until the thing you are doing needs five documents, three reference images, a video, a soundtrack, a note to yourself, and one webpage you absolutely cannot lose.
 
-- toolbar action: open or focus the Flashframe workspace
-- extension-owned full-page workspace: the main product
-- service worker: extension lifecycle and opening/focusing the workspace
-- IndexedDB: durable workspace state, file/directory handles where supported, and later historical state
-- File System Access API: user-granted access to local text files, PDFs, videos, and directories
+Then the browser becomes a hallway full of identical doors.
 
-Flashframe should not ask for broad website permissions merely to work with local content. The first version is local-first.
+FrameChute gives you a room instead.
 
-## The platform model
+Put the PDF beside the note it explains. Keep the reference image above the paragraph it inspired. Leave the video at the exact moment you care about. Put the soundtrack in the corner. Move everything until the arrangement makes sense **to you**.
 
-Flashframe owns **space**.
+Then save the arrangement itself.
 
-It provides:
+Not merely the files.
 
-- a canvas
-- blocks
-- position and size
-- naming
-- z-order
-- save/restore
-- a small state contract that every block type follows
+The moment.
 
-A block has a generic shell:
+## What FrameChute can hold
+
+- **Notes and text** you can write directly in the workspace
+- **PDFs** kept beside the work they belong to
+- **Local images** as independent spatial objects
+- **Image folders / galleries** without exploding a directory into tabs
+- **Local audio** with playback state
+- **Local video** with remembered timestamps and playback state
+- **Web pages and URLs** when the site permits embedding
+- **Direct browser-playable media**
+- **Generic local files** with graceful reconnect behavior
+
+Every block can live beside the thing it relates to instead of being trapped in a separate application-shaped silo.
+
+## Save the whole useful state
+
+A FrameChute workspace remembers the details that make returning feel correct:
+
+- block position
+- block size
+- stacking order
+- names
+- text
+- PDF position
+- gallery position
+- media timestamps
+- playback state
+- looping choices
+- media sync groups
+- workspace appearance
+- background configuration
+
+The goal is not to snapshot RAM.
+
+The goal is to recreate the useful moment.
+
+## Media that behaves like part of the workspace
+
+FrameChute treats audio and video as first-class timed objects rather than decorative attachments.
+
+The movable unified Media controller can operate eligible media across the workspace with:
+
+- rewind
+- play / pause
+- forward
+- configurable seek steps
+- all-media scope
+- synchronized media groups
+- global looping behavior
+
+Audio can sync with video. Video can sync with audio. Groups can grow as the workspace grows.
+
+The Media controller itself can be moved, minimized, faded, hidden, and brought back when needed.
+
+## Grab things. Literally.
+
+Moving an object should feel obvious.
+
+FrameChute gives blocks a dedicated **Grab** affordance so dragging does not turn into accidentally renaming something or interacting with the content inside it.
+
+And because a drag handle apparently does not have to be boring, FrameChute ships with stateful Grab artwork:
+
+- Default
+- Hover
+- Faded
+- Expanded
+
+Users can replace those images from Settings. Packaged artwork is also just four predictable files under `assets/grab/`, so custom builds can change the personality of the interface without rewriting JavaScript.
+
+## The interface gets out of the way
+
+FrameChute is built around controls being there when you need them and disappearing when you do not.
+
+You can:
+
+- hide block headers
+- fade Settings when idle
+- fade or hide the Media controller
+- keep the top toolbar visible
+- reveal the toolbar only when approached
+- hide the toolbar entirely
+- customize Grab artwork
+
+The result can go from a full editing interface to almost nothing but the actual material you are working with.
+
+## Make it yours
+
+FrameChute exposes visual roles independently instead of giving you one giant “theme color” that poisons the whole interface.
+
+You can customize things such as:
+
+- top toolbar color
+- toolbar text color
+- accent / small-button color
+- block header color
+- block header text color
+- Media header color
+- floating-panel text color
+- toolbar font family
+- block-header font family
+- workspace background color
+- workspace background image
+
+So yes, you can make it tasteful.
+
+Or deeply questionable.
+
+Both are supported.
+
+## Tiny hand included
+
+FrameChute has a small top-right mascot because software is allowed to have a pulse.
+
+It can be:
+
+- **Reveal on hover**
+- **Always visible**
+- **Hidden**
+
+Hovering it reveals the optional donation prompt. It never needs broad website permissions to do that, because of course it does not.
+
+## Local-first on purpose
+
+FrameChute is a Manifest V3 Chrome/Chromium extension designed around explicit user-selected files and extension-owned workspace state.
+
+It does **not** require:
+
+- broad host permissions just to function
+- a native executable
+- a Python service
+- a localhost daemon
+- native messaging
+- a remote code loader
+- a bundled universe of codecs
+
+If Chromium can play or render a format, FrameChute can work with it where supported. If Chromium cannot decode something, FrameChute should tell you rather than pretending the source never existed.
+
+A missing file should not destroy the workspace around it. Sources are designed to be reconnectable while the rest of the saved arrangement remains useful.
+
+## Why this exists
+
+Most software asks you to adapt your thinking to its hierarchy.
+
+Window here. Tab there. Folder over there. One document occupying the whole screen because apparently rectangles are scarce.
+
+FrameChute starts with a different assumption:
+
+**space itself is useful state.**
+
+Where you put something can be part of what it means.
+
+A workspace can be a writing desk, reference board, study surface, presentation canvas, research pile, media station, storyboard, or some strange personal computer inside your browser that makes perfect sense only to you.
+
+That is fine.
+
+That is the point.
+
+## Architecture
+
+The core model stays intentionally small:
 
 ```text
-Block
-  id
-  type
-  name
-  x
-  y
-  width
-  height
-  z
-  source
-  state
+Workspace
+  └── Blocks
+        id
+        type
+        name
+        x / y
+        width / height
+        z-order
+        source
+        state
 ```
 
-The workspace owns geometry. The block implementation owns the meaning of its `source` and `state`.
+The workspace owns geometry. Each block type owns the small amount of state required to recreate itself.
 
-This is the main architectural boundary. The canvas should not contain special-case knowledge about PDFs, videos, galleries, or text editors.
+That boundary lets new block types participate in save/restore without turning the canvas into a pile of format-specific special cases.
 
-## First block types
+Internal compatibility identifiers such as historical `flashframe.*` storage keys may remain under the old name so existing saved work continues to restore correctly. User-facing product branding is **FrameChute**.
 
-### Text
+## Repository map
 
-Text is a first-class block rather than an afterthought.
+- `src/` — extension workspace and interaction code
+- `assets/images/` — mascot states
+- `assets/grab/` — packaged Grab states
+- `scripts/` — Chrome Web Store packaging and validation
+- `docs/` — architecture, state model, design notes, and implementation documentation
+- `bugs/` — implementation handoff / regression notes
 
-Minimum saved state:
+Build the Chrome Web Store package on Linux/macOS with:
 
-```text
-name
-text
-scroll position / top visible position
-cursor position (optional)
+```bash
+sh scripts/package-web-store.sh
 ```
 
-The saved text itself matters. If the underlying text file later changes or disappears, a saved historical state can still contain the text that existed at that moment.
+The release gate validates the extension and produces the Store ZIP under `dist/`.
 
-### PDF
+## FrameChute v1.0.6
 
-Minimum saved state:
+**THE BIG RELEASE** includes the mascot interaction, four-state packaged Grab artwork, user Grab overrides, unified Media controls, media-dock drag/drop fixes, theme customization, improved Settings fading, high-contrast context menus, FrameChute branding cleanup, and Chrome Web Store-safe packaging.
 
-```text
-file identity
-current page
-```
+### [Get THE BIG RELEASE](https://github.com/thanks-cohn/framechute/releases/latest)
 
-Zoom or finer scroll state can be added later if it proves useful. Page restoration is the important first behavior.
+---
 
-### Directory lightbox
+## The idea
 
-A lightbox points to a user-selected local image directory and lets the user move through it from inside one block.
+Put the things you need where you need them.
 
-Minimum saved state:
+Move them.
 
-```text
-directory identity
-current image
-```
+Resize them.
 
-The exact image name or stable identity matters more than a bare numeric index because directory ordering can change.
+Make the workspace yours.
 
-The lightbox can later add thumbnails, sorting, fit/fill modes, and slideshow behavior without changing the core block contract.
+Save it.
 
-### Local video
+Come back.
 
-Minimum saved state:
+And if somebody opens it later and sees the tiny hand, the disappearing controls, the oddly careful spacing, the colors you chose, the media sitting exactly where you left it, and all the little decisions that technically did not have to be made but somebody cared enough to make anyway...
 
-```text
-file identity
-current timestamp
-```
+yeah.
 
-Paused/playing state, volume, mute, and playback rate are useful additions but should not make the first implementation complicated.
-
-## Flashframes
-
-A Flashframe is a deliberate snapshot of the current workspace.
-
-At minimum it records:
-
-- snapshot id
-- snapshot name
-- creation time
-- the blocks that existed
-- each block's name
-- each block's position and size
-- each block's source
-- each block's minimal restorable state
-
-A saved Flashframe is conceptually immutable. Opening it creates a live workspace derived from that saved moment. Using the restored workspace should not silently mutate the snapshot that was opened.
-
-## Memorew
-
-Memorew is a separate first-party layer built on top of Flashframe's block-state contract.
-
-Flashframe answers:
-
-> What is on the workspace, and where is it?
-
-Memorew answers:
-
-> What did this workspace look like at that moment?
-
-It does not need to understand every block deeply. Each block already knows how to serialize the tiny amount of state required to recreate itself. Memorew records those states over time and can later ask Flashframe to restore one.
-
-For example, a remembered moment may mean:
-
-- a text block has its earlier name and earlier text
-- that text returns near the same visible line, optionally with the old cursor position
-- a PDF returns to page 83
-- a gallery returns to `image_142.png`
-- a video returns to 31:18
-- every block returns to its old size and position
-
-This is intentionally not a virtual-machine snapshot or RAM snapshot. It is a reconstruction of the small set of user-visible states that matter.
-
-See `docs/MEMOREW.md` for the boundary between the platform and the time layer.
-
-## Why an extension
-
-The browser is meant to be the environment, not merely one app among many.
-
-An extension lets Flashframe live directly in Chrome/Chromium while still having its own full-page interface and browser lifecycle. The user can click the extension and enter the workspace without launching a separate desktop application.
-
-Local content is selected explicitly by the user. The implementation should use browser-native file and directory pickers and persist handles where the platform allows it, while always handling lost permissions or moved files gracefully.
-
-## Design rules
-
-### Few concepts
-
-A block is something on the workspace. A Flashframe is a saved workspace. New functionality should fit those concepts before a new concept is invented.
-
-### Minimal restorable state
-
-Save what is needed to make returning feel correct, not every property that happens to exist.
-
-### Direct manipulation
-
-Move and resize things directly. Avoid configuration screens for actions that can be obvious on the object itself.
-
-### Local-first
-
-Text, PDFs, images, and local video should work well before remote integrations are attempted.
-
-### Resilient restoration
-
-One missing file should not prevent the rest of a workspace from opening. A missing source becomes a relinkable block in the correct old position.
-
-### The workspace is a platform
-
-New block types should plug into a small contract. They should not require changes to the canvas or historical system merely because their private state differs.
-
-## First useful milestone
-
-The first version does not need every planned feature.
-
-A convincing milestone is:
-
-1. Install the unpacked extension in Chrome/Chromium.
-2. Click its toolbar icon to open a Flashframe workspace tab.
-3. Add text, PDF, directory-lightbox, and local-video blocks.
-4. Move and resize those blocks.
-5. Save a named Flashframe.
-6. Close the workspace.
-7. Reopen it and restore the saved Flashframe.
-8. Verify that text content/position, PDF page, gallery image, video timestamp, block names, and block geometry return correctly.
-
-Once that path is solid, Memorew can record the same block states over time instead of requiring the user to create every snapshot deliberately.
-
-## Repository notes
-
-- `docs/DESIGN.md` describes workspace and block behavior.
-- `docs/STATE_MODEL.md` describes persistence.
-- `docs/ARCHITECTURE.md` describes the Chrome/Chromium extension boundary.
-- `docs/MEMOREW.md` describes the optional time layer.
-- `docs/IMPLEMENTATION_PLAN.md` gives a bounded build order.
-
-The code should remain boring where possible. The product value is in the interaction model and the state contract, not in unnecessary framework machinery.
+**Somebody was here.**
