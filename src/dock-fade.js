@@ -14,6 +14,7 @@ const defaults = {
 
 let preferences = { ...defaults, ...readPreferences() };
 const timers = new Map();
+let lastInputKind = "pointer";
 
 function readPreferences() {
   try {
@@ -65,6 +66,17 @@ function fadeEnabledFor(dock) {
   return dock === settingsDock ? preferences.settings : preferences.player;
 }
 
+function hasActiveKeyboardFocus(dock) {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement) || !dock?.contains(active)) return false;
+  if (lastInputKind !== "keyboard") return false;
+  try {
+    return active.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
+
 function scheduleFade(dock) {
   if (!dock) return;
   clearFadeTimer(dock);
@@ -77,7 +89,7 @@ function scheduleFade(dock) {
   const timer = setTimeout(() => {
     timers.delete(dock);
 
-    if (dock.matches(":hover") || dock.matches(":focus-within") || dock.classList.contains("is-dragging")) {
+    if (dock.matches(":hover") || dock.classList.contains("is-dragging") || hasActiveKeyboardFocus(dock)) {
       return;
     }
 
@@ -87,11 +99,15 @@ function scheduleFade(dock) {
   timers.set(dock, timer);
 }
 
+function revealAndReschedule(dock) {
+  revealDock(dock);
+  scheduleFade(dock);
+}
+
 function revealMenusTemporarily() {
   for (const dock of [settingsDock, videoDock]) {
     if (!dock) continue;
-    revealDock(dock);
-    scheduleFade(dock);
+    revealAndReschedule(dock);
   }
 }
 
@@ -100,11 +116,18 @@ function bindDock(dock) {
 
   dock.addEventListener("pointerenter", () => revealDock(dock));
   dock.addEventListener("pointerleave", () => scheduleFade(dock));
-  dock.addEventListener("pointerdown", () => revealDock(dock));
+  dock.addEventListener("pointerdown", () => {
+    lastInputKind = "pointer";
+    revealDock(dock);
+  });
+  dock.addEventListener("keydown", () => {
+    lastInputKind = "keyboard";
+    revealDock(dock);
+  });
   dock.addEventListener("focusin", () => revealDock(dock));
   dock.addEventListener("focusout", () => {
     queueMicrotask(() => {
-      if (!dock.matches(":focus-within")) scheduleFade(dock);
+      if (!dock.matches(":focus-within") || !hasActiveKeyboardFocus(dock)) scheduleFade(dock);
     });
   });
 
@@ -116,20 +139,21 @@ function applyPreferences() {
   if (fadePlayerInput) fadePlayerInput.checked = Boolean(preferences.player);
   if (fadeDelayInput) fadeDelayInput.value = String(readFadeDelaySeconds());
 
-  if (settingsDock) {
-    revealDock(settingsDock);
-    scheduleFade(settingsDock);
-  }
-
-  if (videoDock) {
-    revealDock(videoDock);
-    scheduleFade(videoDock);
-  }
+  if (settingsDock) revealAndReschedule(settingsDock);
+  if (videoDock) revealAndReschedule(videoDock);
 
   window.dispatchEvent(new CustomEvent("flashframe:fade-delay-changed", {
     detail: { seconds: readFadeDelaySeconds() }
   }));
 }
+
+document.addEventListener("pointerdown", () => {
+  lastInputKind = "pointer";
+}, true);
+
+document.addEventListener("keydown", () => {
+  lastInputKind = "keyboard";
+}, true);
 
 fadeSettingsInput?.addEventListener("change", () => {
   preferences.settings = fadeSettingsInput.checked;
@@ -152,6 +176,7 @@ fadeDelayInput?.addEventListener("change", () => {
 });
 
 window.addEventListener("flashframe:reveal-menus", revealMenusTemporarily);
+window.addEventListener("flashframe:show-settings", () => revealAndReschedule(settingsDock));
 
 bindDock(settingsDock);
 bindDock(videoDock);
