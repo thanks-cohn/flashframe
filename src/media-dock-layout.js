@@ -1,4 +1,5 @@
 const GRAB_ART_KEY = "flashframe.grab-art.v1";
+const PACKAGED_DEFAULT_GRAB = chrome.runtime.getURL("assets/grab/default.png");
 
 function readGrabArt() {
   try {
@@ -13,7 +14,7 @@ function sourceForState(state) {
   const art = readGrabArt();
   const exact = typeof art[state] === "string" ? art[state] : "";
   const fallback = typeof art.default === "string" ? art.default : "";
-  return exact || fallback;
+  return exact || fallback || PACKAGED_DEFAULT_GRAB;
 }
 
 function ensureDockGrabParts(grip) {
