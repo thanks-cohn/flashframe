@@ -13,6 +13,9 @@ $Manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
 if ($Manifest.manifest_version -ne 3) {
     throw "Chrome Web Store package must use Manifest V3"
 }
+if ([string]$Manifest.name -ne "FrameChute") {
+    throw "Manifest name must be FrameChute"
+}
 
 $Version = [string]$Manifest.version
 if ([string]::IsNullOrWhiteSpace($Version)) {
@@ -24,15 +27,12 @@ if ([string]::IsNullOrWhiteSpace($Description) -or $Description.Length -gt 132) 
     throw "Manifest description must contain 1-132 characters"
 }
 
-# This isolated Chrome edition deliberately has no desktop companion and no broad
-# website access. If this list changes, review the new permission before changing
-# this release gate.
 $AllowedPermissions = @()
 $ActualPermissions = @($Manifest.permissions | ForEach-Object { [string]$_ })
 $UnexpectedPermissions = @($ActualPermissions | Where-Object { $_ -notin $AllowedPermissions })
 $MissingPermissions = @($AllowedPermissions | Where-Object { $_ -notin $ActualPermissions })
 if ($UnexpectedPermissions.Count -or $MissingPermissions.Count) {
-    throw "Permission gate failed. Expected only: $($AllowedPermissions -join ', '). Actual: $($ActualPermissions -join ', ')"
+    throw "Permission gate failed. Expected no extension API permissions. Actual: $($ActualPermissions -join ', ')"
 }
 
 $AllowedHosts = @()
@@ -43,7 +43,11 @@ if ($UnexpectedHosts.Count -or $MissingHosts.Count) {
     throw "Host-permission gate failed. Expected no host permissions. Actual: $($ActualHosts -join ', ')"
 }
 if ($ActualHosts -contains "http://*/*" -or $ActualHosts -contains "https://*/*" -or $ActualHosts -contains "<all_urls>") {
-    throw "Broad host access is forbidden in the isolated Chrome edition"
+    throw "Broad host access is forbidden in the Chrome Web Store candidate"
+}
+
+if ([string]$Manifest.background.service_worker -ne "src/service-worker.js" -or [string]$Manifest.background.type -ne "module") {
+    throw "Manifest background must use packaged module service worker src/service-worker.js"
 }
 
 $RequiredIcons = @{
@@ -63,8 +67,6 @@ foreach ($Size in $RequiredIcons.Keys) {
     }
 }
 
-# Audit only files that can ship in the extension. Documentation is intentionally
-# excluded from the Store ZIP.
 $ShipRoots = @("manifest.json", "LICENSE", "src", "icons", "assets")
 $TextExtensions = @(".js", ".mjs", ".html", ".css", ".json")
 $ForbiddenBinaryExtensions = @(".exe", ".dll", ".msi", ".bat", ".cmd", ".ps1", ".py", ".pyc")
@@ -139,17 +141,48 @@ $TestUnpacked = Join-Path $Dist "test-unpacked"
 if (Test-Path $TestUnpacked) { Remove-Item $TestUnpacked -Recurse -Force }
 Expand-Archive -Path $Output -DestinationPath $TestUnpacked -Force
 
-$PackagedManifest = Join-Path $TestUnpacked "manifest.json"
-if (-not (Test-Path $PackagedManifest)) {
-    throw "Packaging error: manifest.json is not at the ZIP root"
+$RequiredPackageFiles = @(
+    "manifest.json",
+    "LICENSE",
+    "src/service-worker.js",
+    "src/workspace.html",
+    "src/workspace-extras.js",
+    "src/picker-guard.js",
+    "src/media-dock-grab-pin.js",
+    "src/grab-art-runtime.js",
+    "assets/grab/default.png",
+    "assets/grab/hover.png",
+    "assets/grab/faded.png",
+    "assets/grab/expanded.png",
+    "assets/images/default.png",
+    "assets/images/hover.png",
+    "icons/icon16.png",
+    "icons/icon32.png",
+    "icons/icon48.png",
+    "icons/icon128.png"
+)
+
+foreach ($Relative in $RequiredPackageFiles) {
+    $Candidate = Join-Path $TestUnpacked ($Relative -replace '/', [IO.Path]::DirectorySeparatorChar)
+    if (-not (Test-Path $Candidate)) {
+        throw "Packaging error: required file missing from ZIP: $Relative"
+    }
+}
+
+$PackagedManifestPath = Join-Path $TestUnpacked "manifest.json"
+$SourceManifestJson = (Get-Content $ManifestPath -Raw | ConvertFrom-Json) | ConvertTo-Json -Depth 20 -Compress
+$PackagedManifestJson = (Get-Content $PackagedManifestPath -Raw | ConvertFrom-Json) | ConvertTo-Json -Depth 20 -Compress
+if ($SourceManifestJson -ne $PackagedManifestJson) {
+    throw "Packaging error: manifest inside ZIP differs from source manifest"
 }
 
 Write-Host ""
-Write-Host "FLASHFRAME ISOLATED CHROME RELEASE GATE: PASS"
+Write-Host "FRAMECHUTE CHROME WEB STORE RELEASE GATE: PASS"
 Write-Host "Version:       $Version"
 Write-Host "Store ZIP:     $Output"
 Write-Host "Test unpacked: $TestUnpacked"
-Write-Host "Permissions:   $($ActualPermissions -join ', ')"
-Write-Host "Host access:   $($ActualHosts -join ', ')"
+Write-Host "Permissions:   NONE"
+Write-Host "Host access:   NONE"
+Write-Host "Remote code:   NONE"
 Write-Host "Companion:     NONE"
 Write-Host "Python/EXE:    NOT REQUIRED"
