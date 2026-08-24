@@ -1,0 +1,14 @@
+/* Focused fixes from bugs/details.md. */
+
+:root {
+  --ff-context-menu-text: #fff;
+}
+
+.flashframe-layer-menu,
+.flashframe-layer-menu button {
+  color: var(--ff-context-menu-text) !important;
+}
+
+.workspace.is-drop-target::after {
+  content: "Drop into FrameChute" !important;
+}

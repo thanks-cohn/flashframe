@@ -46,6 +46,14 @@ if (![...document.styleSheets].some((sheet) => sheet.href === frameChuteFinalHre
   document.head.append(link);
 }
 
+const handoffFixesHref = new URL("./handoff-fixes.css", import.meta.url).href;
+if (![...document.styleSheets].some((sheet) => sheet.href === handoffFixesHref)) {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = handoffFixesHref;
+  document.head.append(link);
+}
+
 await import("./web-drop.js");
 await import("./drop-local-sources.js");
 await import("./remote-video.js");
@@ -57,3 +65,7 @@ await import("./media-dock-layout.js");
 await import("./media-header-theme.js");
 await import("./donation-card.js");
 await import("./framechute-final-polish.js");
+await import("./media-dock-drop-router.js");
+await import("./grab-art-defaults.js");
+await import("./framechute-visible-branding.js");
+await import("./mascot.js");
