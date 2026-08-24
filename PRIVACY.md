@@ -1,83 +1,83 @@
-# Flashframe Privacy Policy
+# FrameChute Privacy Policy
 
-**Last updated: August 23, 2026**
+**Last updated: August 24, 2026**
 
-Flashframe is designed as a local-first spatial workspace for Chrome and Chromium. This policy explains what the extension handles, what it stores, and when it uses the network.
+FrameChute is a local-first spatial workspace for Chrome and Chromium. This policy explains what information the extension handles, where it is stored, and when the browser may contact another service.
 
 ## Single purpose
 
-Flashframe lets users build, arrange, save, and restore spatial workspaces made from notes, local files, local media, images, web pages, and supported web media.
+FrameChute lets users arrange, save, restore, and directly manipulate notes, local files, local media, images, PDFs, URLs, and user-selected web content in one visual workspace.
 
-Flashframe does not use workspace information for advertising, profiling, data brokerage, or unrelated analytics.
+FrameChute does not use workspace information for advertising, behavioral profiling, data brokerage, credit decisions, or unrelated analytics.
 
-## Chrome-only architecture
+## No account or developer cloud required
 
-The current Chrome Web Store candidate is self-contained in the browser. It does not require a desktop companion, Windows executable, Python runtime, localhost service, native messaging host, Flashframe account, or developer-operated cloud backend for normal operation.
+The Chrome Web Store build is self-contained in the browser. Normal operation does not require a FrameChute account, desktop companion, native messaging host, Windows executable, Python runtime, localhost service, or developer-operated cloud backend.
 
 ## Local files and folders
 
-Flashframe only opens a local file or folder after explicit user action. The user may choose a source through a browser-native file or directory picker, or deliberately drag a local file or directory into the Flashframe workspace.
+FrameChute accesses a local file or folder only after the user explicitly selects or drops it. The user may choose a source with Chrome's browser-native file or directory picker, or deliberately drag a local source into the workspace.
 
-Selected or dropped content is used only to provide the visible Flashframe feature the user requested, such as displaying text, a PDF, an image directory, a local video, an image, or a generic local-file block.
+Selected content is used only for the visible feature the user requested, such as displaying a text file, PDF, image directory, local image, audio file, video, or generic local-file block.
 
-Flashframe does not silently crawl the user's filesystem.
+FrameChute does not silently crawl the user's filesystem.
 
-When Chrome provides a browser-managed file or directory handle, Flashframe may store that handle locally so a saved workspace can reconnect to the user-selected source. Browser permission may need to be renewed later.
+When Chrome provides a browser-managed file or directory handle, FrameChute may store that handle in extension-local browser storage so a saved workspace can reconnect to the source later. Chrome may require the user to renew permission after a browser restart or other permission change.
 
-## Saved Flashframes
+## Workspace and saved-state data
 
-Named Flashframes and related local state are stored in extension-local browser storage and, when the user explicitly chooses a Flashframe data directory, in that user-selected local directory.
+FrameChute stores workspace state locally in browser storage. Depending on the feature used, this can include block positions and sizes, names, user-entered note text, selected URLs, PDF page number, gallery position, media playback state, appearance settings, and browser-managed references to local sources the user selected.
 
-A saved workspace can contain lightweight restoration state such as block geometry, names, text content, current PDF page, gallery position, video timestamp, playback settings, URLs, and browser-managed references to local sources selected or dropped by the user.
+If a user explicitly chooses a FrameChute data directory, FrameChute may also write session-related files to that user-selected local directory.
 
-Flashframe does not upload saved Flashframes to a Flashframe-operated cloud service.
+FrameChute does not upload workspace contents to a FrameChute-operated cloud service.
 
-## Web pages, images, and remote video
+## User-selected web content
 
-When the user explicitly pastes or drops an HTTP or HTTPS URL into Flashframe, the browser may connect directly to that URL's host to display the requested webpage, image, or direct video stream.
+When the user explicitly adds an HTTP or HTTPS URL, the browser may connect directly to that URL's host to display the requested webpage, image, or browser-playable media.
 
-Remote video is loaded in the browser's native media element. Playback, pause, forward, and rewind operate locally in the workspace when the remote source exposes seekable media. A truly live stream with no DVR or seekable history cannot be rewound beyond the range exposed by that stream.
+The destination host receives the network information ordinarily sent by the browser when loading that resource, such as the user's IP address and standard request metadata. FrameChute does not proxy the request through a FrameChute server.
 
-The destination website or media host receives the network information normally sent by the browser when loading that resource, such as the user's IP address and standard request metadata. Flashframe does not proxy that request through a Flashframe server.
+Some websites prevent embedding. In those cases FrameChute may preserve the URL as a normal link that the user can open directly.
 
-## External links
+## Audio and video
 
-Video-site URLs, including YouTube URLs, are ordinary web/link blocks. Flashframe preserves the exact URL and offers **Open page**; it does not create a special player or request host access for those sites.
+Local audio and video remain local to the user's browser. Direct remote media URLs are requested from the user-selected remote host by the browser. Playback controls operate on the media element in the FrameChute workspace.
 
-## Analytics, ads, accounts, and remote code
+## Support / donation link
 
-The current build does not include Flashframe analytics, advertising, telemetry, account login, Flashframe cloud sync, or remotely hosted executable extension code.
+FrameChute can show an optional support link that opens an external Stripe-hosted checkout page after the user clicks it. FrameChute itself does not receive, process, or store payment-card or financial-account details. Any information entered on Stripe's site is handled by Stripe under Stripe's own terms and privacy practices.
 
-All executable extension JavaScript is packaged with the extension. Remote webpages, images, and videos are user-selected content, not remotely hosted extension code.
+## Analytics, advertising, telemetry, and remote executable code
 
-Flashframe does not sell user data or use user data for personalized, retargeted, or interest-based advertising.
+The submitted build contains no FrameChute analytics, advertising network, behavioral telemetry, account login, or developer-operated cloud sync.
+
+All executable extension JavaScript is packaged with the extension. FrameChute does not download JavaScript or WebAssembly from a remote server and execute it as extension code. User-selected webpages, images, and media are content, not extension code.
+
+FrameChute does not sell user data.
 
 ## Permissions
 
-Flashframe follows a narrow-permission model.
+The submitted manifest requests **no extension API permissions and no host permissions**.
 
-The current manifest requests no extension API permissions and no host permissions.
+Local file and directory access occurs through explicit user interaction with Chrome's native pickers or drag-and-drop rather than broad filesystem access.
 
-Local file and directory access occurs through explicit user interaction with browser-native pickers or drag-and-drop, rather than broad filesystem permission.
-
-Flashframe does not request permission to read or change all websites the user visits.
+FrameChute does not request permission to read or change all websites the user visits and does not collect browser history.
 
 ## Human access to user data
 
-Flashframe's normal operation does not send workspace contents to the developer, so Flashframe personnel do not receive or read the user's local workspace contents as part of normal operation.
+Normal operation does not send workspace contents to the developer. FrameChute personnel therefore do not receive or read users' local workspace contents as part of normal product operation.
 
 ## Deleting local data
 
-Users can delete individual saved Flashframes through available product controls, remove data from a user-selected Flashframe data folder, or uninstall the extension to remove extension-local browser storage according to Chrome's normal extension-removal behavior.
+Users can remove workspace blocks and saved workspace state through product controls where provided. Users can also remove files they placed in a user-selected FrameChute data folder or uninstall the extension to remove extension-local browser storage according to Chrome's normal extension-removal behavior.
 
-Deleting a source file from the user's computer is outside Flashframe's control. Removing a block from a workspace does not delete the user's source file.
+Removing a block from FrameChute does not delete the user's original source file.
 
 ## Chrome Web Store Limited Use
 
-Flashframe's use of information received from Chrome extension APIs is limited to providing or improving Flashframe's disclosed single purpose and user-facing features.
-
-The use of information received from Google APIs will adhere to the Chrome Web Store User Data Policy, including the Limited Use requirements.
+FrameChute uses information only to provide or improve the disclosed spatial-workspace functionality. Any information received through Chrome extension APIs is handled in accordance with the Chrome Web Store User Data Policy and Limited Use requirements.
 
 ## Changes
 
-If Flashframe's data handling materially changes, this policy and the Chrome Web Store privacy disclosures must be updated before the changed behavior is released.
+If FrameChute's data handling materially changes, this policy and the Chrome Web Store privacy disclosures will be updated before the changed behavior is released.
