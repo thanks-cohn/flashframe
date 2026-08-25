@@ -2,207 +2,342 @@
 
 ### Your browser has tabs. FrameChute gives it a desk.
 
-FrameChute is a spatial workspace for Chrome and Chromium.
+FrameChute is a local-first spatial workspace for Chrome and Chromium.
 
-Open notes, PDFs, image galleries, audio, video, local files, and webpages on one freeform canvas. Move them where you want. Resize them. Layer them. Save the arrangement. Come back later and pick up where you left off.
+Drop in images. Open PDFs. Keep notes beside them. Play videos and audio. Arrange references around the screen. Resize, layer, synchronize, save the whole scene, close it, come back later, and keep going.
 
-**There should be almost no perceptible distance between wanting something and reaching it.**
+The idea is simple:
+
+> **There should be almost no perceptible distance between wanting something and reaching it.**
 
 <p align="center">
   <img src="assets/images/default.png" alt="FrameChute mascot" width="180">
 </p>
 
-## FrameChute + Chute
+## The “ohhh, THAT is useful” part
 
-FrameChute works especially well with [Chute](https://github.com/thanks-cohn/chute), the local cross-browser basket for files, images, links, and text.
+A normal browser remembers pages.
 
-**Chute catches things. FrameChute arranges them.**
+FrameChute remembers **the workspace you made out of them**.
 
-Use Chute while browsing to collect something quickly, then drag it from the Chute popup or Shelf directly onto FrameChute when you want it to become part of a persistent workspace.
+Imagine you are writing, studying, editing, researching, storyboarding, comparing references, or just collecting a beautiful mess of things that belong together.
+
+You arrange:
 
 ```text
-webpage / file / image
-        ↓
-      Chute
-        ↓ drag from popup or Shelf
-    FrameChute
-        ↓
-move · resize · layer · save · return later
+reference image       PDF
+       \               /
+        \             /
+          your note
+             |
+          video @ 12:47
+             |
+         second image
 ```
 
-Images dragged out of Chute expose ordinary browser drag formats, so FrameChute can accept them as image blocks without either project becoming dependent on the other.
+Then you save the FrameChute.
 
-Chute remains useful by itself. FrameChute remains useful by itself. Together they make the path from **finding something** to **putting it where you want it** much shorter.
+Later, you restore it.
 
-### [Get Chute](https://github.com/thanks-cohn/chute)
+The blocks return to their saved positions and sizes. Notes come back. PDF position comes back. Gallery position comes back. Media timestamps come back. Sync groups come back. Appearance comes back.
 
-## Download
+And with FrameChute 1.0.14, browser-created and FileChute-dropped images can be preserved locally with the saved workspace instead of existing only as a fragile live drag object.
 
-### [Download the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
+That means a saved workspace containing those images can come back with the images already there.
 
-The Releases page always points to the newest published packaged build, so you do not need to hunt through old version names or branches.
-
-### Install it
-
-1. Open the **latest release** link above.
-2. Download the packaged FrameChute ZIP.
-3. Extract the ZIP.
-4. Open `chrome://extensions`.
-5. Turn on **Developer mode**.
-6. Click **Load unpacked**.
-7. Select the extracted FrameChute folder.
-8. Open FrameChute and start throwing things onto the canvas.
-
-No native companion. No Python runtime. No localhost service. No giant permission grab.
+**That is the point: saving a FrameChute should feel like saving the moment, not saving a list of chores for Future You.**
 
 ---
 
-## Stop organizing your work around tabs
+## What you can put on the canvas
 
-Tabs are great until the thing you are doing needs five documents, three reference images, a video, a soundtrack, a note to yourself, and one webpage you absolutely cannot lose.
+- Notes and editable text
+- PDFs
+- Individual images
+- Image folders and galleries
+- Local audio
+- Local video
+- Browser-playable media
+- Web pages and URLs when the destination permits embedding
+- Generic local files with remembered source information
 
-Then the browser becomes a hallway full of identical doors.
-
-FrameChute gives you a room instead.
-
-Put the PDF beside the note it explains. Keep the reference image above the paragraph it inspired. Leave the video at the exact moment you care about. Put the soundtrack in the corner. Move everything until the arrangement makes sense **to you**.
-
-Then save the arrangement itself.
-
-Not merely the files.
-
-The moment.
-
-## What FrameChute can hold
-
-- **Notes and text** you can write directly in the workspace
-- **PDFs** kept beside the work they belong to
-- **Local images** as independent spatial objects
-- **Image folders / galleries** without exploding a directory into tabs
-- **Local audio** with playback state
-- **Local video** with remembered timestamps and playback state
-- **Web pages and URLs** when the destination permits embedding
-- **Direct browser-playable media**
-- **Generic local files** with graceful reconnect behavior
-
-Every block can live beside the thing it relates to instead of being trapped in a separate application-shaped silo.
+Every block lives in the same freeform space, so related things can finally stay visually related.
 
 ## Save the useful state
 
-A FrameChute workspace remembers the details that make returning feel correct:
+A FrameChute can remember:
 
-- block position and size
+- block position
+- block size
 - stacking order
-- names and note text
-- PDF position
-- gallery position
-- media timestamps and playback state
-- looping choices
+- names
+- note contents
+- note cursor/scroll state
+- PDF page
+- gallery image/index
+- video timestamp
+- playback state
+- volume and mute state
+- looping
+- playback rate
 - media sync groups
-- workspace appearance
-- background configuration
+- workspace background
+- appearance settings
+- remembered local-source information
 
-The goal is not to snapshot RAM.
+The goal is not to freeze RAM.
 
-The goal is to recreate the useful moment.
+The goal is to recreate the **useful human state** of the workspace.
+
+## Images that actually survive the save
+
+This is one of the most important changes in FrameChute 1.0.14.
+
+Some images arrive in FrameChute as real browser `File` objects without a durable operating-system file handle, especially images dragged in from another extension such as FileChute.
+
+Older behavior could make those images feel temporary: the workspace remembered that an image belonged there, but after a restart the browser might no longer have the original drag object.
+
+FrameChute now preserves supported browser-created/FileChute-dropped image bytes in its local IndexedDB storage and keeps the saved block tied to that preserved copy.
+
+So the intended experience is:
+
+```text
+Drop image into FrameChute
+        ↓
+Arrange workspace
+        ↓
+Save FrameChute
+        ↓
+Close it
+        ↓
+Come back later
+        ↓
+Restore
+        ↓
+image is still there
+```
+
+No cloud upload. No FrameChute account. No remote storage service.
+
+Large synthetic video/audio files are intentionally not silently duplicated into browser storage. FrameChute avoids turning one innocent save into several surprise gigabytes.
+
+## Reconnect without playing “where was that file?”
+
+For ordinary native local files, FrameChute remembers Chrome's filesystem handle whenever one exists.
+
+If Chrome still grants access, FrameChute can reconnect directly.
+
+If Chrome requires confirmation again, FrameChute uses the remembered handle/location as the picker starting point when Chromium allows it. The goal is for reconnect to feel like:
+
+```text
+Reconnect to saved location
+        ↓
+correct place opens
+        ↓
+Open
+        ↓
+done
+```
+
+rather than:
+
+```text
+Reconnect
+        ↓
+...where did I put that thing three weeks ago?
+```
+
+There is also a top-toolbar **Reconnect all to locations** command. When saved handles are still usable, one click can reconnect multiple disconnected blocks without making you relink them one by one.
+
+Chrome can revoke filesystem permissions, so no extension can truthfully promise that the browser will never ask again. FrameChute's job is to remember as much context as Chrome permits and make the remaining confirmation as painless as possible.
+
+## Fit to Size
+
+Huge image? Tiny viewport? Weirdly tall reference?
+
+Select an image or gallery and hit **Fit to Size** in the top toolbar.
+
+FrameChute fits the whole visible image inside a maximum 1200 × 700 content area while preserving the exact aspect ratio.
+
+Examples:
+
+```text
+1200 × 800  →  1050 × 700
+2400 × 1200 →  1200 × 600
+800 × 1200  →   467 × 700
+```
+
+No cropping. No stretching. No rewriting the original image file.
+
+It only changes the FrameChute block geometry so the whole image becomes visible at once.
+
+## FrameChute + FileChute
+
+FrameChute works especially well with [FileChute](https://github.com/thanks-cohn/filechute).
+
+**FileChute catches things. FrameChute arranges them.**
+
+```text
+web / image / local file
+          ↓
+      FileChute
+          ↓ drag
+      FrameChute
+          ↓
+ move · resize · layer
+          ↓
+        save
+          ↓
+       return
+```
+
+FileChute and FrameChute remain useful independently. Together, they shorten the path from **“I found this”** to **“this now belongs exactly here.”**
 
 ## Media that behaves like part of the workspace
 
-FrameChute treats audio and video as first-class timed objects rather than decorative attachments.
+FrameChute treats timed media as workspace objects, not decorative attachments.
 
-The movable unified Media controller can operate eligible media across the workspace with rewind, play/pause, forward, configurable seek steps, looping, and synchronized media groups.
+The movable Media controller can operate eligible audio and video across the canvas with:
 
-Audio can sync with video. Video can sync with audio. Groups can grow as the workspace grows.
+- rewind
+- play/pause
+- forward
+- configurable seek steps
+- looping
+- synchronized media groups
+- scope controls
 
-The Media controller itself can be moved, minimized, faded, hidden, and brought back when needed.
+Audio can sync with video. Video can sync with audio. Rewinding or seeking synchronized media can move the group together.
+
+The controller itself can be moved, minimized, faded, hidden, and summoned again when needed.
 
 ## Grab things. Literally.
 
-Moving an object should feel obvious.
+Moving a block should not mean accidentally selecting text, renaming something, or scrubbing a video.
 
-FrameChute gives blocks a dedicated **Grab** affordance so dragging does not turn into accidentally renaming something or interacting with the content inside it.
+FrameChute provides a dedicated **Grab** affordance for moving workspace objects.
 
-And because a drag handle apparently does not have to be boring, FrameChute ships with stateful Grab artwork:
+It also supports replaceable Grab artwork states:
 
 - Default
 - Hover
 - Faded
 - Expanded
 
-Users can replace those images from Settings. Packaged artwork lives under `assets/grab/`, so custom builds can change the personality of the interface without rewriting JavaScript.
+Packaged artwork lives under `assets/grab/`, so the interface can change personality without changing the workspace engine.
 
-## The interface gets out of the way
+## The interface can disappear
 
-FrameChute is built around controls being there when you need them and disappearing when you do not.
+FrameChute is designed so controls can exist when useful and get out of the way when they are not.
 
-You can hide block headers, fade Settings when idle, fade or hide the Media controller, choose toolbar visibility behavior, customize Grab artwork, and change the visual character of the workspace without changing its content.
+You can control block headers, the top toolbar, Settings visibility, Media controller visibility/fading, footer behavior, workspace colors, background imagery, fonts, accents, and other visual roles.
 
-The result can go from a full editing interface to almost nothing but the material you are working with.
-
-## Make it yours
-
-FrameChute exposes visual roles independently instead of giving you one giant theme color that poisons the whole interface.
-
-You can customize toolbar colors, text colors, accents, block headers, Media controls, fonts, workspace background color, and workspace background imagery.
-
-So yes, you can make it tasteful.
-
-Or deeply questionable.
-
-Both are supported.
-
-## Tiny hand included
-
-FrameChute has a small top-right mascot because software is allowed to have a pulse.
-
-It can be **Reveal on hover**, **Always visible**, or **Hidden**.
-
-The optional support link is just that: optional. FrameChute's core workspace does not require an account, subscription, or external service.
+A busy editing surface can become almost nothing but the material itself.
 
 ## Local-first on purpose
 
-FrameChute is a Manifest V3 Chrome/Chromium extension designed around explicit user-selected files and extension-owned workspace state.
+FrameChute is a Manifest V3 Chrome/Chromium extension built around user-selected files and local workspace state.
 
-The current Store-ready build requests **no Chrome extension API permissions and no host permissions**.
+The current extension requests **no Chrome extension API permissions and no host permissions**.
 
-FrameChute does **not** require:
+FrameChute does not require:
 
-- broad website permissions just to function
-- a native executable
-- a Python service
-- a localhost daemon
-- native messaging
-- a remote code loader
 - a FrameChute account
+- a subscription
+- a native executable
+- Python
+- a localhost server
+- native messaging
+- broad browsing-history access
+- remote executable code
 - a developer-operated cloud backend
 
-All executable extension JavaScript ships inside the extension package.
-
-If Chromium can play or render a format, FrameChute can work with it where supported. If Chromium cannot decode something, FrameChute should tell you rather than pretending the source never existed.
-
-A missing file should not destroy the workspace around it. Sources are designed to be reconnectable while the rest of the saved arrangement remains useful.
-
-## Privacy
-
-FrameChute stores normal workspace state locally and does not upload workspace contents to a FrameChute-operated cloud service.
+Normal workspace data is kept locally.
 
 See [PRIVACY.md](PRIVACY.md) for the current privacy policy and Chrome Web Store data-handling disclosures.
+
+---
+
+# Install FrameChute
+
+## Download the latest release
+
+### [Download the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
+
+Then:
+
+1. Download the packaged FrameChute ZIP.
+2. Extract it.
+3. Open `chrome://extensions` in Chrome/Chromium.
+4. Turn on **Developer mode**.
+5. Click **Load unpacked**.
+6. Select the extracted FrameChute folder.
+7. Open FrameChute.
+8. Throw something onto the canvas.
+
+That is it.
+
+## Installing directly from the repository
+
+```bash
+git clone https://github.com/thanks-cohn/framechute.git
+cd framechute
+```
+
+Then open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the repository folder.
+
+To update a local clone:
+
+```bash
+cd /path/to/framechute
+git pull --ff-only origin main
+```
+
+Then press **Reload** on FrameChute in `chrome://extensions`.
+
+---
+
+## Optional durable FrameChute data folder
+
+FrameChute can use a user-chosen local data folder for saved workspace JSON archives.
+
+The archive layout includes live and named saved-state data, such as:
+
+```text
+FrameChute data folder/
+  live/
+    current.flashframe.json
+  sessions/
+    ...saved states....flashframe.json
+```
+
+Chrome may require the initial filesystem permission and can occasionally require confirmation again after browser/security changes.
+
+The archive is intended to give saved workspace state a life outside the extension package itself, while IndexedDB continues to hold browser-managed state such as durable handles and preserved supported image content.
+
+## Why JSON matters
+
+The `.flashframe.json` state is the map of the workspace.
+
+It records what existed, where it sat, what state it was in, and what source identity belongs to it.
+
+Browser filesystem handles themselves are stored through browser-managed persistence rather than being faked as plain path strings inside JSON. When Chrome allows the saved handle to be reused, FrameChute can reconnect directly. When it requires confirmation, FrameChute uses remembered context to get the user as close to **Open → done** as the browser permits.
 
 ## Why this exists
 
 Most software asks you to adapt your thinking to its hierarchy.
 
-Window here. Tab there. Folder over there. One document occupying the whole screen because apparently rectangles are scarce.
+Tab here. Window there. Folder somewhere else. A PDF in one application, notes in another, reference images in a third, and a video buried behind six tabs.
 
-FrameChute starts with a different assumption:
+FrameChute starts from a different assumption:
 
 **space itself is useful state.**
 
 Where you put something can be part of what it means.
 
-A workspace can be a writing desk, reference board, study surface, presentation canvas, research pile, media station, storyboard, or some strange personal computer inside your browser that makes perfect sense only to you.
+A FrameChute can be a writing desk, research board, study surface, media station, storyboard, reference wall, presentation canvas, visual notebook, or a strange little personal computer inside your browser that makes perfect sense only to you.
 
-That is fine.
+That is not an edge case.
 
 That is the point.
 
@@ -223,20 +358,18 @@ Workspace
         state
 ```
 
-The workspace owns geometry. Each block type owns the small amount of state required to recreate itself.
+The workspace owns geometry. Each block type owns the state required to recreate itself.
 
-That boundary lets new block types participate in save/restore without turning the canvas into a pile of format-specific special cases.
-
-Internal compatibility identifiers such as historical `flashframe.*` storage keys may remain under the old name so existing saved work continues to restore correctly. User-facing product branding is **FrameChute**.
+Internal compatibility identifiers using the historical `flashframe` name may remain in storage and file formats so older saved work continues to restore. User-facing product branding is **FrameChute**.
 
 ## Repository map
 
-- `src/` — extension workspace and interaction code
-- `assets/images/` — mascot artwork
-- `assets/grab/` — packaged Grab states
-- `scripts/` — Chrome Web Store packaging and validation
-- `docs/` — architecture, state model, Store submission notes, and implementation documentation
-- `bugs/` — implementation handoff / regression notes
+- `src/` - extension workspace and interaction code
+- `assets/images/` - mascot artwork
+- `assets/grab/` - packaged Grab states
+- `scripts/` - Chrome Web Store packaging and validation
+- `docs/` - architecture, state model, Store notes, and implementation documentation
+- `bugs/` - implementation handoff and regression notes
 
 Build the Chrome Web Store package on Linux/macOS with:
 
@@ -246,28 +379,28 @@ sh scripts/package-web-store.sh
 
 The release gate validates the extension and produces the Store ZIP under `dist/`.
 
-For end users, use the permanent latest-release link instead:
-
-### [Get the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
-
 ---
 
 ## The idea
 
-Put the things you need where you need them.
+Find something.
 
-Move them.
+Drop it in.
 
-Resize them.
+Put it where your brain says it belongs.
 
-Make the workspace yours.
+Resize it.
+
+Layer it.
+
+Sync it.
 
 Save it.
 
+Leave.
+
 Come back.
 
-And if somebody opens it later and sees the tiny hand, the disappearing controls, the oddly careful spacing, the colors you chose, the media sitting exactly where you left it, and all the little decisions that technically did not have to be made but somebody cared enough to make anyway...
+And instead of reconstructing yesterday from memory...
 
-yeah.
-
-**Somebody was here.**
+**there it is.**
