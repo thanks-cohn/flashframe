@@ -27,6 +27,17 @@ function sendToBack(block) {
   applyLayerOrder(ordered);
 }
 
+function closeBlock(block) {
+  if (!block) return;
+  const remove = block.querySelector(".remove-block");
+  if (remove instanceof HTMLElement) {
+    remove.click();
+    return;
+  }
+  block.remove();
+  workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+}
+
 function makeMenusVisible() {
   window.dispatchEvent(new CustomEvent("flashframe:reveal-menus"));
 }
@@ -45,6 +56,8 @@ menu.innerHTML = `
   <button type="button" data-layer-action="show-toolbar" role="menuitem">Show top bar</button>
   <button type="button" data-layer-action="show-settings" role="menuitem">Show Settings</button>
   <button type="button" data-layer-action="reveal-menus" role="menuitem">Make menus visible</button>
+  <div class="flashframe-layer-menu-separator" role="separator"></div>
+  <button type="button" data-layer-action="close" class="flashframe-layer-menu-close" role="menuitem">Close frame</button>
 `;
 document.body.append(menu);
 
@@ -79,6 +92,9 @@ style.textContent = `
   .flashframe-layer-menu button:focus-visible {
     background: rgba(255,255,255,.10);
     outline: none;
+  }
+  .flashframe-layer-menu .flashframe-layer-menu-close {
+    color: #ffb1a2;
   }
   .flashframe-layer-menu-separator {
     height: 1px;
@@ -156,6 +172,12 @@ menu.addEventListener("click", (event) => {
       detail: { block: targetBlock, independent: button.dataset.layerAction === "independent" }
     }));
     hideMenu();
+    return;
+  }
+  if (button.dataset.layerAction === "close") {
+    const block = targetBlock;
+    hideMenu();
+    closeBlock(block);
     return;
   }
 
