@@ -11,13 +11,14 @@ const CUSTOM_MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
 const EXTENSION_GALLERY_MARKER = "__FRAMECHUTE_EXTENSION_GALLERY_V1__";
 
 let rememberedHandles = new Map();
+let preloadTimer = 0;
 
 function setStatus(message) {
   if (status) status.textContent = message;
 }
 
-function markerPayload(record) {
-  const text = String(record?.state?.text || "");
+function markerPayloadFromText(value) {
+  const text = String(value || "");
   for (const marker of [LOCAL_MARKER, CUSTOM_MARKER, EXTENSION_GALLERY_MARKER]) {
     if (!text.startsWith(marker)) continue;
     try {
@@ -29,23 +30,31 @@ function markerPayload(record) {
   return null;
 }
 
+function markerPayload(record) {
+  return markerPayloadFromText(record?.state?.text);
+}
+
+function rememberedSourceFromMarker(marker) {
+  if (!marker) return null;
+  if (marker.marker === EXTENSION_GALLERY_MARKER) {
+    return { handleKey: null, direct: true };
+  }
+  if (marker.payload?.handleKey) {
+    return { handleKey: marker.payload.handleKey, direct: false };
+  }
+  return null;
+}
+
 function rememberedSourceForRecord(record) {
   if (record?.source?.handleKey) {
     return { handleKey: record.source.handleKey, direct: false };
   }
+  return rememberedSourceFromMarker(markerPayload(record));
+}
 
-  const marker = markerPayload(record);
-  if (!marker) return null;
-
-  if (marker.marker === EXTENSION_GALLERY_MARKER) {
-    return { handleKey: null, direct: true };
-  }
-
-  if (marker.payload?.handleKey) {
-    return { handleKey: marker.payload.handleKey, direct: false };
-  }
-
-  return null;
+function rememberedSourceForBlock(block) {
+  const store = block?.querySelector(".custom-state-store, .text-editor");
+  return rememberedSourceFromMarker(markerPayloadFromText(store?.value));
 }
 
 async function preloadRememberedHandles() {
@@ -59,6 +68,16 @@ async function preloadRememberedHandles() {
         const source = rememberedSourceForRecord(block);
         if (source) sourcesByBlockId.set(block.id, source);
       }
+    }
+
+    // A newly-created custom block can exist before the live snapshot write has
+    // landed. Read its versioned marker too so the toolbar button can still
+    // reconnect it during the same workspace session.
+    for (const block of workspace?.querySelectorAll(".block") ?? []) {
+      const blockId = block.dataset.blockId;
+      if (!blockId || sourcesByBlockId.has(blockId)) continue;
+      const source = rememberedSourceForBlock(block);
+      if (source) sourcesByBlockId.set(blockId, source);
     }
 
     const next = new Map();
@@ -184,6 +203,10 @@ if (reconnectAllButton) {
   reconnectAllButton.addEventListener("click", () => void reconnectAllRememberedSources());
 }
 
+workspace?.addEventListener("flashframe:workspace-changed", () => {
+  clearTimeout(preloadTimer);
+  preloadTimer = setTimeout(() => void preloadRememberedHandles(), 180);
+});
 window.addEventListener("flashframe:archive-ready", () => void preloadRememberedHandles());
 window.addEventListener("flashframe:archive-imported", () => void preloadRememberedHandles());
 window.addEventListener("focus", () => void preloadRememberedHandles());
