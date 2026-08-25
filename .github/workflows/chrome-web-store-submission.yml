@@ -41,10 +41,16 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          $sourceManifest = Get-Content manifest.json -Raw | ConvertFrom-Json
           $manifest = Get-Content dist/test-unpacked/manifest.json -Raw | ConvertFrom-Json
           if ($manifest.manifest_version -ne 3) { throw "Expected Manifest V3" }
           if ([string]$manifest.name -ne "FrameChute") { throw "Expected FrameChute manifest name" }
-          if ([string]$manifest.version -ne "1.0.8") { throw "Expected v1.0.8 submission candidate" }
+          if ([string]$manifest.version -ne [string]$sourceManifest.version) {
+            throw "Packaged version does not match source manifest"
+          }
+          if ([string]::IsNullOrWhiteSpace([string]$manifest.version)) {
+            throw "Submission candidate version is missing"
+          }
 
           $apiPermissions = @()
           if ($null -ne $manifest.PSObject.Properties["permissions"]) {
@@ -66,12 +72,16 @@ jobs:
           }
           if ($hostPermissions.Count -ne 0) { throw "Submission candidate must request zero host permissions" }
 
+          Write-Host "Verified FrameChute Store candidate v$($manifest.version)"
+
       - name: Create SHA-256 checksum
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $zip = Get-ChildItem dist/flashframe-chrome-web-store-v1.0.8.zip | Select-Object -First 1
-          if (-not $zip) { throw "v1.0.8 Store ZIP missing" }
+          $manifest = Get-Content manifest.json -Raw | ConvertFrom-Json
+          $version = [string]$manifest.version
+          $zip = Get-ChildItem "dist/flashframe-chrome-web-store-v$version.zip" | Select-Object -First 1
+          if (-not $zip) { throw "Store ZIP missing for v$version" }
           $hash = (Get-FileHash $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $($zip.Name)" | Out-File "$($zip.FullName).sha256" -Encoding ascii
           Write-Host "SHA256: $hash"
@@ -79,10 +89,10 @@ jobs:
       - name: Upload exact submission candidate
         uses: actions/upload-artifact@v4
         with:
-          name: FrameChute-Chrome-Web-Store-v1.0.8
+          name: FrameChute-Chrome-Web-Store-candidate
           path: |
-            dist/flashframe-chrome-web-store-v1.0.8.zip
-            dist/flashframe-chrome-web-store-v1.0.8.zip.sha256
+            dist/flashframe-chrome-web-store-v*.zip
+            dist/flashframe-chrome-web-store-v*.zip.sha256
             dist/test-unpacked/**
             PRIVACY.md
             docs/STORE_LISTING.md
