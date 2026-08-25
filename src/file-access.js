@@ -75,7 +75,10 @@ export async function pickVideoFile() {
       {
         description: "Video files",
         accept: {
-          "video/*": [".mp4", ".webm", ".ogv", ".mov", ".m4v", ".mkv"]
+          "video/*": [
+            ".mp4", ".m4v", ".webm", ".ogv", ".mov", ".mkv", ".avi", ".mpeg",
+            ".mpg", ".wmv", ".flv", ".ts", ".m2ts", ".mts", ".3gp", ".3g2", ".vob"
+          ]
         }
       }
     ]
@@ -104,7 +107,18 @@ export async function listImages(directoryHandle) {
 
 export async function fileFromHandle(handle) {
   if (!handle) return null;
-  return handle.getFile();
+
+  const synthetic = handle.__framechuteSyntheticFile;
+  if (synthetic instanceof File) return synthetic;
+  if (synthetic instanceof Blob) {
+    return new File([synthetic], handle.name || "Dropped file", {
+      type: synthetic.type || "application/octet-stream",
+      lastModified: Date.now()
+    });
+  }
+
+  if (typeof handle.getFile === "function") return handle.getFile();
+  return null;
 }
 
 export async function imageFileByName(directoryHandle, name) {
