@@ -59,6 +59,10 @@ if (![...document.styleSheets].some((sheet) => sheet.href === handoffFixesHref))
 // exists. The location remains copyable even if the live media source later
 // loses permission.
 await import("./source-locations.js");
+// Reconnect pickers use the persisted block id + handle key as a durable hint.
+// If Chrome cannot silently reuse the handle, its picker opens at that saved
+// location instead of forcing the user to remember where the file lived.
+await import("./reconnect-location-picker.js");
 await import("./picker-guard.js");
 await import("./extension-gallery.js");
 await import("./synthetic-file-handle.js");
