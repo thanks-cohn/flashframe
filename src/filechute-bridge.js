@@ -10,24 +10,14 @@ function setStatus(message) {
   if (status) status.textContent = message;
 }
 
-function extensionOf(name = "") {
-  const value = String(name).toLowerCase();
-  const index = value.lastIndexOf(".");
-  return index < 0 ? "" : value.slice(index + 1);
-}
-
-function isImagePayload(payload) {
-  if (String(payload?.mime || "").toLowerCase().startsWith("image/")) return true;
-  return new Set(["jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "svg", "ico", "apng"])
-    .has(extensionOf(payload?.originalName || payload?.name || ""));
-}
-
 function parseFileChutePayload(transfer) {
   try {
     const raw = transfer?.getData(FILECHUTE_DRAG_TYPE);
     if (!raw) return null;
     const payload = JSON.parse(raw);
-    if (payload?.protocol !== FILECHUTE_PROTOCOL || payload?.version !== FILECHUTE_VERSION) return null;
+    if (payload?.protocol !== FILECHUTE_PROTOCOL || payload?.version !== FILECHUTE_VERSION) {
+      return null;
+    }
     return payload;
   } catch {
     return null;
@@ -37,8 +27,11 @@ function parseFileChutePayload(transfer) {
 function base64File(response) {
   const binary = atob(String(response.base64 || ""));
   const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return new File([bytes], response.name || "FileChute image", {
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new File([bytes], response.name || "FileChute file", {
     type: response.type || "application/octet-stream",
     lastModified: Number(response.lastModified) || Date.now()
   });
@@ -58,6 +51,7 @@ function redispatchAsLocalFile(file, originalEvent) {
     screenX: originalEvent.screenX,
     screenY: originalEvent.screenY
   });
+
   workspace.dispatchEvent(event);
 }
 
@@ -71,7 +65,9 @@ function galleryPoint(event) {
 
 function openDirectoryGallery(payload, event) {
   if (!payload.sourceExtensionId || !payload.transferToken || !payload.relativePath) {
-    throw new Error("Reload FileChute, then drag this folder again so FrameChute can connect to it.");
+    throw new Error(
+      "Reload FileChute, then drag this folder again so FrameChute can connect to it."
+    );
   }
 
   workspace.dispatchEvent(new CustomEvent(EXTENSION_GALLERY_EVENT, {
@@ -88,6 +84,12 @@ function openDirectoryGallery(payload, event) {
       }
     }
   }));
+}
+
+function directTransferredFile(transfer) {
+  const files = transfer?.files;
+  if (!files?.length) return null;
+  return files[0] instanceof File ? files[0] : null;
 }
 
 workspace?.addEventListener("drop", (event) => {
@@ -107,17 +109,28 @@ workspace?.addEventListener("drop", (event) => {
       return;
     }
 
-    if (!isImagePayload(payload)) {
-      setStatus(`FileChute recognized ${payload.name || "this file"}. Direct ${payload.mime || "file"} handoff is not wired yet.`);
+    // FileChute places the original File in DataTransfer whenever Chromium
+    // allows it. Prefer that path because it avoids extension messaging,
+    // base64 overhead, and the bridge size limit. The normal FrameChute local
+    // drop pipeline already knows how to create image, video, audio, PDF, text,
+    // and generic-file blocks.
+    const directFile = directTransferredFile(event.dataTransfer);
+    if (directFile) {
+      setStatus(`Adding ${directFile.name || payload.name || "FileChute file"}…`);
+      redispatchAsLocalFile(directFile, event);
       return;
     }
 
+    // Some Chromium surfaces strip File objects while preserving custom drag
+    // data. Fall back to FileChute's explicit cross-extension byte bridge.
     if (!payload.sourceExtensionId || !payload.transferToken || !payload.relativePath) {
-      setStatus("Reload FileChute, then drag this image again so FrameChute can request the original bytes.");
+      setStatus(
+        `Reload FileChute, then drag ${payload.name || "this file"} again so FrameChute can request the original bytes.`
+      );
       return;
     }
 
-    setStatus(`Receiving ${payload.originalName || payload.name || "image"} from FileChute…`);
+    setStatus(`Receiving ${payload.originalName || payload.name || "file"} from FileChute…`);
 
     let response;
     try {
@@ -129,10 +142,15 @@ workspace?.addEventListener("drop", (event) => {
         mime: payload.mime || ""
       });
     } catch (error) {
-      throw new Error(`Could not reach FileChute. Reload both extensions and try again. ${error?.message || ""}`.trim());
+      throw new Error(
+        `Could not reach FileChute. Reload both extensions and try again. ${error?.message || ""}`.trim()
+      );
     }
 
-    if (!response?.ok) throw new Error(response?.error || "FileChute did not return the original image.");
+    if (!response?.ok) {
+      throw new Error(response?.error || "FileChute did not return the original file.");
+    }
+
     const file = base64File(response);
     redispatchAsLocalFile(file, event);
   })().catch((error) => {
