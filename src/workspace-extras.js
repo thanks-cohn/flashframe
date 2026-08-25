@@ -54,6 +54,11 @@ if (![...document.styleSheets].some((sheet) => sheet.href === handoffFixesHref))
   document.head.append(link);
 }
 
+// Install source-location memory before the handoff bridges so it can capture
+// the exact FileChute relative path while the original drag payload still
+// exists. The location remains copyable even if the live media source later
+// loses permission.
+await import("./source-locations.js");
 await import("./picker-guard.js");
 await import("./extension-gallery.js");
 await import("./synthetic-file-handle.js");
