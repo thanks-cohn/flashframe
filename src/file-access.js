@@ -1,17 +1,29 @@
 import { getHandle, putHandle } from "./persistence.js";
 import { isNativeImageName } from "./media-types.js";
 
+// Browser-created File objects can be very large (videos especially). Keep
+// their file-backed handles in memory so a FileChute drag does not have to copy
+// hundreds of megabytes into FrameChute's IndexedDB before it can appear.
+// Native FileSystemHandles continue to use the durable handle store.
+const transientHandles = new Map();
+
 export function makeHandleKey(prefix = "source") {
   return `${prefix}:${crypto.randomUUID()}`;
 }
 
 export async function storeHandle(handleKey, handle) {
+  if (handle?.__framechuteSyntheticFile instanceof Blob) {
+    transientHandles.set(handleKey, handle);
+    return handleKey;
+  }
+
   await putHandle(handleKey, handle);
   return handleKey;
 }
 
 export async function resolveHandle(handleKey) {
   if (!handleKey) return null;
+  if (transientHandles.has(handleKey)) return transientHandles.get(handleKey);
   return getHandle(handleKey);
 }
 
