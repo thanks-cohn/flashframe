@@ -1,17 +1,29 @@
 import { getHandle, putHandle } from "./persistence.js";
 import { isNativeImageName } from "./media-types.js";
 
+// Browser-created File objects can be very large (videos especially). Keep
+// their file-backed handles in memory so a FileChute drag does not have to copy
+// hundreds of megabytes into FrameChute's IndexedDB before it can appear.
+// Native FileSystemHandles continue to use the durable handle store.
+const transientHandles = new Map();
+
 export function makeHandleKey(prefix = "source") {
   return `${prefix}:${crypto.randomUUID()}`;
 }
 
 export async function storeHandle(handleKey, handle) {
+  if (handle?.__framechuteSyntheticFile instanceof Blob) {
+    transientHandles.set(handleKey, handle);
+    return handleKey;
+  }
+
   await putHandle(handleKey, handle);
   return handleKey;
 }
 
 export async function resolveHandle(handleKey) {
   if (!handleKey) return null;
+  if (transientHandles.has(handleKey)) return transientHandles.get(handleKey);
   return getHandle(handleKey);
 }
 
@@ -75,7 +87,10 @@ export async function pickVideoFile() {
       {
         description: "Video files",
         accept: {
-          "video/*": [".mp4", ".webm", ".ogv", ".mov", ".m4v", ".mkv"]
+          "video/*": [
+            ".mp4", ".m4v", ".webm", ".ogv", ".mov", ".mkv", ".avi", ".mpeg",
+            ".mpg", ".wmv", ".flv", ".ts", ".m2ts", ".mts", ".3gp", ".3g2", ".vob"
+          ]
         }
       }
     ]
@@ -104,7 +119,18 @@ export async function listImages(directoryHandle) {
 
 export async function fileFromHandle(handle) {
   if (!handle) return null;
-  return handle.getFile();
+
+  const synthetic = handle.__framechuteSyntheticFile;
+  if (synthetic instanceof File) return synthetic;
+  if (synthetic instanceof Blob) {
+    return new File([synthetic], handle.name || "Dropped file", {
+      type: synthetic.type || "application/octet-stream",
+      lastModified: Date.now()
+    });
+  }
+
+  if (typeof handle.getFile === "function") return handle.getFile();
+  return null;
 }
 
 export async function imageFileByName(directoryHandle, name) {

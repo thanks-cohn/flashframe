@@ -56,6 +56,7 @@ if (![...document.styleSheets].some((sheet) => sheet.href === handoffFixesHref))
 
 await import("./picker-guard.js");
 await import("./extension-gallery.js");
+await import("./synthetic-file-handle.js");
 await import("./filechute-bridge.js");
 await import("./web-drop.js");
 await import("./drop-local-sources.js");

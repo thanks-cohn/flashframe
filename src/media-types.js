@@ -1,6 +1,12 @@
 const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "svg", "ico", "apng"]);
-const AUDIO_EXTENSIONS = new Set(["mp3", "wav", "ogg", "oga", "opus", "flac", "aac", "m4a", "weba"]);
-const VIDEO_EXTENSIONS = new Set(["mp4", "m4v", "webm", "ogv", "ogg", "mov", "mkv"]);
+const AUDIO_EXTENSIONS = new Set([
+  "mp3", "wav", "wave", "ogg", "oga", "opus", "flac", "aac", "m4a", "weba",
+  "aif", "aiff", "aifc", "alac", "wma", "amr", "mid", "midi", "caf", "ac3", "eac3"
+]);
+const VIDEO_EXTENSIONS = new Set([
+  "mp4", "m4v", "webm", "ogv", "ogg", "mov", "mkv", "avi", "mpeg", "mpg",
+  "wmv", "flv", "ts", "m2ts", "mts", "3gp", "3g2", "vob", "mxf", "f4v"
+]);
 
 export function extensionOf(name = "") {
   const index = name.lastIndexOf(".");
