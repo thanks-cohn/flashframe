@@ -60,6 +60,7 @@ await import("./filechute-bridge.js");
 await import("./web-drop.js");
 await import("./drop-local-sources.js");
 await import("./remote-video.js");
+await import("./offscreen-rescue.js");
 await import("./layer-menu.js");
 await import("./appearance.js");
 await import("./media-ux-polish.js");
