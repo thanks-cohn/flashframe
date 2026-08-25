@@ -58,6 +58,7 @@ await import("./picker-guard.js");
 await import("./extension-gallery.js");
 await import("./synthetic-file-handle.js");
 await import("./filechute-bridge.js");
+await import("./filechute-export.js");
 await import("./web-drop.js");
 await import("./drop-local-sources.js");
 await import("./remote-video.js");
