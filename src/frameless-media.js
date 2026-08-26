@@ -23,6 +23,12 @@ function isVisualMediaObject(block) {
   return isImageObject(block) || isVideoObject(block);
 }
 
+function isGalleryObject(block) {
+  return block instanceof HTMLElement && (
+    block.dataset.blockType === "gallery" || block.classList.contains("gallery-block")
+  );
+}
+
 function readPayload(block) {
   const store = block.querySelector(":scope > .custom-state-store, :scope > .remote-video-state");
   const jsonStart = store?.value?.indexOf("{") ?? -1;
@@ -62,7 +68,8 @@ function persistChrome(block, part, visibility) {
 }
 
 function applyObjectChrome(block, part, visibility, { persist = true, notify = true } = {}) {
-  if (!isVisualMediaObject(block) || !["header", "footer"].includes(part)) return;
+  const eligible = part === "header" ? isVisualMediaObject(block) : isVisualMediaObject(block) || isGalleryObject(block);
+  if (!eligible || !["header", "footer"].includes(part)) return;
   const state = visibility === "hide" ? "hide" : visibility === "show" ? "show" : "inherit";
   block.classList.toggle(`hide-object-${part}`, state === "hide");
   block.classList.toggle(`show-object-${part}`, state === "show");
@@ -135,20 +142,68 @@ function dragImageObject(block, event) {
   image.addEventListener("pointercancel", finish);
 }
 
+function attachFramelessResizeHandle(block) {
+  if (!isImageObject(block) || block.querySelector(":scope > .frameless-resize-handle")) return;
+
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "frameless-resize-handle";
+  handle.textContent = "⅃";
+  handle.title = "Drag to resize image";
+  handle.setAttribute("aria-label", "Resize image");
+  block.append(handle);
+
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || !block.classList.contains("is-frameless-media")) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = block.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = rect.width;
+    const startHeight = rect.height;
+    handle.setPointerCapture(event.pointerId);
+    block.classList.add("is-frameless-resizing");
+
+    const move = (moveEvent) => {
+      const width = Math.max(32, startWidth + moveEvent.clientX - startX);
+      const height = Math.max(32, startHeight + moveEvent.clientY - startY);
+      block.style.width = `${width}px`;
+      block.style.height = `${height}px`;
+    };
+
+    const finish = () => {
+      block.classList.remove("is-frameless-resizing");
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", finish);
+      handle.removeEventListener("pointercancel", finish);
+      workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+    };
+
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
+  });
+}
+
 function prepare(block) {
-  if (!isVisualMediaObject(block)) return;
-  if (block.dataset.framelessBound !== "true") {
+  if (!isVisualMediaObject(block) && !isGalleryObject(block)) return;
+  if (isVisualMediaObject(block) && block.dataset.framelessBound !== "true") {
     block.dataset.framelessBound = "true";
     block.addEventListener("pointerdown", (event) => dragImageObject(block, event), true);
   }
+  attachFramelessResizeHandle(block);
   const payload = readPayload(block) || {};
-  const headerVisibility = payload.headerVisibility ?? block.dataset.headerVisibility
-    ?? (payload.hideHeader === true ? "hide" : payload.hideHeader === false ? "show" : "inherit");
   const footerVisibility = payload.footerVisibility ?? block.dataset.footerVisibility
     ?? (payload.hideFooter === true ? "hide" : payload.hideFooter === false ? "show" : "inherit");
-  applyObjectChrome(block, "header", headerVisibility, { persist: false, notify: false });
   applyObjectChrome(block, "footer", footerVisibility, { persist: false, notify: false });
-  applyFrameless(block, payload.frameless === true || block.dataset.frameless === "true", { persist: false, notify: false });
+  if (isVisualMediaObject(block)) {
+    const headerVisibility = payload.headerVisibility ?? block.dataset.headerVisibility
+      ?? (payload.hideHeader === true ? "hide" : payload.hideHeader === false ? "show" : "inherit");
+    applyObjectChrome(block, "header", headerVisibility, { persist: false, notify: false });
+    applyFrameless(block, payload.frameless === true || block.dataset.frameless === "true", { persist: false, notify: false });
+  }
 }
 
 window.addEventListener("flashframe:set-frameless", (event) => {
@@ -191,10 +246,10 @@ const observer = new MutationObserver((mutations) => {
     for (const node of mutation.addedNodes) {
       if (!(node instanceof HTMLElement)) continue;
       if (node.classList.contains("block")) prepare(node);
-      for (const block of node.querySelectorAll?.('.block[data-custom-kind="image"], .video-block, .block[data-custom-kind="remote-video"]') ?? []) prepare(block);
+      for (const block of node.querySelectorAll?.('.block[data-custom-kind="image"], .video-block, .block[data-custom-kind="remote-video"], .gallery-block') ?? []) prepare(block);
     }
   }
 });
 
 observer.observe(workspace, { childList: true, subtree: false });
-for (const block of workspace.querySelectorAll('.block[data-custom-kind="image"], .video-block, .block[data-custom-kind="remote-video"]')) prepare(block);
+for (const block of workspace.querySelectorAll('.block[data-custom-kind="image"], .video-block, .block[data-custom-kind="remote-video"], .gallery-block')) prepare(block);
