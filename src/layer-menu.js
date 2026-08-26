@@ -78,6 +78,9 @@ style.textContent = `
     position: fixed;
     z-index: 2147483647;
     min-width: 158px;
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 6px;
     border: 1px solid rgba(255,255,255,.16);
     border-radius: 10px;
@@ -130,7 +133,9 @@ function showMenu(block, x, y) {
   menu.querySelector('[data-layer-action="back"]').hidden = !block;
   menu.querySelector('[data-layer-action="sync"]').hidden = !timed;
   menu.querySelector('[data-layer-action="independent"]').hidden = !timed;
-  const isImage = block?.dataset.customKind === "image";
+  const isImage = block?.dataset.customKind === "image"
+    || block?.dataset.customLocalKind === "image"
+    || Boolean(block?.querySelector(":scope > .image-frame"));
   const isVideo = Boolean(block?.querySelector(":scope > video"))
     || block?.dataset.blockType === "video"
     || block?.dataset.customKind === "remote-video";
