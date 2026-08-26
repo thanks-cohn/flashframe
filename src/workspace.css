@@ -111,10 +111,8 @@ body.toolbar-show-text .toolbar-command-label {
 }
 
 .toolbar-slot-panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  z-index: 100010;
+  position: fixed;
+  z-index: 2147483646;
   width: min(560px, calc(100vw - 24px));
   padding: 12px;
   border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
