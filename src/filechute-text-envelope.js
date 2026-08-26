@@ -1,6 +1,8 @@
 const FILECHUTE_DRAG_TYPE = "application/x-filechute-item+json";
-const FILECHUTE_TEXT_PREFIX = "FILECHUTE1|";
+const COMPACT_PREFIX = "FILECHUTE1|";
+const LEGACY_PREFIX = "filechute-transfer-v1:";
 const workspace = document.querySelector("#workspace");
+const status = document.querySelector("#status");
 
 function looksLikeTransport(transfer) {
   try {
@@ -15,16 +17,13 @@ function looksLikeTransport(transfer) {
   }
 }
 
-function parseTicket(transfer) {
-  let text = "";
-  try {
-    text = String(transfer?.getData("text/plain") || "");
-  } catch {
-    return null;
-  }
-  if (!text.startsWith(FILECHUTE_TEXT_PREFIX)) return null;
+function validPayload(payload) {
+  return payload?.protocol === "filechute-item" && payload?.version === 1 ? payload : null;
+}
 
-  const parts = text.slice(FILECHUTE_TEXT_PREFIX.length).split("|");
+function parseCompact(text) {
+  if (!text.startsWith(COMPACT_PREFIX)) return null;
+  const parts = text.slice(COMPACT_PREFIX.length).split("|");
   if (parts.length < 5) return null;
   const [sourceExtensionId, transferToken, kindCode, encodedPath, ...nameParts] = parts;
   if (!sourceExtensionId || !transferToken) return null;
@@ -53,6 +52,25 @@ function parseTicket(transfer) {
   }
 }
 
+function parseLegacy(text) {
+  if (!text.startsWith(LEGACY_PREFIX)) return null;
+  try {
+    return validPayload(JSON.parse(decodeURIComponent(text.slice(LEGACY_PREFIX.length))));
+  } catch {
+    return null;
+  }
+}
+
+function parseTicket(transfer) {
+  let text = "";
+  try {
+    text = String(transfer?.getData("text/plain") || "");
+  } catch {
+    return null;
+  }
+  return parseCompact(text) || parseLegacy(text);
+}
+
 workspace?.addEventListener("dragenter", (event) => {
   if (!looksLikeTransport(event.dataTransfer)) return;
   event.preventDefault();
@@ -74,6 +92,7 @@ workspace?.addEventListener("drop", (event) => {
   event.preventDefault();
   event.stopImmediatePropagation();
   workspace.classList.remove("is-drop-target");
+  if (status) status.textContent = `FileChute ticket caught: ${payload.originalName || payload.name || "item"}`;
 
   const transfer = new DataTransfer();
   transfer.effectAllowed = "copy";
