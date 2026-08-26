@@ -187,6 +187,15 @@ function ensureMediaPlayerHideButton() {
   return true;
 }
 
+window.addEventListener("flashframe:show-media-player", () => {
+  applyMediaPlayerMode("visible", { persist: true });
+  mediaDock?.classList.remove("is-faded");
+  mediaDock?.animate(
+    [{ outline: "4px solid #ffd34e" }, { outline: "0 solid transparent" }],
+    { duration: 900 }
+  );
+});
+
 function renameText(value) {
   return String(value)
     .replaceAll("Flashframes", "FrameChutes")
