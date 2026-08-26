@@ -96,7 +96,11 @@ if (resizeHandleDelayInput) {
 }
 
 function isImageObject(block) {
-  return block instanceof HTMLElement && block.dataset.customKind === "image";
+  return block instanceof HTMLElement && (
+    block.dataset.customKind === "image"
+    || block.dataset.customLocalKind === "image"
+    || Boolean(block.querySelector(":scope > .image-frame"))
+  );
 }
 
 function isVideoObject(block) {
@@ -173,6 +177,11 @@ function applyFrameless(block, frameless, { persist = true, notify = true } = {}
   const enabled = Boolean(frameless);
   block.classList.toggle("is-frameless-media", enabled);
   block.dataset.frameless = String(enabled);
+  const image = block.querySelector(":scope > .image-frame");
+  if (image) {
+    if (enabled) image.draggable = false;
+    else image.removeAttribute("draggable");
+  }
   block.setAttribute("aria-label", enabled
     ? `${block.querySelector(".block-name")?.value || (isVideoObject(block) ? "Video" : "Image")}, frameless object`
     : block.querySelector(".block-name")?.value || (isVideoObject(block) ? "Video" : "Image"));
@@ -355,10 +364,10 @@ const observer = new MutationObserver((mutations) => {
     for (const node of mutation.addedNodes) {
       if (!(node instanceof HTMLElement)) continue;
       if (node.classList.contains("block")) prepare(node);
-      for (const block of node.querySelectorAll?.('.block[data-custom-kind="image"], .video-block, .block[data-custom-kind="remote-video"], .gallery-block') ?? []) prepare(block);
+      for (const block of node.querySelectorAll?.('.block[data-custom-kind="image"], .block[data-custom-local-kind="image"], .block:has(> .image-frame), .video-block, .block[data-custom-kind="remote-video"], .gallery-block') ?? []) prepare(block);
     }
   }
 });
 
 observer.observe(workspace, { childList: true, subtree: false });
-for (const block of workspace.querySelectorAll('.block[data-custom-kind="image"], .video-block, .block[data-custom-kind="remote-video"], .gallery-block')) prepare(block);
+for (const block of workspace.querySelectorAll('.block[data-custom-kind="image"], .block[data-custom-local-kind="image"], .block:has(> .image-frame), .video-block, .block[data-custom-kind="remote-video"], .gallery-block')) prepare(block);
