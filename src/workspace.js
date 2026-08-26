@@ -593,6 +593,7 @@ async function createBlock(record = {}) {
   const block = definition.createElement();
   block.dataset.blockId = record.id ?? crypto.randomUUID();
   block.dataset.blockType = type;
+  if (record.timedMotion) block.dataset.timedMotion = JSON.stringify(record.timedMotion);
   setSourceRecord(block, record.source ?? null);
 
   const nameInput = block.querySelector(".block-name");
@@ -602,6 +603,7 @@ async function createBlock(record = {}) {
   attachBlockInteractions(block);
   definition.initialize?.(block);
   workspace.append(block);
+  window.dispatchEvent(new CustomEvent("flashframe:restore-timed-motion", { detail: { block } }));
 
   try {
     await definition.restore(block, record.state ?? {}, record.source ?? null);
@@ -625,7 +627,8 @@ function captureBlock(block) {
     name: block.querySelector(".block-name")?.value?.trim() || "Untitled",
     geometry: readGeometry(block),
     source: getSourceRecord(block),
-    state: definition.capture(block)
+    state: definition.capture(block),
+    timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null
   };
 }
 
