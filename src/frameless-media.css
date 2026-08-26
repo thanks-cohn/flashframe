@@ -107,6 +107,14 @@ body.hide-block-headers #workspace .block[data-custom-kind="image"]:not(.show-ob
   -webkit-user-drag: none;
 }
 
+body.hide-block-headers #workspace .block[data-custom-local-kind="image"]:not(.show-object-header) > .image-frame,
+body.hide-block-headers #workspace .block:has(> .image-frame):not(.show-object-header) > .image-frame {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
 .block.hide-object-header.is-frameless-dragging > .image-frame,
 body.hide-block-headers #workspace .block.is-frameless-dragging:not(.show-object-header) > .image-frame {
   cursor: grabbing;
