@@ -260,7 +260,9 @@ body.toolbar-hidden .workspace {
    deliberately target only the URL/custom blocks and directory gallery that
    can be rebuilt after the footer visibility module has already initialized. */
 #workspace[data-video-footer-mode="hide"] .remote-video-block > .block-toolbar,
-#workspace[data-video-footer-mode="hide"] .block[data-custom-kind="remote-video"] > .block-toolbar {
+#workspace[data-video-footer-mode="hide"] .block[data-custom-kind="remote-video"] > .block-toolbar,
+#workspace[data-video-footer-mode="hide"] .video-block > .block-toolbar,
+#workspace[data-video-footer-mode="hide"] .video-block > .framechute-source-location {
   display: none !important;
 }
 
@@ -286,6 +288,14 @@ body.toolbar-hidden .workspace {
 }
 
 #workspace[data-other-footer-mode] .block.show-object-footer > .framechute-source-location {
+  display: grid !important;
+}
+
+#workspace[data-video-footer-mode] .block.show-object-footer > .block-toolbar {
+  display: flex !important;
+}
+
+#workspace[data-video-footer-mode] .block.show-object-footer > .framechute-source-location {
   display: grid !important;
 }
 
