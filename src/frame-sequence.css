@@ -1,29 +1,143 @@
+/* Top toolbar polish -------------------------------------------------------
+   Keep every control visually contained and let the toolbar degrade cleanly
+   from labeled controls to compact icon controls instead of wrapping or
+   allowing labels to spill outside their buttons. */
+
+.toolbar {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 0 color-mix(in srgb, CanvasText 4%, transparent),
+              0 8px 24px color-mix(in srgb, CanvasText 6%, transparent);
+}
+
+.toolbar .brand {
+  flex: 0 0 auto;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toolbar-primary {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.toolbar-primary::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-command,
+.frame-sequence-open-top,
+.frame-sequence-play-top,
+.frame-sequence-transport-top {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  height: 34px;
+  min-height: 34px;
+  min-width: 34px;
+  max-width: 150px;
+  overflow: hidden;
+  padding: 0 9px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  transition: background-color 120ms ease, border-color 120ms ease,
+              box-shadow 120ms ease, transform 120ms ease;
+}
+
+.toolbar-command:hover,
+.frame-sequence-open-top:hover,
+.frame-sequence-play-top:hover,
+.frame-sequence-transport-top:hover {
+  border-color: color-mix(in srgb, CanvasText 25%, transparent);
+}
+
+.toolbar-command:active,
+.frame-sequence-open-top:active,
+.frame-sequence-play-top:active,
+.frame-sequence-transport-top:active {
+  transform: translateY(1px);
+}
+
+.toolbar-command:focus-visible,
+.frame-sequence-open-top:focus-visible,
+.frame-sequence-play-top:focus-visible,
+.frame-sequence-transport-top:focus-visible {
+  outline: 2px solid color-mix(in srgb, CanvasText 42%, transparent);
+  outline-offset: 2px;
+}
+
+.toolbar-command-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbar .status {
+  flex: 0 1 24rem;
+  min-width: 0;
+}
+
+/* Sequence transport is one deliberate segmented control. */
 .frame-sequence-top-controls {
   display: flex;
   align-items: center;
-  gap: 5px;
   flex: 0 0 auto;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, CanvasText 13%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, CanvasText 3.5%, Canvas);
 }
 
-.frame-sequence-open-top { white-space: nowrap; }
-.frame-sequence-play-top {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  min-width: 38px;
-  padding: 0;
-  font-weight: 750;
+.frame-sequence-top-controls > button {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
+
+.frame-sequence-top-controls > button:hover {
+  background: color-mix(in srgb, CanvasText 7%, Canvas);
+}
+
+.frame-sequence-open-top {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.frame-sequence-play-top,
 .frame-sequence-transport-top {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 34px;
-  min-width: 34px;
-  height: 34px;
   padding: 0;
-  border-radius: 50%;
-  font-size: 17px;
-  line-height: 1;
+}
+
+.frame-sequence-play-top {
+  font-weight: 760;
+}
+
+.frame-sequence-transport-top {
+  font-size: 16px;
 }
 
 body.toolbar-show-text .frame-sequence-play-top,
@@ -36,10 +150,62 @@ body.toolbar-show-text .frame-sequence-transport-top {
 body.toolbar-show-text .frame-sequence-play-top::after,
 body.toolbar-show-text .frame-sequence-transport-top::after {
   content: attr(data-label);
+  min-width: 0;
+  overflow: hidden;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 680;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
+/* Drop the least-important words before the toolbar ever becomes ugly. */
+@media (max-width: 1180px) {
+  .toolbar .status {
+    display: none;
+  }
+
+  body.toolbar-show-text .frame-sequence-play-top,
+  body.toolbar-show-text .frame-sequence-transport-top {
+    width: 34px;
+    padding: 0;
+  }
+
+  body.toolbar-show-text .frame-sequence-play-top::after,
+  body.toolbar-show-text .frame-sequence-transport-top::after {
+    content: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .toolbar {
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 7px 8px;
+  }
+
+  .toolbar-primary {
+    flex-wrap: nowrap;
+    width: auto;
+  }
+
+  .toolbar .brand {
+    display: none;
+  }
+
+  body.toolbar-show-text .toolbar-command-label {
+    display: none;
+  }
+
+  .toolbar-command,
+  .frame-sequence-open-top {
+    width: 34px;
+    padding-inline: 0;
+  }
+}
+
+/* Sequence panel --------------------------------------------------------- */
 .frame-sequence-panel {
   position: fixed;
   z-index: 2147483645;
