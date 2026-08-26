@@ -1,0 +1,32 @@
+.layer-rule-panel {
+  position: fixed;
+  z-index: 2147483646;
+  width: min(610px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  border-radius: 14px;
+  color: CanvasText;
+  background: Canvas;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, .28);
+}
+
+.layer-rule-head { display: flex; align-items: center; gap: 8px; cursor: grab; touch-action: none; user-select: none; }
+.layer-rule-head strong { flex: 1; }
+.layer-rule-panel.is-dragging .layer-rule-head { cursor: grabbing; }
+.layer-rule-clock-note { margin: 8px 0; font-size: 11px; opacity: .68; }
+.layer-cue-list { display: grid; gap: 7px; }
+.layer-cue-row { display: grid; grid-template-columns: 70px 70px 92px minmax(130px, 1fr) 34px; gap: 6px; align-items: end; padding: 7px; border-radius: 9px; background: color-mix(in srgb, CanvasText 5%, Canvas); }
+.layer-cue-row label { display: grid; gap: 3px; min-width: 0; font-size: 10px; }
+.layer-cue-row input,
+.layer-cue-row select { width: 100%; min-width: 0; }
+.layer-cue-remove { width: 34px; padding: 0; }
+.layer-rule-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.layer-rule-error { min-height: 18px; margin: 7px 0 0; color: #b43a25; font-size: 11px; }
+.block.has-layer-cues::after { content: "LAYERS"; position: absolute; right: 7px; top: 7px; z-index: 4; padding: 2px 5px; border-radius: 999px; color: #171717; background: rgba(247, 207, 75, .82); font-size: 9px; pointer-events: none; opacity: .7; }
+.block.is-frameless-media.has-layer-cues::after { display: none; }
+
+@media (max-width: 650px) {
+  .layer-cue-row { grid-template-columns: 1fr 1fr; }
+}
