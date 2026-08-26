@@ -60,8 +60,15 @@ function applyFrameless(block, frameless, { persist = true, notify = true } = {}
   }
 }
 
-function dragFramelessObject(block, event) {
-  if (event.button !== 0 || !block.classList.contains("is-frameless-media")) return;
+function imageIsDirectGrabSurface(block) {
+  return block.classList.contains("is-frameless-media")
+    || block.classList.contains("hide-object-header")
+    || document.body.classList.contains("hide-block-headers");
+}
+
+function dragImageObject(block, event) {
+  if (event.button !== 0 || !imageIsDirectGrabSurface(block)) return;
+  if (!event.target.closest(".image-frame")) return;
   if (event.target.closest("button, input, textarea, a")) return;
   if (block.classList.contains("is-maximized")) return;
 
@@ -104,7 +111,7 @@ function prepare(block) {
   if (!isImageObject(block)) return;
   if (block.dataset.framelessBound !== "true") {
     block.dataset.framelessBound = "true";
-    block.addEventListener("pointerdown", (event) => dragFramelessObject(block, event), true);
+    block.addEventListener("pointerdown", (event) => dragImageObject(block, event), true);
   }
   const payload = readPayload(block) || {};
   applyObjectChrome(block, "header", Boolean(payload.hideHeader), { persist: false, notify: false });
