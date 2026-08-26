@@ -29,18 +29,24 @@ function persistFrameless(block, frameless) {
   store.value = `${MARKER}${JSON.stringify(payload)}`;
 }
 
-function persistChrome(block, part, hidden) {
+function persistChrome(block, part, visibility) {
   const store = block.querySelector(":scope > .custom-state-store");
   const payload = readPayload(block);
   if (!store || !payload || !["header", "footer"].includes(part)) return;
-  payload[part === "header" ? "hideHeader" : "hideFooter"] = Boolean(hidden);
+  const key = part === "header" ? "headerVisibility" : "footerVisibility";
+  const legacyKey = part === "header" ? "hideHeader" : "hideFooter";
+  payload[key] = visibility;
+  payload[legacyKey] = visibility === "hide";
   store.value = `${MARKER}${JSON.stringify(payload)}`;
 }
 
-function applyObjectChrome(block, part, hidden, { persist = true, notify = true } = {}) {
+function applyObjectChrome(block, part, visibility, { persist = true, notify = true } = {}) {
   if (!isImageObject(block) || !["header", "footer"].includes(part)) return;
-  block.classList.toggle(`hide-object-${part}`, Boolean(hidden));
-  if (persist) persistChrome(block, part, hidden);
+  const state = visibility === "hide" ? "hide" : visibility === "show" ? "show" : "inherit";
+  block.classList.toggle(`hide-object-${part}`, state === "hide");
+  block.classList.toggle(`show-object-${part}`, state === "show");
+  block.dataset[`${part}Visibility`] = state;
+  if (persist) persistChrome(block, part, state);
   if (notify) {
     workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
   }
@@ -63,7 +69,8 @@ function applyFrameless(block, frameless, { persist = true, notify = true } = {}
 function imageIsDirectGrabSurface(block) {
   return block.classList.contains("is-frameless-media")
     || block.classList.contains("hide-object-header")
-    || document.body.classList.contains("hide-block-headers");
+    || (document.body.classList.contains("hide-block-headers")
+      && !block.classList.contains("show-object-header"));
 }
 
 function dragImageObject(block, event) {
@@ -114,25 +121,40 @@ function prepare(block) {
     block.addEventListener("pointerdown", (event) => dragImageObject(block, event), true);
   }
   const payload = readPayload(block) || {};
-  applyObjectChrome(block, "header", Boolean(payload.hideHeader), { persist: false, notify: false });
-  applyObjectChrome(block, "footer", Boolean(payload.hideFooter), { persist: false, notify: false });
+  const headerVisibility = payload.headerVisibility
+    ?? (payload.hideHeader === true ? "hide" : payload.hideHeader === false ? "show" : "inherit");
+  const footerVisibility = payload.footerVisibility
+    ?? (payload.hideFooter === true ? "hide" : payload.hideFooter === false ? "show" : "inherit");
+  applyObjectChrome(block, "header", headerVisibility, { persist: false, notify: false });
+  applyObjectChrome(block, "footer", footerVisibility, { persist: false, notify: false });
   applyFrameless(block, Boolean(payload.frameless), { persist: false, notify: false });
 }
 
 window.addEventListener("flashframe:set-frameless", (event) => {
-  applyFrameless(event.detail?.block, event.detail?.frameless);
+  const block = event.detail?.block;
+  const frameless = Boolean(event.detail?.frameless);
+  if (!frameless && isImageObject(block)) {
+    applyObjectChrome(block, "header", "show", { notify: false });
+    applyObjectChrome(block, "footer", "show", { notify: false });
+  }
+  applyFrameless(block, frameless);
 });
 
 window.addEventListener("flashframe:set-object-chrome", (event) => {
-  applyObjectChrome(event.detail?.block, event.detail?.part, event.detail?.hidden);
+  const block = event.detail?.block;
+  const hidden = Boolean(event.detail?.hidden);
+  if (!hidden && block?.classList.contains("is-frameless-media")) {
+    applyFrameless(block, false, { notify: false });
+  }
+  applyObjectChrome(block, event.detail?.part, hidden ? "hide" : "show");
 });
 
 restoreAllButton?.addEventListener("click", () => {
   const images = [...workspace.querySelectorAll('.block[data-custom-kind="image"]')];
   for (const block of images) {
     applyFrameless(block, false, { notify: false });
-    applyObjectChrome(block, "header", false, { notify: false });
-    applyObjectChrome(block, "footer", false, { notify: false });
+    applyObjectChrome(block, "header", "show", { notify: false });
+    applyObjectChrome(block, "footer", "show", { notify: false });
   }
   if (images.length) {
     workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
