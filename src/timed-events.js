@@ -322,6 +322,7 @@ async function playMotion(block, supplied = null) {
       });
     }
     if (controller.signal.aborted) return;
+    window.dispatchEvent(new CustomEvent("flashframe:timed-motion-started", { detail: { block } }));
     const started = performance.now();
     await new Promise((resolve) => {
       const frame = (now) => {
