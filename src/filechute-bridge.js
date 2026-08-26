@@ -10,6 +10,22 @@ function setStatus(message) {
   if (status) status.textContent = message;
 }
 
+function hasFileChuteType(transfer) {
+  try {
+    return [...(transfer?.types || [])].includes(FILECHUTE_DRAG_TYPE);
+  } catch {
+    return false;
+  }
+}
+
+function claimFileChuteDrag(event) {
+  if (!hasFileChuteType(event.dataTransfer)) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  workspace?.classList.add("is-drop-target");
+}
+
 function parseFileChutePayload(transfer) {
   try {
     const raw = transfer?.getData(FILECHUTE_DRAG_TYPE);
@@ -92,6 +108,20 @@ function directTransferredFile(transfer) {
   return files[0] instanceof File ? files[0] : null;
 }
 
+// Windows FileChute deliberately carries only its private token instead of a
+// synthetic native File item. FrameChute's normal local-file dragover handler
+// only accepts DataTransfer items whose kind is "file", so without this early
+// claim Chromium never considers the workspace a valid drop target and never
+// completes the drop. Claim FileChute's custom MIME type in capture phase
+// before the generic file/url handlers inspect the drag.
+workspace?.addEventListener("dragenter", claimFileChuteDrag, { capture: true });
+workspace?.addEventListener("dragover", claimFileChuteDrag, { capture: true });
+
+workspace?.addEventListener("dragleave", (event) => {
+  if (!hasFileChuteType(event.dataTransfer)) return;
+  workspace.classList.remove("is-drop-target");
+}, { capture: true });
+
 workspace?.addEventListener("drop", (event) => {
   const payload = parseFileChutePayload(event.dataTransfer);
   if (!payload) return;
@@ -121,8 +151,8 @@ workspace?.addEventListener("drop", (event) => {
       return;
     }
 
-    // Some Chromium surfaces strip File objects while preserving custom drag
-    // data. Fall back to FileChute's explicit cross-extension byte bridge.
+    // Windows and some Chromium surfaces preserve FileChute's custom token but
+    // strip/refuse synthetic File items. Ask FileChute for the cached bytes.
     if (!payload.sourceExtensionId || !payload.transferToken || !payload.relativePath) {
       setStatus(
         `Reload FileChute, then drag ${payload.name || "this file"} again so FrameChute can request the original bytes.`
