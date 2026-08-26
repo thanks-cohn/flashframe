@@ -47,7 +47,11 @@ function captureState(block) {
     const position = block.querySelector(".gallery-position")?.textContent ?? "";
     const match = position.match(/^(\d+)\s*\/\s*(\d+)$/);
     const currentIndex = match ? Math.max(0, Number.parseInt(match[1], 10) - 1) : 0;
-    return { currentEntry: filename, currentIndex };
+    return {
+      currentEntry: filename,
+      currentIndex,
+      footerVisibility: block.dataset.footerVisibility || "inherit"
+    };
   }
 
   if (type === "video") {
