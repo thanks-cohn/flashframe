@@ -276,6 +276,10 @@ body.toolbar-hidden .workspace {
   display: none !important;
 }
 
+#workspace[data-other-footer-mode="hide"] .block:not(.video-block):not(.audio-block):not(.remote-video-block) > .framechute-source-location {
+  display: none !important;
+}
+
 .local-source-controls {
   display: flex;
   align-items: center;
