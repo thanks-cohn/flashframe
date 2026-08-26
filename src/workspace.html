@@ -7,27 +7,42 @@
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="floating.css">
 </head>
-<body>
+<body class="toolbar-show-text">
   <header class="toolbar">
     <div class="brand">Flashframe</div>
 
-    <div class="toolbar-actions" aria-label="Add blocks">
-      <button id="add-text" type="button">New note</button>
-      <button id="open-text" type="button">Open text</button>
-      <button id="open-pdf" type="button">Open PDF</button>
-      <button id="open-image" type="button">Open image</button>
-      <button id="open-gallery" type="button">Open gallery</button>
-      <button id="open-video" type="button">Open video</button>
-      <button id="open-url" type="button">Open URL</button>
-    </div>
+    <div class="toolbar-primary" aria-label="FrameChute workflow">
+      <div class="toolbar-slot">
+        <button id="toolbar-add-toggle" class="toolbar-command" type="button" aria-expanded="false" aria-controls="toolbar-add-panel"><span aria-hidden="true">＋</span><span class="toolbar-command-label">Add</span></button>
+        <div id="toolbar-add-panel" class="toolbar-slot-panel" hidden>
+          <strong>Add to this frame</strong>
+          <div class="toolbar-actions" aria-label="Add blocks">
+            <button id="add-text" type="button">New note</button>
+            <button id="open-text" type="button">Open text</button>
+            <button id="open-pdf" type="button">Open PDF</button>
+            <button id="open-image" type="button">Open image</button>
+            <button id="open-gallery" type="button">Open gallery</button>
+            <button id="open-video" type="button">Open video</button>
+            <button id="open-url" type="button">Open URL</button>
+          </div>
+        </div>
+      </div>
 
-    <div class="toolbar-actions frame-actions" aria-label="Flashframes">
-      <button id="save-frame" type="button">Save Flashframe</button>
-      <select id="saved-frames" aria-label="Saved Flashframes">
-        <option value="">Saved Flashframes</option>
-      </select>
-      <button id="restore-frame" type="button">Restore</button>
-      <button id="reconnect-all" type="button">Reconnect all</button>
+      <span id="frame-sequence-slot"></span>
+
+      <div class="toolbar-slot">
+        <button id="toolbar-saved-toggle" class="toolbar-command" type="button" aria-expanded="false" aria-controls="toolbar-saved-panel"><span aria-hidden="true">▤</span><span class="toolbar-command-label">Saved</span></button>
+        <div id="toolbar-saved-panel" class="toolbar-slot-panel toolbar-saved-panel" hidden>
+          <strong>Saved FrameChutes</strong>
+          <select id="saved-frames" aria-label="Saved FrameChutes">
+            <option value="">Saved FrameChutes</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="save-frame" class="toolbar-command" type="button" title="Save this FrameChute"><span aria-hidden="true">💾</span><span class="toolbar-command-label">Save</span></button>
+      <button id="restore-frame" class="toolbar-command" type="button" title="Restore the selected FrameChute"><span aria-hidden="true">↻</span><span class="toolbar-command-label">Restore</span></button>
+      <button id="reconnect-all" class="toolbar-command" type="button" title="Reconnect every remembered source"><span aria-hidden="true">⛓</span><span class="toolbar-command-label">Reconnect</span></button>
     </div>
 
     <div id="status" class="status" role="status" aria-live="polite"></div>
@@ -71,6 +86,10 @@
       <label class="setting-row">
         <input id="setting-toolbar" type="checkbox" checked>
         <span><strong>Show top toolbar</strong><small>When hidden, use the movable F button to bring it back.</small></span>
+      </label>
+      <label class="setting-row">
+        <input id="setting-toolbar-text" type="checkbox" checked>
+        <span><strong>Show toolbar text</strong><small>Keep plain-language names beside toolbar symbols. Turn this off for a compact icon-only toolbar.</small></span>
       </label>
       <label class="setting-row">
         <input id="setting-loop-videos" type="checkbox">
@@ -152,6 +171,7 @@
   </template>
 
   <script type="module" src="workspace.js"></script>
+  <script type="module" src="toolbar-paradigm.js"></script>
   <script type="module" src="controls.js"></script>
   <script type="module" src="workspace-extras.js"></script>
   <script type="module" src="dock-fade.js"></script>
