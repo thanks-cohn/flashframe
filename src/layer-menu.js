@@ -66,6 +66,7 @@ menu.innerHTML = `
   <button type="button" data-layer-action="timed-play" role="menuitem">Preview timed move</button>
   <button type="button" data-layer-action="timed-return" role="menuitem">Return to move start</button>
   <button type="button" data-layer-action="timed-clear" role="menuitem">Remove timed move</button>
+  <button type="button" data-layer-action="layer-rule" role="menuitem">Layer timing…</button>
   <div class="flashframe-layer-menu-separator timed-motion-separator" role="separator"></div>
   <button type="button" data-layer-action="close" class="flashframe-layer-menu-close" role="menuitem">Close frame</button>
 `;
@@ -163,6 +164,7 @@ function showMenu(block, x, y) {
   menu.querySelector('[data-layer-action="timed-play"]').hidden = !hasTimedMotion;
   menu.querySelector('[data-layer-action="timed-return"]').hidden = !hasTimedMotion;
   menu.querySelector('[data-layer-action="timed-clear"]').hidden = !hasTimedMotion;
+  menu.querySelector('[data-layer-action="layer-rule"]').hidden = !block;
   menu.querySelector(".timed-motion-separator").hidden = !block;
   closeButton.hidden = !block;
   closeButton.textContent = isVisualMedia ? "Close object" : "Close frame";
@@ -228,6 +230,12 @@ menu.addEventListener("click", (event) => {
     const action = button.dataset.layerAction.slice("timed-".length);
     hideMenu();
     if (block) window.dispatchEvent(new CustomEvent(`flashframe:${action}-timed-motion`, { detail: { block } }));
+    return;
+  }
+  if (button.dataset.layerAction === "layer-rule") {
+    const block = targetBlock;
+    hideMenu();
+    if (block) window.dispatchEvent(new CustomEvent("flashframe:edit-layer-rule", { detail: { block } }));
     return;
   }
   if (button.dataset.layerAction === "close") {
