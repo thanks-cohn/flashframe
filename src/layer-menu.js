@@ -62,6 +62,11 @@ menu.innerHTML = `
   <button type="button" data-layer-action="object-footer" role="menuitem">Hide object footer</button>
   <button type="button" data-layer-action="frameless" role="menuitem">Show image only</button>
   <div class="flashframe-layer-menu-separator frameless-separator" role="separator"></div>
+  <button type="button" data-layer-action="timed-edit" role="menuitem">Create timed move</button>
+  <button type="button" data-layer-action="timed-play" role="menuitem">Preview timed move</button>
+  <button type="button" data-layer-action="timed-return" role="menuitem">Return to move start</button>
+  <button type="button" data-layer-action="timed-clear" role="menuitem">Remove timed move</button>
+  <div class="flashframe-layer-menu-separator timed-motion-separator" role="separator"></div>
   <button type="button" data-layer-action="close" class="flashframe-layer-menu-close" role="menuitem">Close frame</button>
 `;
 document.body.append(menu);
@@ -152,6 +157,13 @@ function showMenu(block, x, y) {
     : `Show ${isVideo ? "video" : "image"} only`;
   menu.querySelector(".frameless-separator").hidden = !isVisualMedia;
   const closeButton = menu.querySelector('[data-layer-action="close"]');
+  const hasTimedMotion = Boolean(block?.dataset.timedMotion || block?.classList.contains("has-timed-motion"));
+  menu.querySelector('[data-layer-action="timed-edit"]').hidden = !block;
+  menu.querySelector('[data-layer-action="timed-edit"]').textContent = hasTimedMotion ? "Edit timed move" : "Create timed move";
+  menu.querySelector('[data-layer-action="timed-play"]').hidden = !hasTimedMotion;
+  menu.querySelector('[data-layer-action="timed-return"]').hidden = !hasTimedMotion;
+  menu.querySelector('[data-layer-action="timed-clear"]').hidden = !hasTimedMotion;
+  menu.querySelector(".timed-motion-separator").hidden = !block;
   closeButton.hidden = !block;
   closeButton.textContent = isVisualMedia ? "Close object" : "Close frame";
 
@@ -209,6 +221,13 @@ menu.addEventListener("click", (event) => {
       detail: { block: targetBlock, independent: button.dataset.layerAction === "independent" }
     }));
     hideMenu();
+    return;
+  }
+  if (button.dataset.layerAction.startsWith("timed-")) {
+    const block = targetBlock;
+    const action = button.dataset.layerAction.slice("timed-".length);
+    hideMenu();
+    if (block) window.dispatchEvent(new CustomEvent(`flashframe:${action}-timed-motion`, { detail: { block } }));
     return;
   }
   if (button.dataset.layerAction === "close") {
