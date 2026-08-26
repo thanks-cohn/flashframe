@@ -112,29 +112,42 @@ function clearScheduled() {
   active.clear();
 }
 
-function scheduleCues(block) {
+function clearTimersOnly() {
+  for (const timer of timers) clearTimeout(timer);
+  timers.clear();
+}
+
+function scheduleCues(block, localTime = 0, continueRunning = true) {
+  if (localTime < 0 && !continueRunning) return;
   if (!baselineZ.size) {
     for (const candidate of blocks()) baselineZ.set(candidate.dataset.blockId, candidate.style.zIndex || "1");
   }
   const owner = block.dataset.blockId;
   for (const cue of readRule(block).cues) {
-    const startTimer = setTimeout(() => {
-      timers.delete(startTimer);
-      if (!baselineZ.size) {
-        for (const candidate of blocks()) baselineZ.set(candidate.dataset.blockId, candidate.style.zIndex || "1");
-      }
-      active.set(`${owner}:${cue.id}`, { owner, target: cue.target, relation: cue.relation });
-      applyActiveConstraints();
-    }, cue.from * 1000);
-    const endTimer = setTimeout(() => {
-      timers.delete(endTimer);
-      active.delete(`${owner}:${cue.id}`);
-      if (active.size) applyActiveConstraints();
-      else restoreBaseline();
-    }, cue.to * 1000);
-    timers.add(startTimer);
-    timers.add(endTimer);
+    const key = `${owner}:${cue.id}`;
+    if (cue.from <= localTime && localTime < cue.to) {
+      active.set(key, { owner, target: cue.target, relation: cue.relation });
+    }
+    if (!continueRunning) continue;
+    if (cue.from > localTime) {
+      const startTimer = setTimeout(() => {
+        timers.delete(startTimer);
+        active.set(key, { owner, target: cue.target, relation: cue.relation });
+        applyActiveConstraints();
+      }, (cue.from - localTime) * 1000);
+      timers.add(startTimer);
+    }
+    if (cue.to > localTime) {
+      const endTimer = setTimeout(() => {
+        timers.delete(endTimer);
+        active.delete(key);
+        if (active.size) applyActiveConstraints();
+        else restoreBaseline();
+      }, (cue.to - localTime) * 1000);
+      timers.add(endTimer);
+    }
   }
+  if (active.size) applyActiveConstraints();
 }
 
 function restoreBaseline() {
@@ -151,6 +164,18 @@ function startMasterRules() {
   for (const block of blocks()) baselineZ.set(block.dataset.blockId, block.style.zIndex || "1");
   for (const block of blocks()) {
     if (!block.dataset.timedMotion) scheduleCues(block);
+  }
+}
+
+function setRulesAt(detail, continueRunning) {
+  clearScheduled();
+  restoreBaseline();
+  for (const block of blocks()) baselineZ.set(block.dataset.blockId, block.style.zIndex || "1");
+  const masterTime = Math.max(0, number(detail?.time));
+  const starts = detail?.starts || {};
+  for (const block of blocks()) {
+    const localTime = block.dataset.timedMotion ? masterTime - number(starts[block.dataset.blockId]) : masterTime;
+    scheduleCues(block, localTime, continueRunning);
   }
 }
 
@@ -273,8 +298,13 @@ function prepare(block) {
 
 window.addEventListener("flashframe:edit-layer-rule", (event) => event.detail?.block && openPanel(event.detail.block));
 window.addEventListener("flashframe:frame-sequence-cycle", startMasterRules);
+window.addEventListener("flashframe:frame-sequence-resumed", (event) => setRulesAt(event.detail, true));
+window.addEventListener("flashframe:frame-sequence-paused", clearTimersOnly);
+window.addEventListener("flashframe:frame-sequence-seek", (event) => setRulesAt(event.detail, false));
 window.addEventListener("flashframe:frame-sequence-stopped", stopRules);
-window.addEventListener("flashframe:timed-motion-started", (event) => event.detail?.block && scheduleCues(event.detail.block));
+window.addEventListener("flashframe:timed-motion-started", (event) => {
+  if (!document.documentElement.dataset.frameSequencePlaying && event.detail?.block) scheduleCues(event.detail.block);
+});
 window.addEventListener("flashframe:restore-layer-rule", (event) => prepare(event.detail?.block));
 
 const observer = new MutationObserver((mutations) => {
