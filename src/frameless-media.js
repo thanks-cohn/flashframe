@@ -2,7 +2,12 @@ const MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
 const workspace = document.querySelector("#workspace");
 const restoreAllButton = document.querySelector("#restore-image-frames");
 const aspectRatioInput = document.querySelector("#setting-frameless-aspect-ratio");
+const resizeHandleModeSelect = document.querySelector("#setting-frameless-resize-handle-mode");
+const resizeHandleDelayInput = document.querySelector("#setting-frameless-resize-handle-delay");
 const ASPECT_RATIO_KEY = "framechute.frameless-image-aspect-ratio.v1";
+const RESIZE_HANDLE_MODE_KEY = "framechute.frameless-resize-handle-mode.v1";
+const RESIZE_HANDLE_DELAY_KEY = "framechute.frameless-resize-handle-delay.v1";
+const resizeHandleTimers = new WeakMap();
 
 const stylesheet = document.createElement("link");
 stylesheet.rel = "stylesheet";
@@ -25,6 +30,68 @@ if (aspectRatioInput) {
     } catch (error) {
       console.warn("Could not save frameless image aspect-ratio preference:", error);
     }
+  });
+}
+
+function resizeHandleMode() {
+  try {
+    const mode = localStorage.getItem(RESIZE_HANDLE_MODE_KEY);
+    return ["always", "fade", "hide"].includes(mode) ? mode : "fade";
+  } catch {
+    return "fade";
+  }
+}
+
+function resizeHandleDelayMs() {
+  try {
+    const seconds = Number.parseFloat(localStorage.getItem(RESIZE_HANDLE_DELAY_KEY) ?? "3");
+    return (Number.isFinite(seconds) ? Math.min(300, Math.max(1, seconds)) : 3) * 1000;
+  } catch {
+    return 3000;
+  }
+}
+
+function scheduleResizeHandleFade(handle, immediate = false) {
+  const oldTimer = resizeHandleTimers.get(handle);
+  if (oldTimer) clearTimeout(oldTimer);
+  resizeHandleTimers.delete(handle);
+
+  const mode = resizeHandleMode();
+  handle.dataset.visibilityMode = mode;
+  handle.classList.toggle("is-resize-handle-visible", mode === "always" || mode === "fade");
+  if (mode !== "fade") return;
+
+  const timer = setTimeout(() => {
+    resizeHandleTimers.delete(handle);
+    if (!handle.matches(":hover, :focus-visible") && !handle.closest(".is-frameless-resizing")) {
+      handle.classList.remove("is-resize-handle-visible");
+    }
+  }, immediate ? 0 : resizeHandleDelayMs());
+  resizeHandleTimers.set(handle, timer);
+}
+
+function applyResizeHandlePreference() {
+  for (const handle of workspace.querySelectorAll(".frameless-resize-handle")) {
+    scheduleResizeHandleFade(handle);
+  }
+}
+
+if (resizeHandleModeSelect) {
+  resizeHandleModeSelect.value = resizeHandleMode();
+  resizeHandleModeSelect.addEventListener("change", () => {
+    try { localStorage.setItem(RESIZE_HANDLE_MODE_KEY, resizeHandleModeSelect.value); } catch { /* best effort */ }
+    applyResizeHandlePreference();
+  });
+}
+
+if (resizeHandleDelayInput) {
+  resizeHandleDelayInput.value = String(resizeHandleDelayMs() / 1000);
+  resizeHandleDelayInput.addEventListener("change", () => {
+    const parsed = Number.parseFloat(resizeHandleDelayInput.value);
+    const seconds = Number.isFinite(parsed) ? Math.min(300, Math.max(1, parsed)) : 3;
+    resizeHandleDelayInput.value = String(seconds);
+    try { localStorage.setItem(RESIZE_HANDLE_DELAY_KEY, String(seconds)); } catch { /* best effort */ }
+    applyResizeHandlePreference();
   });
 }
 
@@ -173,6 +240,16 @@ function attachFramelessResizeHandle(block) {
   handle.title = "Drag to resize image";
   handle.setAttribute("aria-label", "Resize image");
   block.append(handle);
+  handle.addEventListener("pointerenter", () => {
+    if (resizeHandleMode() !== "fade") return;
+    handle.classList.add("is-resize-handle-visible");
+    scheduleResizeHandleFade(handle);
+  });
+  handle.addEventListener("focus", () => {
+    if (resizeHandleMode() === "fade") handle.classList.add("is-resize-handle-visible");
+  });
+  handle.addEventListener("blur", () => scheduleResizeHandleFade(handle));
+  scheduleResizeHandleFade(handle);
 
   handle.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 || !block.classList.contains("is-frameless-media")) return;
@@ -187,6 +264,7 @@ function attachFramelessResizeHandle(block) {
     const aspect = startWidth / Math.max(1, startHeight);
     handle.setPointerCapture(event.pointerId);
     block.classList.add("is-frameless-resizing");
+    if (resizeHandleMode() === "fade") handle.classList.add("is-resize-handle-visible");
 
     const move = (moveEvent) => {
       const dx = moveEvent.clientX - startX;
@@ -209,6 +287,7 @@ function attachFramelessResizeHandle(block) {
       handle.removeEventListener("pointerup", finish);
       handle.removeEventListener("pointercancel", finish);
       workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+      scheduleResizeHandleFade(handle);
     };
 
     handle.addEventListener("pointermove", move);
