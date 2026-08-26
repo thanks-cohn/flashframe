@@ -18,6 +18,7 @@ const toolbarSummon = document.querySelector("#toolbar-summon");
 const settingsDock = document.querySelector("#settings-dock");
 const settingsDrag = document.querySelector("#settings-dock-grip");
 const settingsExpand = document.querySelector("#settings-expand");
+const settingsHide = document.querySelector("#settings-hide");
 const settingsMini = document.querySelector("#settings-mini");
 const videoDock = document.querySelector("#video-dock");
 const videoDrag = document.querySelector("#video-dock-grip");
@@ -150,9 +151,16 @@ function setDockCollapsed(dock, expandButton, key, collapsed) {
   });
 }
 
+function setDockHidden(dock, key, hidden) {
+  dock.classList.toggle("dock-hidden", hidden);
+  const old = readJson(key, {});
+  writeJson(key, { ...old, hidden });
+}
+
 function initializeDock(dock, expandButton, key) {
   const saved = readJson(key, {});
   const collapsed = saved.collapsed === true;
+  dock.classList.toggle("dock-hidden", saved.hidden === true);
   dock.classList.toggle("is-collapsed", collapsed);
   expandButton.textContent = collapsed ? "□" : "−";
   expandButton.title = collapsed ? "Expand" : "Minimize";
@@ -512,6 +520,7 @@ attachDragOnly(settingsDock, settingsDrag, SETTINGS_DOCK_KEY);
 attachDragOnly(videoDock, videoDrag, VIDEO_DOCK_KEY);
 initializeDock(settingsDock, settingsExpand, SETTINGS_DOCK_KEY);
 initializeDock(videoDock, videoExpand, VIDEO_DOCK_KEY);
+settingsHide?.addEventListener("click", () => setDockHidden(settingsDock, SETTINGS_DOCK_KEY, true));
 
 initializeFloatingPosition(toolbarSummon, TOOLBAR_BUTTON_KEY);
 toolbarSummon.addEventListener("pointerdown", (event) => {
@@ -593,6 +602,7 @@ window.addEventListener("flashframe:show-toolbar", () => {
 });
 
 window.addEventListener("flashframe:show-settings", () => {
+  setDockHidden(settingsDock, SETTINGS_DOCK_KEY, false);
   settingsDock.classList.remove("is-faded");
   setDockCollapsed(settingsDock, settingsExpand, SETTINGS_DOCK_KEY, false);
   settingsDock.animate([{ outline: "4px solid #ffd34e" }, { outline: "0 solid transparent" }], { duration: 900 });
