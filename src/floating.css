@@ -70,6 +70,7 @@ body.toolbar-hidden .workspace {
 
 .dock-drag,
 .dock-expand,
+.dock-close,
 .settings-mini,
 .player-control {
   display: grid;
@@ -86,6 +87,14 @@ body.toolbar-hidden .workspace {
   cursor: grab;
   touch-action: none;
   user-select: none;
+}
+
+.floating-dock.dock-hidden {
+  display: none !important;
+}
+
+.settings-dock.is-collapsed .dock-close {
+  display: none;
 }
 
 .dock-drag:active,
@@ -266,7 +275,6 @@ body.toolbar-hidden .workspace {
   display: none !important;
 }
 
-#workspace[data-other-footer-mode="hide"] .gallery-block > .gallery-toolbar,
 #workspace[data-other-footer-mode="hide"] .custom-flashframe-block:not(.remote-video-block) > .block-toolbar,
 #workspace[data-other-footer-mode="hide"] .block[data-custom-kind="image"] > .block-toolbar,
 #workspace[data-other-footer-mode="hide"] .block[data-custom-kind="web"] > .block-toolbar {
