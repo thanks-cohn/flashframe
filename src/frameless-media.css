@@ -48,12 +48,29 @@
   display: none !important;
 }
 
+body #workspace .block.show-object-header > .block-header {
+  display: flex !important;
+  padding-left: 91px !important;
+}
+
+body #workspace .block.show-object-header > .compact-drag-handle {
+  display: inline-flex !important;
+}
+
+body #workspace .block.show-object-footer > .block-toolbar {
+  display: flex !important;
+}
+
+body #workspace .block.show-object-footer > .framechute-source-location {
+  display: grid !important;
+}
+
 body.hide-block-headers #workspace .block > .compact-drag-handle {
   display: none !important;
 }
 
 .block.hide-object-header > .image-frame,
-body.hide-block-headers #workspace .block[data-custom-kind="image"] > .image-frame {
+body.hide-block-headers #workspace .block[data-custom-kind="image"]:not(.show-object-header) > .image-frame {
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -61,6 +78,6 @@ body.hide-block-headers #workspace .block[data-custom-kind="image"] > .image-fra
 }
 
 .block.hide-object-header.is-frameless-dragging > .image-frame,
-body.hide-block-headers #workspace .block.is-frameless-dragging > .image-frame {
+body.hide-block-headers #workspace .block.is-frameless-dragging:not(.show-object-header) > .image-frame {
   cursor: grabbing;
 }
