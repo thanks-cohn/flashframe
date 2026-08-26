@@ -26,6 +26,20 @@
   line-height: 1;
 }
 
+body.toolbar-show-text .frame-sequence-play-top,
+body.toolbar-show-text .frame-sequence-transport-top {
+  width: auto;
+  padding: 0 9px;
+  gap: 5px;
+}
+
+body.toolbar-show-text .frame-sequence-play-top::after,
+body.toolbar-show-text .frame-sequence-transport-top::after {
+  content: attr(data-label);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .frame-sequence-panel {
   position: fixed;
   z-index: 2147483645;
