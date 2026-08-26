@@ -1,11 +1,32 @@
 const MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
 const workspace = document.querySelector("#workspace");
 const restoreAllButton = document.querySelector("#restore-image-frames");
+const aspectRatioInput = document.querySelector("#setting-frameless-aspect-ratio");
+const ASPECT_RATIO_KEY = "framechute.frameless-image-aspect-ratio.v1";
 
 const stylesheet = document.createElement("link");
 stylesheet.rel = "stylesheet";
 stylesheet.href = new URL("./frameless-media.css", import.meta.url).href;
 document.head.append(stylesheet);
+
+function preserveAspectRatio() {
+  try {
+    return localStorage.getItem(ASPECT_RATIO_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+if (aspectRatioInput) {
+  aspectRatioInput.checked = preserveAspectRatio();
+  aspectRatioInput.addEventListener("change", () => {
+    try {
+      localStorage.setItem(ASPECT_RATIO_KEY, String(aspectRatioInput.checked));
+    } catch (error) {
+      console.warn("Could not save frameless image aspect-ratio preference:", error);
+    }
+  });
+}
 
 function isImageObject(block) {
   return block instanceof HTMLElement && block.dataset.customKind === "image";
@@ -163,12 +184,21 @@ function attachFramelessResizeHandle(block) {
     const startY = event.clientY;
     const startWidth = rect.width;
     const startHeight = rect.height;
+    const aspect = startWidth / Math.max(1, startHeight);
     handle.setPointerCapture(event.pointerId);
     block.classList.add("is-frameless-resizing");
 
     const move = (moveEvent) => {
-      const width = Math.max(32, startWidth + moveEvent.clientX - startX);
-      const height = Math.max(32, startHeight + moveEvent.clientY - startY);
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      let width = Math.max(32, startWidth + dx);
+      let height = Math.max(32, startHeight + dy);
+      if (preserveAspectRatio()) {
+        const dyAsWidth = dy * aspect;
+        const delta = Math.abs(dx) >= Math.abs(dyAsWidth) ? dx : dyAsWidth;
+        width = Math.max(32, startWidth + delta);
+        height = width / aspect;
+      }
       block.style.width = `${width}px`;
       block.style.height = `${height}px`;
     };
