@@ -59,7 +59,10 @@ function captureState(block) {
       muted: Boolean(player?.muted),
       playbackRate: Number.isFinite(player?.playbackRate) ? player.playbackRate : 1,
       loop: Boolean(player?.loop),
-      syncGroup: block.dataset.syncGroup || "all"
+      syncGroup: block.dataset.syncGroup || "all",
+      frameless: block.dataset.frameless === "true",
+      headerVisibility: block.dataset.headerVisibility || "inherit",
+      footerVisibility: block.dataset.footerVisibility || "inherit"
     };
   }
 
