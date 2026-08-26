@@ -72,6 +72,7 @@ await import("./web-drop.js");
 await import("./frameless-media.js");
 await import("./timed-events.js");
 await import("./frame-sequence.js");
+await import("./layer-rules.js");
 await import("./drop-local-sources.js");
 await import("./fit-to-size.js");
 await import("./remote-video.js");
