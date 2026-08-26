@@ -247,11 +247,34 @@ body.toolbar-hidden .toolbar-summon {
 }
 
 .setting-row small,
+.setting-action-row small,
 .storage-setting small,
 .video-dock-body small {
   font-size: 11px;
   line-height: 1.35;
   opacity: 0.62;
+}
+
+.setting-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 10px;
+}
+
+.setting-action-row > span {
+  display: grid;
+  gap: 2px;
+}
+
+.setting-action-row strong {
+  font-size: 13px;
+}
+
+.setting-action-row button {
+  white-space: nowrap;
 }
 
 .storage-setting {
@@ -345,8 +368,8 @@ body.toolbar-hidden .workspace {
   user-select: none;
 }
 
-body.hide-block-headers .block-header {
-  display: none;
+body.hide-block-headers #workspace .block > .block-header {
+  display: none !important;
 }
 
 .compact-drag-handle {
