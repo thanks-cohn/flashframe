@@ -166,7 +166,8 @@ async function captureLiveSnapshot() {
       name: block.querySelector(".block-name")?.value?.trim() || "Untitled",
       geometry: readGeometry(block),
       source: inferredSource(block, sourceMap, handlesByName),
-      state: captureState(block)
+      state: captureState(block),
+      timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null
     }))
   };
 }
