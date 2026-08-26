@@ -594,6 +594,7 @@ async function createBlock(record = {}) {
   block.dataset.blockId = record.id ?? crypto.randomUUID();
   block.dataset.blockType = type;
   if (record.timedMotion) block.dataset.timedMotion = JSON.stringify(record.timedMotion);
+  if (record.layerRule) block.dataset.layerRuleData = JSON.stringify(record.layerRule);
   setSourceRecord(block, record.source ?? null);
 
   const nameInput = block.querySelector(".block-name");
@@ -604,6 +605,7 @@ async function createBlock(record = {}) {
   definition.initialize?.(block);
   workspace.append(block);
   window.dispatchEvent(new CustomEvent("flashframe:restore-timed-motion", { detail: { block } }));
+  window.dispatchEvent(new CustomEvent("flashframe:restore-layer-rule", { detail: { block } }));
 
   try {
     await definition.restore(block, record.state ?? {}, record.source ?? null);
@@ -628,7 +630,8 @@ function captureBlock(block) {
     geometry: readGeometry(block),
     source: getSourceRecord(block),
     state: definition.capture(block),
-    timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null
+    timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null,
+    layerRule: block.dataset.layerRuleData ? JSON.parse(block.dataset.layerRuleData) : null
   };
 }
 
