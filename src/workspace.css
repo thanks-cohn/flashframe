@@ -628,8 +628,19 @@ body.hide-block-headers .compact-drag-handle {
   inset: 0;
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 12px;
   text-align: center;
   padding: 24px;
+  background: color-mix(in srgb, Canvas 90%, transparent);
+}
+
+.gallery-reconnect-center {
+  justify-self: center;
+  min-width: 150px;
+  min-height: 38px;
+  padding: 8px 14px;
+  font-weight: 700;
 }
 
 .gallery-stage > .source-message[hidden] {
