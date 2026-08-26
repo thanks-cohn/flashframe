@@ -79,6 +79,77 @@ body.toolbar-hidden .toolbar {
   letter-spacing: -0.02em;
 }
 
+.toolbar-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.toolbar-command {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 36px;
+  padding-inline: 9px;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.toolbar-command-label {
+  display: none;
+}
+
+body.toolbar-show-text .toolbar-command-label {
+  display: inline;
+}
+
+.toolbar-slot {
+  position: relative;
+  display: inline-flex;
+}
+
+.toolbar-slot-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 100010;
+  width: min(560px, calc(100vw - 24px));
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
+  border-radius: 12px;
+  color: CanvasText;
+  background: Canvas;
+  box-shadow: 0 16px 44px color-mix(in srgb, CanvasText 22%, transparent);
+}
+
+.toolbar-slot-panel[hidden] {
+  display: none;
+}
+
+.toolbar-slot-panel > strong {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 13px;
+}
+
+.toolbar-slot-panel .toolbar-actions {
+  align-items: stretch;
+}
+
+.toolbar-slot-panel .toolbar-actions > button {
+  flex: 1 1 110px;
+}
+
+.toolbar-saved-panel {
+  width: min(390px, calc(100vw - 24px));
+}
+
+.toolbar-saved-panel select {
+  width: 100%;
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
@@ -650,6 +721,10 @@ body.hide-block-headers .compact-drag-handle {
 @media (max-width: 900px) {
   .toolbar {
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-primary {
     flex-wrap: wrap;
   }
 
