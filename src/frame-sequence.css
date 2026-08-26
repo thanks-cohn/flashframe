@@ -14,6 +14,17 @@
   padding: 0;
   font-weight: 750;
 }
+.frame-sequence-transport-top {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 17px;
+  line-height: 1;
+}
 
 .frame-sequence-panel {
   position: fixed;
