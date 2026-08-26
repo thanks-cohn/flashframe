@@ -163,6 +163,7 @@ function launch(block) {
 
 function scheduleCycle() {
   returnAll();
+  window.dispatchEvent(new CustomEvent("flashframe:frame-sequence-cycle"));
   const blocks = timedBlocks();
   run.startedAt = performance.now();
   run.launched.clear();
@@ -201,6 +202,7 @@ function stopSequence({ returnToStart = false } = {}) {
   delete document.documentElement.dataset.frameSequencePlaying;
   topPlay?.classList.remove("is-frame-sequence-playing");
   if (returnToStart) returnAll();
+  window.dispatchEvent(new CustomEvent("flashframe:frame-sequence-stopped"));
 }
 
 function restartSequence() {
