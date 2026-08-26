@@ -38,10 +38,29 @@
   display: none !important;
 }
 
-.block.hide-object-header > .block-header {
+.block.hide-object-header > .block-header,
+.block.hide-object-header > .compact-drag-handle {
   display: none !important;
 }
 
-.block.hide-object-footer > .block-toolbar {
+.block.hide-object-footer > .block-toolbar,
+.block.hide-object-footer > .framechute-source-location {
   display: none !important;
+}
+
+body.hide-block-headers #workspace .block > .compact-drag-handle {
+  display: none !important;
+}
+
+.block.hide-object-header > .image-frame,
+body.hide-block-headers #workspace .block[data-custom-kind="image"] > .image-frame {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.block.hide-object-header.is-frameless-dragging > .image-frame,
+body.hide-block-headers #workspace .block.is-frameless-dragging > .image-frame {
+  cursor: grabbing;
 }
