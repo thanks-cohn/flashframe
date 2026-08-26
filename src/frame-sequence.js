@@ -1,6 +1,6 @@
 const workspace = document.querySelector("#workspace");
 const topPlay = document.querySelector("#video-play-all");
-const brand = document.querySelector(".toolbar .brand");
+const toolbarSlot = document.querySelector("#frame-sequence-slot");
 
 const stylesheet = document.createElement("link");
 stylesheet.rel = "stylesheet";
@@ -9,14 +9,15 @@ document.head.append(stylesheet);
 
 const openButton = document.createElement("button");
 openButton.type = "button";
-openButton.className = "frame-sequence-open-top";
-openButton.textContent = "Set times";
+openButton.className = "frame-sequence-open-top toolbar-command";
+openButton.innerHTML = '<span aria-hidden="true">◷</span><span class="toolbar-command-label">Timing</span>';
 openButton.title = "Open the current frame master timeline";
 
 const presentationPlay = document.createElement("button");
 presentationPlay.type = "button";
 presentationPlay.className = "frame-sequence-play-top";
 presentationPlay.textContent = "▶";
+presentationPlay.dataset.label = "Play";
 presentationPlay.title = "Play current frame sequence";
 presentationPlay.setAttribute("aria-label", presentationPlay.title);
 
@@ -25,6 +26,7 @@ function topTransportButton(action, text, title) {
   button.type = "button";
   button.className = `frame-sequence-transport-top is-${action}`;
   button.dataset.action = action;
+  button.dataset.label = action === "rewind" ? "Rewind" : action === "back" ? "Back" : "Forward";
   button.textContent = text;
   button.title = title;
   button.setAttribute("aria-label", title);
@@ -38,7 +40,7 @@ const presentationForward = topTransportButton("forward", "↷", "Step forward 1
 const presentationControls = document.createElement("div");
 presentationControls.className = "frame-sequence-top-controls";
 presentationControls.append(openButton, presentationRewind, presentationBack, presentationPlay, presentationForward);
-brand?.after(presentationControls);
+toolbarSlot?.replaceWith(presentationControls);
 
 const panel = document.createElement("section");
 panel.className = "frame-sequence-panel";
@@ -290,6 +292,7 @@ function playSequence() {
   document.documentElement.dataset.frameSequencePlaying = "true";
   topPlay?.classList.add("is-frame-sequence-playing");
   presentationPlay.textContent = "❚❚";
+  presentationPlay.dataset.label = "Pause";
   presentationPlay.title = "Pause current frame sequence";
   presentationPlay.setAttribute("aria-label", presentationPlay.title);
   scheduleCycle();
@@ -308,6 +311,7 @@ function pauseSequence() {
   delete document.documentElement.dataset.frameSequencePlaying;
   topPlay?.classList.remove("is-frame-sequence-playing");
   presentationPlay.textContent = "▶";
+  presentationPlay.dataset.label = "Play";
   presentationPlay.title = "Play current frame sequence";
   presentationPlay.setAttribute("aria-label", presentationPlay.title);
   updateClockText();
