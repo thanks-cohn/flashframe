@@ -69,6 +69,7 @@ await import("./synthetic-file-handle.js");
 await import("./filechute-bridge.js");
 await import("./filechute-export.js");
 await import("./web-drop.js");
+await import("./frameless-media.js");
 await import("./drop-local-sources.js");
 await import("./fit-to-size.js");
 await import("./remote-video.js");
