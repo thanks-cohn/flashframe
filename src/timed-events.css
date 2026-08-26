@@ -59,7 +59,15 @@
   box-shadow: 0 16px 42px rgba(0, 0, 0, .28);
 }
 
-.timed-motion-editor h3 { margin: 0 0 9px; font-size: 15px; }
+.timed-motion-editor h3 {
+  margin: -4px -4px 9px;
+  padding: 5px 4px 8px;
+  font-size: 15px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.timed-motion-editor.is-dragging h3 { cursor: grabbing; }
 .timed-motion-editor label { display: grid; gap: 4px; margin: 8px 0; font-size: 12px; }
 .timed-motion-editor input,
 .timed-motion-editor select { width: 100%; }
