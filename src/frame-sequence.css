@@ -39,6 +39,15 @@
 .frame-sequence-loop { display: flex !important; grid-column: 1 / -1; align-items: center; gap: 7px !important; }
 .frame-sequence-loop input { width: auto; }
 .frame-sequence-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.frame-sequence-step-button {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+}
 .frame-sequence-list { display: grid; gap: 7px; }
 .frame-sequence-empty { margin: 8px 0; opacity: .65; font-size: 12px; }
 .frame-sequence-row { display: grid; grid-template-columns: minmax(90px, 1fr) 126px minmax(90px, 1fr) 70px; gap: 6px; align-items: center; padding: 7px; border-radius: 9px; background: color-mix(in srgb, CanvasText 5%, Canvas); }
