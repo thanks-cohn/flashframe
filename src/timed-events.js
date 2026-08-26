@@ -301,29 +301,44 @@ function bezier(motion, t) {
   };
 }
 
-async function playMotion(block, supplied = null) {
+function placeMotionAt(block, motion, localTime) {
+  const movementTime = Math.max(0, localTime - motion.delay);
+  const t = localTime <= motion.delay ? 0 : Math.min(1, movementTime / motion.duration);
+  const point = bezier(motion, t);
+  block.style.left = `${point.x}px`;
+  block.style.top = `${point.y}px`;
+}
+
+async function playMotion(block, supplied = null, suppliedStartAt = 0) {
   const source = supplied || readMotion(block);
   if (!source || !block.isConnected) return;
   const motion = normalizeMotion(source, block);
+  const startAt = Math.max(0, number(suppliedStartAt));
+  const total = motion.delay + motion.duration;
   running.get(block)?.abort();
+  if (startAt >= total) {
+    placeMotionAt(block, motion, total);
+    return;
+  }
   const controller = new AbortController();
   running.set(block, controller);
-  block.style.left = `${motion.start.x}px`;
-  block.style.top = `${motion.start.y}px`;
+  placeMotionAt(block, motion, startAt);
   block.classList.add("is-timed-motion-playing");
   const playbackPath = motion.showPath ? makeSvg(motion, block) : null;
 
   let completed = false;
   try {
-    if (motion.delay > 0) {
+    const remainingDelay = Math.max(0, motion.delay - startAt);
+    if (remainingDelay > 0) {
       await new Promise((resolve) => {
-        const timer = setTimeout(resolve, motion.delay * 1000);
+        const timer = setTimeout(resolve, remainingDelay * 1000);
         controller.signal.addEventListener("abort", () => { clearTimeout(timer); resolve(); }, { once: true });
       });
     }
     if (controller.signal.aborted) return;
     window.dispatchEvent(new CustomEvent("flashframe:timed-motion-started", { detail: { block } }));
-    const started = performance.now();
+    const elapsedMovement = Math.max(0, startAt - motion.delay);
+    const started = performance.now() - elapsedMovement * 1000;
     await new Promise((resolve) => {
       const frame = (now) => {
         if (controller.signal.aborted) { resolve(); return; }
@@ -348,6 +363,19 @@ async function playMotion(block, supplied = null) {
   }
 }
 
+function pauseMotion(block) {
+  running.get(block)?.abort();
+  block.classList.remove("is-timed-motion-playing");
+}
+
+function seekMotion(block, localTime) {
+  const motion = readMotion(block);
+  if (!motion) return;
+  pauseMotion(block);
+  placeMotionAt(block, motion, Math.max(0, number(localTime)));
+  workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+}
+
 function returnToStart(block) {
   const motion = readMotion(block);
   if (!motion) return;
@@ -367,8 +395,10 @@ function prepare(block) {
 
 window.addEventListener("flashframe:edit-timed-motion", (event) => event.detail?.block && editMotion(event.detail.block));
 window.addEventListener("flashframe:play-timed-motion", (event) => {
-  if (event.detail?.block) void playMotion(event.detail.block, event.detail.motion);
+  if (event.detail?.block) void playMotion(event.detail.block, event.detail.motion, event.detail.startAt);
 });
+window.addEventListener("flashframe:pause-timed-motion", (event) => event.detail?.block && pauseMotion(event.detail.block));
+window.addEventListener("flashframe:seek-timed-motion", (event) => event.detail?.block && seekMotion(event.detail.block, event.detail.time));
 window.addEventListener("flashframe:return-timed-motion", (event) => event.detail?.block && returnToStart(event.detail.block));
 window.addEventListener("flashframe:clear-timed-motion", (event) => event.detail?.block && clearMotion(event.detail.block));
 window.addEventListener("flashframe:restore-timed-motion", (event) => prepare(event.detail?.block));
