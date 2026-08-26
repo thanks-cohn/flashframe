@@ -1,6 +1,7 @@
 const PICKER_BUTTON_IDS = [
   "open-text",
   "open-pdf",
+  "open-image",
   "open-gallery",
   "open-video",
   "open-audio",
