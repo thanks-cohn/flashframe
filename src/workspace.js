@@ -512,12 +512,15 @@ registerBlockType("gallery", {
     const entry = runtime?.entries?.[runtime.index];
     return {
       currentEntry: entry?.name ?? block.dataset.currentEntry ?? null,
-      currentIndex: Number.isFinite(runtime?.index) ? runtime.index : 0
+      currentIndex: Number.isFinite(runtime?.index) ? runtime.index : 0,
+      footerVisibility: block.dataset.footerVisibility || "inherit"
     };
   },
 
   async restore(block, state = {}, source = null) {
     block.dataset.currentEntry = state.currentEntry ?? "";
+    block.dataset.footerVisibility = state.footerVisibility ?? "inherit";
+    window.dispatchEvent(new CustomEvent("flashframe:restore-media-chrome", { detail: { block } }));
     const handle = await storedReadableHandle(source);
 
     if (handle) await loadGalleryHandle(block, handle, state);
