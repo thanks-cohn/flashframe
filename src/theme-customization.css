@@ -21,6 +21,7 @@
 }
 
 .toolbar .toolbar-actions > button,
+.toolbar-slot-panel .toolbar-actions > button,
 .toolbar .frame-actions > button,
 .toolbar .toolbar-command,
 .toolbar .frame-sequence-top-controls > button,
@@ -34,6 +35,7 @@
 }
 
 .toolbar .toolbar-actions > button:hover,
+.toolbar-slot-panel .toolbar-actions > button:hover,
 .toolbar .frame-actions > button:hover,
 .toolbar .toolbar-command:hover,
 .toolbar .frame-sequence-top-controls > button:hover {
