@@ -55,6 +55,7 @@ menu.innerHTML = `
   <div class="flashframe-layer-menu-separator" role="separator"></div>
   <button type="button" data-layer-action="show-toolbar" role="menuitem">Show top bar</button>
   <button type="button" data-layer-action="show-settings" role="menuitem">Show Settings</button>
+  <button type="button" data-layer-action="show-media-player" role="menuitem">Show media player</button>
   <button type="button" data-layer-action="reveal-menus" role="menuitem">Make menus visible</button>
   <div class="flashframe-layer-menu-separator" role="separator"></div>
   <button type="button" data-layer-action="object-header" role="menuitem">Hide object header</button>
@@ -118,24 +119,27 @@ function hideMenu() {
 function showMenu(block, x, y) {
   targetBlock = block;
   menu.hidden = false;
-  const timed = block.dataset.timedMedia === "true" || Boolean(block.querySelector("video, audio"));
+  const timed = Boolean(block) && (block.dataset.timedMedia === "true" || Boolean(block.querySelector("video, audio")));
+  menu.querySelector('[data-layer-action="front"]').hidden = !block;
+  menu.querySelector('[data-layer-action="back"]').hidden = !block;
   menu.querySelector('[data-layer-action="sync"]').hidden = !timed;
   menu.querySelector('[data-layer-action="independent"]').hidden = !timed;
-  const isImage = block.dataset.customKind === "image";
-  const isVideo = Boolean(block.querySelector(":scope > video"))
-    || block.dataset.blockType === "video"
-    || block.dataset.customKind === "remote-video";
+  const isImage = block?.dataset.customKind === "image";
+  const isVideo = Boolean(block?.querySelector(":scope > video"))
+    || block?.dataset.blockType === "video"
+    || block?.dataset.customKind === "remote-video";
   const isVisualMedia = isImage || isVideo;
+  const isGallery = block?.dataset.blockType === "gallery" || block?.classList.contains("gallery-block");
   const framelessButton = menu.querySelector('[data-layer-action="frameless"]');
   const objectHeaderButton = menu.querySelector('[data-layer-action="object-header"]');
   const objectFooterButton = menu.querySelector('[data-layer-action="object-footer"]');
-  const frameless = block.classList.contains("is-frameless-media");
-  const headerHidden = block.classList.contains("hide-object-header")
-    || (frameless && !block.classList.contains("show-object-header"));
-  const footerHidden = block.classList.contains("hide-object-footer")
-    || (frameless && !block.classList.contains("show-object-footer"));
+  const frameless = Boolean(block?.classList.contains("is-frameless-media"));
+  const headerHidden = Boolean(block?.classList.contains("hide-object-header"))
+    || (frameless && !block?.classList.contains("show-object-header"));
+  const footerHidden = Boolean(block?.classList.contains("hide-object-footer"))
+    || (frameless && !block?.classList.contains("show-object-footer"));
   objectHeaderButton.hidden = !isVisualMedia;
-  objectFooterButton.hidden = !isVisualMedia;
+  objectFooterButton.hidden = !(isVisualMedia || isGallery);
   objectHeaderButton.textContent = headerHidden
     ? (frameless ? "Show header" : "Restore object header")
     : "Hide object header";
@@ -147,7 +151,9 @@ function showMenu(block, x, y) {
     ? `Restore ${isVideo ? "video" : "image"} frame`
     : `Show ${isVideo ? "video" : "image"} only`;
   menu.querySelector(".frameless-separator").hidden = !isVisualMedia;
-  menu.querySelector('[data-layer-action="close"]').textContent = isVisualMedia ? "Close object" : "Close frame";
+  const closeButton = menu.querySelector('[data-layer-action="close"]');
+  closeButton.hidden = !block;
+  closeButton.textContent = isVisualMedia ? "Close object" : "Close frame";
 
   const margin = 8;
   const rect = menu.getBoundingClientRect();
@@ -169,11 +175,6 @@ workspace.addEventListener("pointerdown", (event) => {
 
 workspace.addEventListener("contextmenu", (event) => {
   const block = event.target.closest(".block");
-  if (!block) {
-    hideMenu();
-    return;
-  }
-
   event.preventDefault();
   event.stopPropagation();
   showMenu(block, event.clientX, event.clientY);
@@ -195,6 +196,11 @@ menu.addEventListener("click", (event) => {
   }
   if (button.dataset.layerAction === "show-settings") {
     window.dispatchEvent(new CustomEvent("flashframe:show-settings"));
+    hideMenu();
+    return;
+  }
+  if (button.dataset.layerAction === "show-media-player") {
+    window.dispatchEvent(new CustomEvent("flashframe:show-media-player"));
     hideMenu();
     return;
   }
