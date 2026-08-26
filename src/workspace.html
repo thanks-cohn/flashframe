@@ -56,6 +56,18 @@
         <input id="setting-frameless-aspect-ratio" type="checkbox" checked>
         <span><strong>Preserve image aspect ratio</strong><small>Keep frameless images proportional while dragging their ⅃ corner. Turn this off to reshape them freely.</small></span>
       </label>
+      <label class="setting-choice-row">
+        <span><strong>Resize corner ⅃</strong><small>Always show it, fade it after a delay, or hide it while keeping its corner hotspot active.</small></span>
+        <select id="setting-frameless-resize-handle-mode" aria-label="Resize corner visibility">
+          <option value="always">Always show</option>
+          <option value="fade">Fade</option>
+          <option value="hide">Hide</option>
+        </select>
+      </label>
+      <label class="setting-choice-row">
+        <span><strong>Resize corner fade delay</strong><small>How long ⅃ remains visible in Fade mode.</small></span>
+        <span class="setting-inline-input"><input id="setting-frameless-resize-handle-delay" type="number" min="1" max="300" step="1" value="3" inputmode="numeric"><span>seconds</span></span>
+      </label>
       <label class="setting-row">
         <input id="setting-toolbar" type="checkbox" checked>
         <span><strong>Show top toolbar</strong><small>When hidden, use the movable F button to bring it back.</small></span>
