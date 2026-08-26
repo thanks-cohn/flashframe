@@ -32,14 +32,14 @@
   background: transparent;
   color: color-mix(in srgb, #f7cf4b 72%, CanvasText);
   font: 700 18px/1 sans-serif;
-  opacity: 0.55;
+  opacity: 0;
   cursor: nwse-resize;
   touch-action: none;
 }
 
-.block.is-frameless-media:hover > .frameless-resize-handle,
-.block.is-frameless-media > .frameless-resize-handle:focus-visible,
-.block.is-frameless-media.is-frameless-resizing > .frameless-resize-handle {
+.block.is-frameless-media > .frameless-resize-handle[data-visibility-mode="always"],
+.block.is-frameless-media > .frameless-resize-handle.is-resize-handle-visible,
+.block.is-frameless-media.is-frameless-resizing > .frameless-resize-handle:not([data-visibility-mode="hide"]) {
   opacity: 0.95;
 }
 
