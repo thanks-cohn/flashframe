@@ -122,23 +122,32 @@ function showMenu(block, x, y) {
   menu.querySelector('[data-layer-action="sync"]').hidden = !timed;
   menu.querySelector('[data-layer-action="independent"]').hidden = !timed;
   const isImage = block.dataset.customKind === "image";
+  const isVideo = Boolean(block.querySelector(":scope > video"))
+    || block.dataset.blockType === "video"
+    || block.dataset.customKind === "remote-video";
+  const isVisualMedia = isImage || isVideo;
   const framelessButton = menu.querySelector('[data-layer-action="frameless"]');
   const objectHeaderButton = menu.querySelector('[data-layer-action="object-header"]');
   const objectFooterButton = menu.querySelector('[data-layer-action="object-footer"]');
-  objectHeaderButton.hidden = !isImage;
-  objectFooterButton.hidden = !isImage;
-  objectHeaderButton.textContent = block.classList.contains("hide-object-header")
-    ? "Restore object header"
+  const frameless = block.classList.contains("is-frameless-media");
+  const headerHidden = block.classList.contains("hide-object-header")
+    || (frameless && !block.classList.contains("show-object-header"));
+  const footerHidden = block.classList.contains("hide-object-footer")
+    || (frameless && !block.classList.contains("show-object-footer"));
+  objectHeaderButton.hidden = !isVisualMedia;
+  objectFooterButton.hidden = !isVisualMedia;
+  objectHeaderButton.textContent = headerHidden
+    ? (frameless ? "Show header" : "Restore object header")
     : "Hide object header";
-  objectFooterButton.textContent = block.classList.contains("hide-object-footer")
-    ? "Restore object footer"
+  objectFooterButton.textContent = footerHidden
+    ? (frameless ? "Show footer" : "Restore object footer")
     : "Hide object footer";
-  framelessButton.hidden = !isImage;
+  framelessButton.hidden = !isVisualMedia;
   framelessButton.textContent = block.classList.contains("is-frameless-media")
-    ? "Restore image frame"
-    : "Show image only";
-  menu.querySelector(".frameless-separator").hidden = !isImage;
-  menu.querySelector('[data-layer-action="close"]').textContent = isImage ? "Close object" : "Close frame";
+    ? `Restore ${isVideo ? "video" : "image"} frame`
+    : `Show ${isVideo ? "video" : "image"} only`;
+  menu.querySelector(".frameless-separator").hidden = !isVisualMedia;
+  menu.querySelector('[data-layer-action="close"]').textContent = isVisualMedia ? "Close object" : "Close frame";
 
   const margin = 8;
   const rect = menu.getBoundingClientRect();
@@ -215,10 +224,12 @@ menu.addEventListener("click", (event) => {
   if (button.dataset.layerAction === "object-header" || button.dataset.layerAction === "object-footer") {
     const block = targetBlock;
     const part = button.dataset.layerAction === "object-header" ? "header" : "footer";
+    const hidden = block && (block.classList.contains(`hide-object-${part}`)
+      || (block.classList.contains("is-frameless-media") && !block.classList.contains(`show-object-${part}`)));
     hideMenu();
     if (block) {
       window.dispatchEvent(new CustomEvent("flashframe:set-object-chrome", {
-        detail: { block, part, hidden: !block.classList.contains(`hide-object-${part}`) }
+        detail: { block, part, hidden: !hidden }
       }));
     }
     return;
