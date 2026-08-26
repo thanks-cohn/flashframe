@@ -50,8 +50,19 @@ function sourceMessage(block, message) {
 }
 
 function setUnavailable(block, message) {
-  sourceMessage(block, message);
   const retry = block.querySelector(".reconnect-source");
+  const node = block.querySelector(".source-message");
+  if (node && retry) {
+    const text = document.createElement("span");
+    text.textContent = message;
+    const centerRetry = document.createElement("button");
+    centerRetry.type = "button";
+    centerRetry.className = "gallery-reconnect-center";
+    centerRetry.textContent = "Reconnect gallery";
+    centerRetry.addEventListener("click", () => retry.click());
+    node.replaceChildren(text, centerRetry);
+    node.hidden = false;
+  } else sourceMessage(block, message);
   if (retry) retry.hidden = false;
 }
 
