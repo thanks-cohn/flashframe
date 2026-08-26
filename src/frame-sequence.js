@@ -20,9 +20,24 @@ presentationPlay.textContent = "▶";
 presentationPlay.title = "Play current frame sequence";
 presentationPlay.setAttribute("aria-label", presentationPlay.title);
 
+function topTransportButton(action, text, title) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `frame-sequence-transport-top is-${action}`;
+  button.dataset.action = action;
+  button.textContent = text;
+  button.title = title;
+  button.setAttribute("aria-label", title);
+  return button;
+}
+
+const presentationRewind = topTransportButton("rewind", "⏮", "Total rewind current frame sequence");
+const presentationBack = topTransportButton("back", "↶", "Step backward 1 second");
+const presentationForward = topTransportButton("forward", "↷", "Step forward 1 second");
+
 const presentationControls = document.createElement("div");
 presentationControls.className = "frame-sequence-top-controls";
-presentationControls.append(openButton, presentationPlay);
+presentationControls.append(openButton, presentationRewind, presentationBack, presentationPlay, presentationForward);
 brand?.after(presentationControls);
 
 const panel = document.createElement("section");
@@ -322,11 +337,13 @@ function totalRewind() {
 }
 
 function updateStepLabels() {
-  for (const [action, direction] of [["back", "backward"], ["forward", "forward"]]) {
-    const button = panel.querySelector(`[data-action="${action}"]`);
+  for (const [action, direction, topButton] of [["back", "backward", presentationBack], ["forward", "forward", presentationForward]]) {
+    const buttons = [panel.querySelector(`[data-action="${action}"]`), topButton];
     const label = `Step ${direction} ${config.step} second${config.step === 1 ? "" : "s"}`;
-    button.title = label;
-    button.setAttribute("aria-label", label);
+    for (const button of buttons) {
+      button.title = label;
+      button.setAttribute("aria-label", label);
+    }
   }
 }
 
@@ -388,6 +405,9 @@ presentationPlay.addEventListener("click", () => {
   else if (run) pauseSequence();
   else playSequence();
 });
+presentationRewind.addEventListener("click", totalRewind);
+presentationBack.addEventListener("click", () => seekSequence(currentTime() - config.step));
+presentationForward.addEventListener("click", () => seekSequence(currentTime() + config.step));
 
 window.addEventListener("flashframe:capture-appearance", (event) => {
   event.detail.appearance ||= {};
