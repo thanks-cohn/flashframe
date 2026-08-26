@@ -1,0 +1,47 @@
+.block.is-frameless-media {
+  min-width: 32px;
+  min-height: 32px;
+  overflow: visible;
+  resize: none;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: grab;
+  touch-action: none;
+}
+
+.block.is-frameless-media > :not(.image-frame):not(.custom-state-store) {
+  display: none !important;
+}
+
+.block.is-frameless-media > .image-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: none;
+  border: 0;
+  background: transparent !important;
+  object-fit: contain;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.block.is-frameless-media.is-frameless-dragging,
+.block.is-frameless-media.is-frameless-dragging > .image-frame {
+  cursor: grabbing;
+}
+
+.block.is-frameless-media > .compact-drag-handle,
+.block.is-frameless-media > .coarse-resize-handle {
+  display: none !important;
+}
+
+.block.hide-object-header > .block-header {
+  display: none !important;
+}
+
+.block.hide-object-footer > .block-toolbar {
+  display: none !important;
+}
