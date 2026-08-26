@@ -105,7 +105,17 @@ function setSourceUnavailable(block, message) {
   const reconnect = block.querySelector(".reconnect-source");
 
   if (sourceMessage) {
-    sourceMessage.textContent = message;
+    if (block.dataset.blockType === "gallery" && reconnect) {
+      const text = document.createElement("span");
+      text.textContent = message;
+      const centerReconnect = document.createElement("button");
+      centerReconnect.type = "button";
+      centerReconnect.className = "gallery-reconnect-center";
+      centerReconnect.textContent = "Reconnect folder";
+      centerReconnect.title = "Reconnect to the remembered image directory";
+      centerReconnect.addEventListener("click", () => reconnect.click());
+      sourceMessage.replaceChildren(text, centerReconnect);
+    } else sourceMessage.textContent = message;
     sourceMessage.hidden = false;
   }
 
@@ -117,7 +127,7 @@ function clearSourceUnavailable(block) {
   const reconnect = block.querySelector(".reconnect-source");
 
   if (sourceMessage) {
-    sourceMessage.textContent = "";
+    sourceMessage.replaceChildren();
     sourceMessage.hidden = true;
   }
 
@@ -473,33 +483,50 @@ registerBlockType("gallery", {
   initialize(block) {
     block.tabIndex = 0;
 
-    block.querySelector(".gallery-prev").addEventListener("click", () => {
+    const reconnectGallery = async (direction = 0) => {
+      const state = this.capture(block);
+      await reconnectSource(block, pickImageDirectory, async (handle) => {
+        await loadGalleryHandle(block, handle, state);
+        const runtime = runtimeSources.get(block);
+        if (direction && runtime?.entries?.length) await showGalleryIndex(block, runtime.index + direction);
+      });
+    };
+
+    const moveGallery = async (direction) => {
       const runtime = runtimeSources.get(block);
-      if (runtime?.entries?.length) void showGalleryIndex(block, runtime.index - 1);
+      if (runtime?.handle && await requestReadPermission(runtime.handle)) {
+        try {
+          await showGalleryIndex(block, runtime.index + direction);
+          return;
+        } catch (error) {
+          console.warn("Gallery access needs to be refreshed:", error);
+        }
+      }
+      await reconnectGallery(direction);
+    };
+
+    block.querySelector(".gallery-prev").addEventListener("click", () => {
+      void moveGallery(-1);
     });
 
     block.querySelector(".gallery-next").addEventListener("click", () => {
-      const runtime = runtimeSources.get(block);
-      if (runtime?.entries?.length) void showGalleryIndex(block, runtime.index + 1);
+      void moveGallery(1);
     });
 
     block.addEventListener("keydown", (event) => {
       if (event.target.closest("input, button, textarea")) return;
-      const runtime = runtimeSources.get(block);
-      if (!runtime?.entries?.length) return;
-
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        void showGalleryIndex(block, runtime.index - 1);
+        void moveGallery(-1);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        void showGalleryIndex(block, runtime.index + 1);
+        void moveGallery(1);
       }
     });
 
     block.querySelector(".reconnect-source").addEventListener("click", async () => {
       try {
-        await reconnectSource(block, pickImageDirectory, async (handle) => loadGalleryHandle(block, handle, this.capture(block)));
+        await reconnectGallery();
       } catch (error) {
         console.error(error);
         setStatus("Could not reconnect that image folder.");
