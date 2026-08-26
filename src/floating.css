@@ -280,6 +280,15 @@ body.toolbar-hidden .workspace {
   display: none !important;
 }
 
+/* An explicit per-object Restore command outranks the global footer mode. */
+#workspace[data-other-footer-mode] .block.show-object-footer > .block-toolbar {
+  display: flex !important;
+}
+
+#workspace[data-other-footer-mode] .block.show-object-footer > .framechute-source-location {
+  display: grid !important;
+}
+
 .local-source-controls {
   display: flex;
   align-items: center;
