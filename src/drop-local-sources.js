@@ -263,7 +263,17 @@ function setUnavailable(block, message) {
   const sourceMessage = block.querySelector(".source-message");
   const reconnect = block.querySelector(".reconnect-source");
   if (sourceMessage) {
-    sourceMessage.textContent = message;
+    if (block.dataset.customLocalKind === "gallery" && reconnect) {
+      const text = document.createElement("span");
+      text.textContent = message;
+      const centerReconnect = document.createElement("button");
+      centerReconnect.type = "button";
+      centerReconnect.className = "gallery-reconnect-center";
+      centerReconnect.textContent = "Reconnect folder";
+      centerReconnect.title = "Reconnect to the remembered image directory";
+      centerReconnect.addEventListener("click", () => reconnect.click());
+      sourceMessage.replaceChildren(text, centerReconnect);
+    } else sourceMessage.textContent = message;
     sourceMessage.hidden = false;
   }
   if (reconnect) reconnect.hidden = false;
@@ -273,7 +283,7 @@ function clearUnavailable(block) {
   const sourceMessage = block.querySelector(".source-message");
   const reconnect = block.querySelector(".reconnect-source");
   if (sourceMessage) {
-    sourceMessage.textContent = "";
+    sourceMessage.replaceChildren();
     sourceMessage.hidden = true;
   }
   if (reconnect) reconnect.hidden = true;
@@ -392,6 +402,7 @@ function renderGallery(payload, options = {}) {
   const move = async (direction) => {
     const current = Number.parseInt(block.dataset.galleryIndex || String(payload.currentIndex || 0), 10);
     let handle = await readableHandle(payload);
+    if (!handle) handle = await reconnectHandle(block, payload, "directory");
     if (!handle) return;
     await showGalleryIndex(block, payload, handle, current + direction);
   };
