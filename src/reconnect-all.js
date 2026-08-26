@@ -17,6 +17,17 @@ function setStatus(message) {
   if (status) status.textContent = message;
 }
 
+function setButtonLabel(label) {
+  if (!reconnectAllButton) return;
+  const icon = document.createElement("span");
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "⛓";
+  const text = document.createElement("span");
+  text.className = "toolbar-command-label";
+  text.textContent = label === IDLE_LABEL ? "Reconnect" : label;
+  reconnectAllButton.replaceChildren(icon, text);
+}
+
 function markerPayloadFromText(value) {
   const text = String(value || "");
   for (const marker of [LOCAL_MARKER, CUSTOM_MARKER, EXTENSION_GALLERY_MARKER]) {
@@ -146,7 +157,7 @@ async function reconnectAllRememberedSources() {
   }
 
   reconnectAllButton.disabled = true;
-  reconnectAllButton.textContent = "Reconnecting…";
+  setButtonLabel("Reconnecting…");
 
   try {
     // Start every permission request from the same explicit toolbar click.
@@ -193,12 +204,12 @@ async function reconnectAllRememberedSources() {
     setTimeout(() => void preloadRememberedHandles(), 600);
   } finally {
     reconnectAllButton.disabled = false;
-    reconnectAllButton.textContent = IDLE_LABEL;
+    setButtonLabel(IDLE_LABEL);
   }
 }
 
 if (reconnectAllButton) {
-  reconnectAllButton.textContent = IDLE_LABEL;
+  setButtonLabel(IDLE_LABEL);
   reconnectAllButton.title = "Reconnect every disconnected block to its remembered source location";
   reconnectAllButton.addEventListener("click", () => void reconnectAllRememberedSources());
 }
