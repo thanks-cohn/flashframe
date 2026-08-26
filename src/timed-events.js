@@ -34,7 +34,13 @@ function normalizeMotion(raw, block) {
     shape: raw?.shape === "straight" ? "straight" : "curve",
     delay: Math.max(0, number(raw?.delay, 0)),
     duration: Math.max(0.1, number(raw?.duration, 3)),
-    showPath: Boolean(raw?.showPath)
+    showPath: Boolean(raw?.showPath),
+    schedule: {
+      mode: ["play", "absolute", "after"].includes(raw?.schedule?.mode) ? raw.schedule.mode : "play",
+      at: Math.max(0, number(raw?.schedule?.at, 0)),
+      after: String(raw?.schedule?.after || ""),
+      offset: Math.max(0, number(raw?.schedule?.offset, 0))
+    }
   };
 }
 
@@ -307,6 +313,7 @@ async function playMotion(block, supplied = null) {
   block.classList.add("is-timed-motion-playing");
   const playbackPath = motion.showPath ? makeSvg(motion, block) : null;
 
+  let completed = false;
   try {
     if (motion.delay > 0) {
       await new Promise((resolve) => {
@@ -328,11 +335,15 @@ async function playMotion(block, supplied = null) {
       };
       requestAnimationFrame(frame);
     });
+    completed = !controller.signal.aborted;
   } finally {
     playbackPath?.remove();
     block.classList.remove("is-timed-motion-playing");
     if (running.get(block) === controller) running.delete(block);
     workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+    window.dispatchEvent(new CustomEvent("flashframe:timed-motion-finished", {
+      detail: { block, aborted: !completed }
+    }));
   }
 }
 
@@ -354,10 +365,19 @@ function prepare(block) {
 }
 
 window.addEventListener("flashframe:edit-timed-motion", (event) => event.detail?.block && editMotion(event.detail.block));
-window.addEventListener("flashframe:play-timed-motion", (event) => event.detail?.block && void playMotion(event.detail.block));
+window.addEventListener("flashframe:play-timed-motion", (event) => {
+  if (event.detail?.block) void playMotion(event.detail.block, event.detail.motion);
+});
 window.addEventListener("flashframe:return-timed-motion", (event) => event.detail?.block && returnToStart(event.detail.block));
 window.addEventListener("flashframe:clear-timed-motion", (event) => event.detail?.block && clearMotion(event.detail.block));
 window.addEventListener("flashframe:restore-timed-motion", (event) => prepare(event.detail?.block));
+window.addEventListener("flashframe:set-timed-motion-schedule", (event) => {
+  const block = event.detail?.block;
+  const current = block && readMotion(block);
+  if (!current) return;
+  current.schedule = event.detail?.schedule;
+  storeMotion(block, current);
+});
 
 const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) for (const node of mutation.addedNodes) {
