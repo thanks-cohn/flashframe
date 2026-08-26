@@ -57,6 +57,10 @@ menu.innerHTML = `
   <button type="button" data-layer-action="show-settings" role="menuitem">Show Settings</button>
   <button type="button" data-layer-action="reveal-menus" role="menuitem">Make menus visible</button>
   <div class="flashframe-layer-menu-separator" role="separator"></div>
+  <button type="button" data-layer-action="object-header" role="menuitem">Hide object header</button>
+  <button type="button" data-layer-action="object-footer" role="menuitem">Hide object footer</button>
+  <button type="button" data-layer-action="frameless" role="menuitem">Show image only</button>
+  <div class="flashframe-layer-menu-separator frameless-separator" role="separator"></div>
   <button type="button" data-layer-action="close" class="flashframe-layer-menu-close" role="menuitem">Close frame</button>
 `;
 document.body.append(menu);
@@ -117,6 +121,24 @@ function showMenu(block, x, y) {
   const timed = block.dataset.timedMedia === "true" || Boolean(block.querySelector("video, audio"));
   menu.querySelector('[data-layer-action="sync"]').hidden = !timed;
   menu.querySelector('[data-layer-action="independent"]').hidden = !timed;
+  const isImage = block.dataset.customKind === "image";
+  const framelessButton = menu.querySelector('[data-layer-action="frameless"]');
+  const objectHeaderButton = menu.querySelector('[data-layer-action="object-header"]');
+  const objectFooterButton = menu.querySelector('[data-layer-action="object-footer"]');
+  objectHeaderButton.hidden = !isImage;
+  objectFooterButton.hidden = !isImage;
+  objectHeaderButton.textContent = block.classList.contains("hide-object-header")
+    ? "Restore object header"
+    : "Hide object header";
+  objectFooterButton.textContent = block.classList.contains("hide-object-footer")
+    ? "Restore object footer"
+    : "Hide object footer";
+  framelessButton.hidden = !isImage;
+  framelessButton.textContent = block.classList.contains("is-frameless-media")
+    ? "Restore image frame"
+    : "Show image only";
+  menu.querySelector(".frameless-separator").hidden = !isImage;
+  menu.querySelector('[data-layer-action="close"]').textContent = isImage ? "Close object" : "Close frame";
 
   const margin = 8;
   const rect = menu.getBoundingClientRect();
@@ -178,6 +200,27 @@ menu.addEventListener("click", (event) => {
     const block = targetBlock;
     hideMenu();
     closeBlock(block);
+    return;
+  }
+  if (button.dataset.layerAction === "frameless") {
+    const block = targetBlock;
+    hideMenu();
+    if (block) {
+      window.dispatchEvent(new CustomEvent("flashframe:set-frameless", {
+        detail: { block, frameless: !block.classList.contains("is-frameless-media") }
+      }));
+    }
+    return;
+  }
+  if (button.dataset.layerAction === "object-header" || button.dataset.layerAction === "object-footer") {
+    const block = targetBlock;
+    const part = button.dataset.layerAction === "object-header" ? "header" : "footer";
+    hideMenu();
+    if (block) {
+      window.dispatchEvent(new CustomEvent("flashframe:set-object-chrome", {
+        detail: { block, part, hidden: !block.classList.contains(`hide-object-${part}`) }
+      }));
+    }
     return;
   }
 
