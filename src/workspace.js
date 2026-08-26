@@ -555,13 +555,20 @@ registerBlockType("video", {
       muted: player.muted,
       playbackRate: player.playbackRate,
       loop: player.loop,
-      syncGroup: block.dataset.syncGroup || "all"
+      syncGroup: block.dataset.syncGroup || "all",
+      frameless: block.dataset.frameless === "true",
+      headerVisibility: block.dataset.headerVisibility || "inherit",
+      footerVisibility: block.dataset.footerVisibility || "inherit"
     };
   },
 
   async restore(block, state = {}, source = null) {
     block.dataset.timedMedia = "true";
     block.dataset.syncGroup = state.syncGroup ?? "all";
+    block.dataset.frameless = String(Boolean(state.frameless));
+    block.dataset.headerVisibility = state.headerVisibility ?? "inherit";
+    block.dataset.footerVisibility = state.footerVisibility ?? "inherit";
+    window.dispatchEvent(new CustomEvent("flashframe:restore-media-chrome", { detail: { block } }));
     block.querySelector(".video-player").loop = Boolean(state.loop);
     block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);
     const handle = await storedReadableHandle(source);
