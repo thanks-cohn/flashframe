@@ -271,6 +271,11 @@ body.toolbar-hidden .workspace {
   display: none !important;
 }
 
+/* Final enforcement for every dynamically-created non-video object. */
+#workspace[data-other-footer-mode="hide"] .block:not(.video-block):not(.audio-block):not(.remote-video-block) > .block-toolbar {
+  display: none !important;
+}
+
 .local-source-controls {
   display: flex;
   align-items: center;
