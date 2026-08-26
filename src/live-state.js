@@ -167,7 +167,8 @@ async function captureLiveSnapshot() {
       geometry: readGeometry(block),
       source: inferredSource(block, sourceMap, handlesByName),
       state: captureState(block),
-      timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null
+      timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null,
+      layerRule: block.dataset.layerRuleData ? JSON.parse(block.dataset.layerRuleData) : null
     }))
   };
 }
