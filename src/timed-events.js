@@ -110,13 +110,14 @@ function makeSvg(motion, block, editing = false) {
   path.classList.add("timed-motion-path");
   path.setAttribute("d", pathData(motion, block));
   svg.append(path);
-  if (editing && motion.shape === "curve") {
+  if (editing) {
     const start = centerFor(motion.start, block);
     const end = centerFor(motion.end, block);
     const control = centerFor(motion.control, block);
     const guide = document.createElementNS(svg.namespaceURI, "path");
     guide.classList.add("timed-motion-guide");
     guide.setAttribute("d", `M ${start.x} ${start.y} L ${control.x} ${control.y} L ${end.x} ${end.y}`);
+    guide.hidden = motion.shape !== "curve";
     svg.prepend(guide);
   }
   workspace.append(svg);
@@ -175,6 +176,38 @@ function editorPosition(block) {
   };
 }
 
+function makeEditorDraggable(editor) {
+  const title = editor.querySelector("h3");
+  if (!title) return;
+  title.title = "Drag this panel";
+  title.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const rect = editor.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startLeft = rect.left;
+    const startTop = rect.top;
+    title.setPointerCapture(event.pointerId);
+    editor.classList.add("is-dragging");
+    const move = (moveEvent) => {
+      const left = Math.min(window.innerWidth - editor.offsetWidth - 8, Math.max(8, startLeft + moveEvent.clientX - startX));
+      const top = Math.min(window.innerHeight - editor.offsetHeight - 8, Math.max(8, startTop + moveEvent.clientY - startY));
+      editor.style.left = `${left}px`;
+      editor.style.top = `${top}px`;
+    };
+    const finish = () => {
+      editor.classList.remove("is-dragging");
+      title.removeEventListener("pointermove", move);
+      title.removeEventListener("pointerup", finish);
+      title.removeEventListener("pointercancel", finish);
+    };
+    title.addEventListener("pointermove", move);
+    title.addEventListener("pointerup", finish);
+    title.addEventListener("pointercancel", finish);
+  });
+}
+
 function editMotion(block) {
   closeEditor();
   const existing = readMotion(block);
@@ -197,28 +230,35 @@ function editMotion(block) {
   editor.style.left = `${pos.left}px`;
   editor.style.top = `${pos.top}px`;
   document.body.append(editor);
+  makeEditorDraggable(editor);
 
-  let svg;
-  let startHandle;
-  let endHandle;
-  let curveHandle;
-  const nodes = [editor];
-  const redraw = () => {
-    for (const node of [svg, startHandle, endHandle, curveHandle]) node?.remove();
-    svg = makeSvg(motion, block, true);
-    startHandle = makeHandle("is-start", "S", motion.start, block);
-    endHandle = makeHandle("is-end", "E", motion.end, block);
-    nodes.push(svg, startHandle, endHandle);
-    dragPoint(startHandle, motion, "start", block, redraw);
-    dragPoint(endHandle, motion, "end", block, redraw);
-    if (motion.shape === "curve") {
-      curveHandle = makeHandle("is-curve", "↝", motion.control, block);
-      nodes.push(curveHandle);
-      dragPoint(curveHandle, motion, "control", block, redraw);
-    } else {
-      curveHandle = null;
-    }
+  const svg = makeSvg(motion, block, true);
+  const path = svg.querySelector(".timed-motion-path");
+  const guide = svg.querySelector(".timed-motion-guide");
+  const startHandle = makeHandle("is-start", "S", motion.start, block);
+  const endHandle = makeHandle("is-end", "E", motion.end, block);
+  const curveHandle = makeHandle("is-curve", "↝", motion.control, block);
+  const nodes = [editor, svg, startHandle, endHandle, curveHandle];
+  const placeHandle = (handle, point) => {
+    const center = centerFor(point, block);
+    handle.style.left = `${center.x - 15}px`;
+    handle.style.top = `${center.y - 15}px`;
   };
+  const redraw = () => {
+    path.setAttribute("d", pathData(motion, block));
+    const start = centerFor(motion.start, block);
+    const end = centerFor(motion.end, block);
+    const control = centerFor(motion.control, block);
+    guide.setAttribute("d", `M ${start.x} ${start.y} L ${control.x} ${control.y} L ${end.x} ${end.y}`);
+    guide.hidden = motion.shape !== "curve";
+    curveHandle.hidden = motion.shape !== "curve";
+    placeHandle(startHandle, motion.start);
+    placeHandle(endHandle, motion.end);
+    placeHandle(curveHandle, motion.control);
+  };
+  dragPoint(startHandle, motion, "start", block, redraw);
+  dragPoint(endHandle, motion, "end", block, redraw);
+  dragPoint(curveHandle, motion, "control", block, redraw);
   redraw();
   editorSession = { block, motion, nodes };
 
