@@ -13,6 +13,7 @@ const LEGACY_EMBED_KIND = "you" + "tube";
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const addTextButton = document.querySelector("#add-text");
+const openImageButton = document.querySelector("#open-image");
 const openUrlButton = document.querySelector("#open-url");
 
 const customObjectUrls = new WeakMap();
@@ -531,6 +532,31 @@ function createUrlBlock(value, point = null, forceImage = false) {
   setStatus("Web page added. If the site blocks embedding, use Open page in the block footer.");
   return block;
 }
+
+openImageButton?.addEventListener("click", async () => {
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      multiple: false,
+      types: [{ description: "Images and GIFs", accept: { "image/*": nativeImagePickerExtensions } }]
+    });
+    if (!handle) return;
+
+    const handleKey = makeHandleKey("image");
+    await storeHandle(handleKey, handle);
+    createCustomBlock({
+      kind: "image",
+      name: handle.name || "Image",
+      displayName: handle.name || "Image",
+      handleKey
+    });
+    setStatus(`${handle.name || "Image"} added. Right-click it to show the image only.`);
+  } catch (error) {
+    if (error?.name !== "AbortError") {
+      console.error(error);
+      setStatus("FrameChute could not open that image.");
+    }
+  }
+});
 
 openUrlButton?.addEventListener("click", () => {
   const value = window.prompt("Paste a webpage, image, or direct media URL");
