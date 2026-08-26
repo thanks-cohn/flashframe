@@ -1,3 +1,5 @@
+import { frameChuteBlackBox } from "./black-box.js";
+
 const FILECHUTE_DRAG_TYPE = "application/x-filechute-item+json";
 const COMPACT_PREFIX = "FILECHUTE1|";
 const LEGACY_PREFIX = "filechute-transfer-v1:";
@@ -7,11 +9,12 @@ const status = document.querySelector("#status");
 function looksLikeTransport(transfer) {
   try {
     const types = [...(transfer?.types || [])];
-    return types.includes("text/plain") && (
+    const match = types.includes("text/plain") && (
       transfer.effectAllowed === "copy" ||
       transfer.effectAllowed === "all" ||
       transfer.effectAllowed === "uninitialized"
     );
+    return match;
   } catch {
     return false;
   }
@@ -65,14 +68,27 @@ function parseTicket(transfer) {
   let text = "";
   try {
     text = String(transfer?.getData("text/plain") || "");
-  } catch {
+  } catch (error) {
+    frameChuteBlackBox("text-envelope-read-failed", { message: error?.message || String(error) });
     return null;
   }
-  return parseCompact(text) || parseLegacy(text);
+  const payload = parseCompact(text) || parseLegacy(text);
+  if (payload) {
+    frameChuteBlackBox("text-envelope-parsed", {
+      transferToken: payload.transferToken,
+      itemName: payload.originalName || payload.name || null,
+      kind: payload.kind,
+      relativePath: payload.relativePath
+    });
+  }
+  return payload;
 }
 
 workspace?.addEventListener("dragenter", (event) => {
   if (!looksLikeTransport(event.dataTransfer)) return;
+  frameChuteBlackBox("text-envelope-dragenter-claimed", {
+    types: [...(event.dataTransfer?.types || [])]
+  });
   event.preventDefault();
   if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
   workspace.classList.add("is-drop-target");
@@ -80,14 +96,23 @@ workspace?.addEventListener("dragenter", (event) => {
 
 workspace?.addEventListener("dragover", (event) => {
   if (!looksLikeTransport(event.dataTransfer)) return;
+  frameChuteBlackBox("text-envelope-dragover-claimed", {
+    types: [...(event.dataTransfer?.types || [])]
+  });
   event.preventDefault();
   if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
   workspace.classList.add("is-drop-target");
 }, { capture: true });
 
 workspace?.addEventListener("drop", (event) => {
+  frameChuteBlackBox("text-envelope-drop-entered", {
+    types: [...(event.dataTransfer?.types || [])]
+  });
   const payload = parseTicket(event.dataTransfer);
-  if (!payload) return;
+  if (!payload) {
+    frameChuteBlackBox("text-envelope-drop-ignored", { reason: "payload-not-recognized" });
+    return;
+  }
 
   event.preventDefault();
   event.stopImmediatePropagation();
@@ -98,15 +123,36 @@ workspace?.addEventListener("drop", (event) => {
   transfer.effectAllowed = "copy";
   transfer.setData(FILECHUTE_DRAG_TYPE, JSON.stringify(payload));
 
+  frameChuteBlackBox("text-envelope-synthetic-drop-dispatch-start", {
+    transferToken: payload.transferToken,
+    itemName: payload.originalName || payload.name || null,
+    syntheticTypes: [...transfer.types]
+  });
+
   const target = event.target instanceof EventTarget ? event.target : workspace;
-  target.dispatchEvent(new DragEvent("drop", {
-    bubbles: true,
-    cancelable: true,
-    composed: true,
-    dataTransfer: transfer,
-    clientX: event.clientX,
-    clientY: event.clientY,
-    screenX: event.screenX,
-    screenY: event.screenY
-  }));
+  try {
+    const accepted = target.dispatchEvent(new DragEvent("drop", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      dataTransfer: transfer,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      screenX: event.screenX,
+      screenY: event.screenY
+    }));
+    frameChuteBlackBox("text-envelope-synthetic-drop-dispatch-result", {
+      transferToken: payload.transferToken,
+      itemName: payload.originalName || payload.name || null,
+      dispatchReturned: accepted
+    });
+  } catch (error) {
+    frameChuteBlackBox("text-envelope-synthetic-drop-dispatch-error", {
+      transferToken: payload.transferToken,
+      itemName: payload.originalName || payload.name || null,
+      message: error?.message || String(error),
+      stack: error?.stack || null
+    });
+    throw error;
+  }
 }, { capture: true });
