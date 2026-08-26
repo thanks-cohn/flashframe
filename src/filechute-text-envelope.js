@@ -1,17 +1,21 @@
 const FILECHUTE_DRAG_TYPE = "application/x-filechute-item+json";
-const FILECHUTE_TEXT_PREFIX = "filechute-transfer-v1:";
+const FILECHUTE_TEXT_PREFIX = "FILECHUTE1|";
 const workspace = document.querySelector("#workspace");
 
 function looksLikeTransport(transfer) {
   try {
     const types = [...(transfer?.types || [])];
-    return types.includes("text/plain") && (transfer.effectAllowed === "copy" || transfer.effectAllowed === "all" || transfer.effectAllowed === "uninitialized");
+    return types.includes("text/plain") && (
+      transfer.effectAllowed === "copy" ||
+      transfer.effectAllowed === "all" ||
+      transfer.effectAllowed === "uninitialized"
+    );
   } catch {
     return false;
   }
 }
 
-function parseEnvelope(transfer) {
+function parseTicket(transfer) {
   let text = "";
   try {
     text = String(transfer?.getData("text/plain") || "");
@@ -20,10 +24,30 @@ function parseEnvelope(transfer) {
   }
   if (!text.startsWith(FILECHUTE_TEXT_PREFIX)) return null;
 
+  const parts = text.slice(FILECHUTE_TEXT_PREFIX.length).split("|");
+  if (parts.length < 5) return null;
+  const [sourceExtensionId, transferToken, kindCode, encodedPath, ...nameParts] = parts;
+  if (!sourceExtensionId || !transferToken) return null;
+
   try {
-    const payload = JSON.parse(decodeURIComponent(text.slice(FILECHUTE_TEXT_PREFIX.length)));
-    if (payload?.protocol !== "filechute-item" || payload?.version !== 1) return null;
-    return payload;
+    const relativePath = decodeURIComponent(encodedPath || "");
+    const originalName = decodeURIComponent(nameParts.join("|") || "");
+    return {
+      protocol: "filechute-item",
+      version: 1,
+      kind: kindCode === "d" ? "directory" : "file",
+      name: originalName,
+      originalName,
+      representation: "original",
+      mime: kindCode === "d" ? "inode/directory" : "",
+      relativePath,
+      sourceUrl: null,
+      parentPageUrl: null,
+      size: null,
+      lastModified: null,
+      sourceExtensionId,
+      transferToken
+    };
   } catch {
     return null;
   }
@@ -44,7 +68,7 @@ workspace?.addEventListener("dragover", (event) => {
 }, { capture: true });
 
 workspace?.addEventListener("drop", (event) => {
-  const payload = parseEnvelope(event.dataTransfer);
+  const payload = parseTicket(event.dataTransfer);
   if (!payload) return;
 
   event.preventDefault();
