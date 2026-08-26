@@ -11,11 +11,12 @@
   touch-action: none;
 }
 
-.block.is-frameless-media > :not(.image-frame):not(.custom-state-store) {
+.block.is-frameless-media > :not(.image-frame):not(.video-player):not(.custom-state-store):not(.remote-video-state) {
   display: none !important;
 }
 
-.block.is-frameless-media > .image-frame {
+.block.is-frameless-media > .image-frame,
+.block.is-frameless-media > .video-player {
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -29,7 +30,8 @@
 }
 
 .block.is-frameless-media.is-frameless-dragging,
-.block.is-frameless-media.is-frameless-dragging > .image-frame {
+.block.is-frameless-media.is-frameless-dragging > .image-frame,
+.block.is-frameless-media.is-frameless-dragging > .video-player {
   cursor: grabbing;
 }
 
