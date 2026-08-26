@@ -22,6 +22,8 @@
 
 .toolbar .toolbar-actions > button,
 .toolbar .frame-actions > button,
+.toolbar .toolbar-command,
+.toolbar .frame-sequence-top-controls > button,
 .toolbar-summon,
 .settings-mini,
 .compact-drag-handle,
@@ -32,7 +34,9 @@
 }
 
 .toolbar .toolbar-actions > button:hover,
-.toolbar .frame-actions > button:hover {
+.toolbar .frame-actions > button:hover,
+.toolbar .toolbar-command:hover,
+.toolbar .frame-sequence-top-controls > button:hover {
   background: color-mix(in srgb, var(--ff-accent) 82%, white 18%);
 }
 
