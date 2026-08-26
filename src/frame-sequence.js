@@ -1,6 +1,6 @@
 const workspace = document.querySelector("#workspace");
 const topPlay = document.querySelector("#video-play-all");
-const toolbarActions = document.querySelector(".frame-actions");
+const brand = document.querySelector(".toolbar .brand");
 
 const stylesheet = document.createElement("link");
 stylesheet.rel = "stylesheet";
@@ -9,9 +9,21 @@ document.head.append(stylesheet);
 
 const openButton = document.createElement("button");
 openButton.type = "button";
-openButton.textContent = "Frame sequence";
+openButton.className = "frame-sequence-open-top";
+openButton.textContent = "Set times";
 openButton.title = "Open the current frame master timeline";
-toolbarActions?.append(openButton);
+
+const presentationPlay = document.createElement("button");
+presentationPlay.type = "button";
+presentationPlay.className = "frame-sequence-play-top";
+presentationPlay.textContent = "▶";
+presentationPlay.title = "Play current frame sequence";
+presentationPlay.setAttribute("aria-label", presentationPlay.title);
+
+const presentationControls = document.createElement("div");
+presentationControls.className = "frame-sequence-top-controls";
+presentationControls.append(openButton, presentationPlay);
+brand?.after(presentationControls);
 
 const panel = document.createElement("section");
 panel.className = "frame-sequence-panel";
@@ -192,6 +204,9 @@ function playSequence() {
   run = { timers: new Set(), launched: new Set(), startedAt: performance.now() };
   document.documentElement.dataset.frameSequencePlaying = "true";
   topPlay?.classList.add("is-frame-sequence-playing");
+  presentationPlay.textContent = "❚❚";
+  presentationPlay.title = "Stop current frame sequence";
+  presentationPlay.setAttribute("aria-label", presentationPlay.title);
   scheduleCycle();
 }
 
@@ -201,6 +216,9 @@ function stopSequence({ returnToStart = false } = {}) {
   cancelAnimationFrame(clockFrame);
   delete document.documentElement.dataset.frameSequencePlaying;
   topPlay?.classList.remove("is-frame-sequence-playing");
+  presentationPlay.textContent = "▶";
+  presentationPlay.title = "Play current frame sequence";
+  presentationPlay.setAttribute("aria-label", presentationPlay.title);
   if (returnToStart) returnAll();
   window.dispatchEvent(new CustomEvent("flashframe:frame-sequence-stopped"));
 }
@@ -259,6 +277,11 @@ panel.addEventListener("change", (event) => {
 
 topPlay?.addEventListener("click", () => {
   if (run) stopSequence();
+  else playSequence();
+});
+presentationPlay.addEventListener("click", () => {
+  if (topPlay) topPlay.click();
+  else if (run) stopSequence();
   else playSequence();
 });
 
