@@ -1,0 +1,81 @@
+name: Publish windows-next
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/windows-next.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out FrameChute
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript syntax
+        run: find src -name '*.js' -type f -print0 | xargs -0 -n1 node --check
+
+      - name: Build Chrome package
+        run: sh scripts/package-web-store.sh
+
+      - name: Prepare release asset
+        run: |
+          set -eu
+          zip_path=$(find dist -maxdepth 1 -type f -name 'flashframe-chrome-web-store-v*.zip' -print -quit)
+          test -n "$zip_path"
+          cp "$zip_path" "FrameChute-windows-next.zip"
+          sha256sum "FrameChute-windows-next.zip" > "FrameChute-windows-next.zip.sha256"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > release-notes.md <<'EOF'
+          # windows-next
+
+          A fresh FrameChute desktop Chrome/Chromium build from the current `main` branch.
+
+          FrameChute is a local-first spatial workspace and lightweight scene composer: place notes, PDFs, images, image directories, audio, video, local files, and webpages together on a freeform canvas, then save and restore the useful arrangement.
+
+          ## Highlights
+
+          - frameless / image-only media objects with persistent resize hotspots
+          - optional per-object headers and footers, including directory-gallery navigation
+          - gallery/lightbox presentation polish
+          - unified media controls for coordinated audio and video
+          - per-media looping plus master media/action looping
+          - timed object movement with start, end, control/curve point, delay, and duration
+          - master scheduling: with Play, at an exact master time, or after another action plus an offset
+          - timed layer relationships
+          - saved spatial state, media state, gallery position, and timed-action state
+          - local-source reconnect behavior
+          - Manifest V3 Chrome/Chromium package
+          - no native companion, Python runtime, localhost daemon, FrameChute account, or developer-operated cloud backend required
+
+          ## Direction from here
+
+          FrameChute's timing system is being built as a general action framework rather than a movement-only trick. Planned directions include stop points and action points, recorded rotation/spinning, flipping, scaling, resizing, fading, replacement, appearance/disappearance, image distortion/warping, persistent offset-based media SYNC/UNSYNC, and more complex chained or conditional behavior.
+
+          This is a browser extension ZIP, not a native Windows executable. Extract it and load the folder through `chrome://extensions` with Developer mode enabled.
+          EOF
+
+          tag="windows-next"
+          title="windows-next"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "$title" --notes-file release-notes.md --latest
+            gh release upload "$tag" "FrameChute-windows-next.zip" "FrameChute-windows-next.zip.sha256" --clobber
+          else
+            gh release create "$tag" \
+              "FrameChute-windows-next.zip" \
+              "FrameChute-windows-next.zip.sha256" \
+              --target "$GITHUB_SHA" \
+              --title "$title" \
+              --notes-file release-notes.md \
+              --latest
+          fi
