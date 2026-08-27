@@ -1,5 +1,4 @@
-const DB_NAME = "flashframe";
-const DB_VERSION = 1;
+import { listCachedSources, listFrames } from "./storage.js";
 const LIVE_ID = "__flashframe_live__";
 
 const workspace = document.querySelector("#workspace");
@@ -17,37 +16,14 @@ function setStatus(message) {
   if (status) status.textContent = message;
 }
 
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 async function readStore(storeName) {
-  let db;
   try {
-    db = await openDatabase();
+    if (storeName === "snapshots") return await listFrames();
+    if (storeName === "handles") return await listCachedSources();
+    return [];
   } catch {
     return [];
   }
-
-  if (!db.objectStoreNames.contains(storeName)) {
-    db.close();
-    return [];
-  }
-
-  return new Promise((resolve) => {
-    const transaction = db.transaction(storeName, "readonly");
-    const request = transaction.objectStore(storeName).getAll();
-
-    request.onerror = () => resolve([]);
-    request.onsuccess = () => resolve(request.result ?? []);
-    transaction.oncomplete = () => db.close();
-    transaction.onabort = () => db.close();
-    transaction.onerror = () => db.close();
-  });
 }
 
 function sourceFromDataset(block) {

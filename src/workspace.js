@@ -1,4 +1,4 @@
-import { getSnapshot, listSnapshots, saveSnapshot } from "./persistence.js";
+import { getFrame as getSnapshot, listFrames as listSnapshots, saveFrame as saveSnapshot } from "./storage.js";
 import {
   fileFromHandle,
   hasReadPermission,
@@ -666,7 +666,7 @@ function captureWorkspace(name) {
   const detail = {};
   window.dispatchEvent(new CustomEvent("flashframe:capture-appearance", { detail }));
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: crypto.randomUUID(),
     name,
     createdAt: new Date().toISOString(),

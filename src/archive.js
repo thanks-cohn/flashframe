@@ -2,6 +2,8 @@ import { getHandle, putHandle } from "./persistence.js";
 
 const ARCHIVE_HANDLE_KEY = "flashframe:archive-root";
 const SESSION_SUFFIX = ".flashframe.json";
+const ARCHIVE_VERSION = 1;
+const MANIFEST_FILE = "assets.json";
 
 async function permissionState(handle, mode = "readwrite") {
   if (!handle?.queryPermission) return "granted";
@@ -24,6 +26,13 @@ async function writableArchiveHandle() {
 async function ensureLayout(root) {
   await root.getDirectoryHandle("live", { create: true });
   await root.getDirectoryHandle("sessions", { create: true });
+  await root.getDirectoryHandle("assets", { create: true });
+  await root.getDirectoryHandle("manifests", { create: true });
+  try {
+    await root.getFileHandle("framechute.json");
+  } catch {
+    await writeJsonFile(root, "framechute.json", { format: "framechute", archiveVersion: ARCHIVE_VERSION });
+  }
 }
 
 async function writeJsonFile(directory, filename, value) {
@@ -32,8 +41,10 @@ async function writeJsonFile(directory, filename, value) {
 
   try {
     await writable.write(JSON.stringify(value, null, 2));
-  } finally {
     await writable.close();
+  } catch (error) {
+    if (writable.abort) await writable.abort().catch(() => {});
+    throw error;
   }
 }
 
@@ -42,8 +53,10 @@ async function writeBlobFile(directory, filename, blob) {
   const writable = await handle.createWritable();
   try {
     await writable.write(blob);
-  } finally {
     await writable.close();
+  } catch (error) {
+    if (writable.abort) await writable.abort().catch(() => {});
+    throw error;
   }
 }
 
@@ -152,13 +165,118 @@ export async function connectArchiveDirectory({ chooseNew = false } = {}) {
   return handle;
 }
 
+function assetStem(id) {
+  return safePart(String(id).replace(/^asset:/, ""), "asset");
+}
+
+async function readAssetManifest(root) {
+  try {
+    const manifests = await root.getDirectoryHandle("manifests");
+    return await readJsonFile(await manifests.getFileHandle(MANIFEST_FILE));
+  } catch {
+    return { schemaVersion: 1, assets: [] };
+  }
+}
+
+async function writeAssetManifest(root, manifest) {
+  const manifests = await root.getDirectoryHandle("manifests", { create: true });
+  await writeJsonFile(manifests, MANIFEST_FILE, manifest);
+}
+
+export async function writeAsset(record, source) {
+  const root = await writableArchiveHandle();
+  if (!root) return false;
+  await ensureLayout(root);
+
+  const assets = await root.getDirectoryHandle("assets", { create: true });
+  const stem = assetStem(record.id);
+  let storage;
+
+  if (source?.kind === "directory") {
+    const galleries = await assets.getDirectoryHandle("galleries", { create: true });
+    const gallery = await galleries.getDirectoryHandle(stem, { create: true });
+    const entries = [];
+    for await (const [name, handle] of source.entries()) {
+      if (handle.kind !== "file") continue;
+      const file = await handle.getFile();
+      await writeBlobFile(gallery, name, file);
+      entries.push({ name, mimeType: file.type || "application/octet-stream", size: file.size, lastModified: file.lastModified });
+    }
+    await writeJsonFile(gallery, "manifest.json", { schemaVersion: 1, name: record.name, entries });
+    storage = { kind: "gallery", path: `assets/galleries/${stem}` };
+  } else {
+    const file = source?.getFile ? await source.getFile() : source?.__framechuteSyntheticFile || source;
+    if (!(file instanceof Blob)) throw new Error(`Asset ${record.id} has no readable bytes`);
+    const files = await assets.getDirectoryHandle("files", { create: true });
+    const extension = String(record.name || "").match(/(\.[a-z0-9]{1,10})$/i)?.[1] || "";
+    const filename = `${stem}${extension}`;
+    await writeBlobFile(files, filename, file);
+    storage = { kind: "embedded", path: `assets/files/${filename}` };
+  }
+
+  const manifest = await readAssetManifest(root);
+  const durableRecord = { ...record, durable: true, storage };
+  manifest.assets = (manifest.assets || []).filter((item) => item.id !== record.id);
+  manifest.assets.push(durableRecord);
+  await writeAssetManifest(root, manifest);
+  return durableRecord;
+}
+
+async function fileAtPath(root, path) {
+  const parts = path.split("/").filter(Boolean);
+  let directory = root;
+  for (const part of parts.slice(0, -1)) directory = await directory.getDirectoryHandle(part);
+  return directory.getFileHandle(parts.at(-1));
+}
+
+function archivedFileHandle(file, name = file.name) {
+  return { kind: "file", name, __framechuteSyntheticFile: new File([file], name, { type: file.type, lastModified: file.lastModified }) };
+}
+
+export async function readAsset(assetId) {
+  const root = await writableArchiveHandle();
+  if (!root) return null;
+  const manifest = await readAssetManifest(root);
+  const record = (manifest.assets || []).find((item) => item.id === assetId);
+  if (!record) return null;
+
+  if (record.storage?.kind === "gallery") {
+    const parts = record.storage.path.split("/").filter(Boolean);
+    let gallery = root;
+    for (const part of parts) gallery = await gallery.getDirectoryHandle(part);
+    const metadata = await readJsonFile(await gallery.getFileHandle("manifest.json"));
+    const names = new Set((metadata.entries || []).map((entry) => entry.name));
+    return {
+      record,
+      source: {
+        kind: "directory",
+        name: record.name,
+        async *entries() {
+          for await (const [name, handle] of gallery.entries()) {
+            if (handle.kind === "file" && names.has(name)) yield [name, handle];
+          }
+        }
+      }
+    };
+  }
+
+  const file = await (await fileAtPath(root, record.storage.path)).getFile();
+  return { record, source: archivedFileHandle(file, record.name) };
+}
+
+export async function listArchivedAssets() {
+  const root = await writableArchiveHandle();
+  if (!root) return [];
+  return (await readAssetManifest(root)).assets || [];
+}
+
 export async function writeNamedSnapshot(snapshot) {
   const root = await writableArchiveHandle();
   if (!root) return false;
 
   await ensureLayout(root);
   const sessions = await root.getDirectoryHandle("sessions", { create: true });
-  const filename = `${timestampForFilename(snapshot.createdAt)}--${safePart(snapshot.name)}--${safePart(snapshot.id).slice(0, 12)}${SESSION_SUFFIX}`;
+  const filename = `${safePart(snapshot.id)}${SESSION_SUFFIX}`;
   const archived = await archiveSafeSnapshot(sessions, snapshot, safePart(snapshot.id).slice(0, 24));
   await writeJsonFile(sessions, filename, archived);
   return true;

@@ -1,5 +1,4 @@
-import { getSnapshot, listSnapshots, saveSnapshot } from "./persistence.js";
-import { writeLiveSnapshot } from "./archive.js";
+import { getFrame as getSnapshot, listFrames as listSnapshots, listSourcesByName, saveLive } from "./storage.js";
 
 const LIVE_ID = "__flashframe_live__";
 const workspace = document.querySelector("#workspace");
@@ -88,34 +87,7 @@ async function sourceMapFromNamedSnapshots() {
 }
 
 async function storedHandlesByName() {
-  return new Promise((resolve) => {
-    const request = indexedDB.open("flashframe", 1);
-
-    request.onerror = () => resolve(new Map());
-    request.onsuccess = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("handles")) {
-        db.close();
-        resolve(new Map());
-        return;
-      }
-
-      const transaction = db.transaction("handles", "readonly");
-      const getAll = transaction.objectStore("handles").getAll();
-
-      getAll.onerror = () => resolve(new Map());
-      getAll.onsuccess = () => {
-        const map = new Map();
-        for (const row of getAll.result ?? []) {
-          const name = row?.handle?.name;
-          if (name && !map.has(name)) map.set(name, row.id);
-        }
-        resolve(map);
-      };
-
-      transaction.oncomplete = () => db.close();
-    };
-  });
+  return listSourcesByName();
 }
 
 function inferredSource(block, sourceMap, handlesByName) {
@@ -155,7 +127,7 @@ async function captureLiveSnapshot() {
   const detail = {};
   window.dispatchEvent(new CustomEvent("flashframe:capture-appearance", { detail }));
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: LIVE_ID,
     name: "Current workspace",
     createdAt: new Date().toISOString(),
@@ -178,8 +150,7 @@ async function saveLiveNow() {
 
   try {
     const snapshot = await captureLiveSnapshot();
-    await saveSnapshot(snapshot);
-    await writeLiveSnapshot(snapshot);
+    await saveLive(snapshot);
     hideLiveOption();
   } catch (error) {
     console.warn("Could not autosave current Flashframe workspace:", error);

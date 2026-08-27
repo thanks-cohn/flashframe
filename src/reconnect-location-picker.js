@@ -1,4 +1,4 @@
-import { listSnapshots } from "./persistence.js";
+import { listFrames as listSnapshots } from "./storage.js";
 import { resolveHandle } from "./file-access.js";
 
 const LOCAL_MARKER = "__FLASHFRAME_LOCAL_DROP_V1__";
