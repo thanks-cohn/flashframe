@@ -1,18 +1,14 @@
 const workspace = document.querySelector("#workspace");
-const topPlay = document.querySelector("#video-play-all");
-const sequencePanel = document.querySelector(".frame-sequence-panel");
-const presentationControls = document.querySelector(".frame-sequence-top-controls");
-const presentationPlay = presentationControls?.querySelector(".frame-sequence-play-top");
-const presentationRewind = presentationControls?.querySelector('[data-action="rewind"], .is-rewind');
-const presentationBack = presentationControls?.querySelector('[data-action="back"], .is-back');
-const presentationForward = presentationControls?.querySelector('[data-action="forward"], .is-forward');
-const sequenceClock = sequencePanel?.querySelector(".frame-sequence-clock");
+const mediaPlay = document.querySelector("#video-play-all");
+const panel = document.querySelector(".frame-sequence-panel");
+const topControls = document.querySelector(".frame-sequence-top-controls");
+const topPlay = topControls?.querySelector(".frame-sequence-play-top");
+const topRewind = topControls?.querySelector('[data-action="rewind"], .is-rewind');
+const topBack = topControls?.querySelector('[data-action="back"], .is-back');
+const topForward = topControls?.querySelector('[data-action="forward"], .is-forward');
+const clock = panel?.querySelector(".frame-sequence-clock");
 
-const state = {
-  loopActions: false,
-  loopMedia: false
-};
-
+const loopState = { actions: false, media: false };
 let playing = false;
 let playhead = 0;
 let startedAt = 0;
@@ -21,17 +17,21 @@ let stopTimer = null;
 const actionTimers = new Set();
 const mediaHooks = new WeakSet();
 
-function number(value, fallback = 0) {
+function num(value, fallback = 0) {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function durationSetting() {
-  return Math.max(0.1, number(sequencePanel?.querySelector('[data-config="duration"]')?.value, 30));
+  return Math.max(0.1, num(panel?.querySelector('[data-config="duration"]')?.value, 30));
 }
 
 function stepSetting() {
-  return Math.min(3600, Math.max(0.1, number(sequencePanel?.querySelector('[data-config="step"]')?.value, 1)));
+  return Math.min(3600, Math.max(0.1, num(panel?.querySelector('[data-config="step"]')?.value, 1)));
+}
+
+function masterTime() {
+  return playing ? Math.max(0, (performance.now() - startedAt) / 1000) : playhead;
 }
 
 function formatTime(seconds) {
@@ -39,10 +39,6 @@ function formatTime(seconds) {
   const minutes = Math.floor(safe / 60);
   const remainder = (safe % 60).toFixed(1).padStart(4, "0");
   return `${minutes}:${remainder}`;
-}
-
-function masterTime() {
-  return playing ? Math.max(0, (performance.now() - startedAt) / 1000) : playhead;
 }
 
 function timedBlocks() {
@@ -54,13 +50,13 @@ function motion(block) {
 }
 
 function scheduleFor(block) {
-  const value = motion(block)?.schedule;
-  if (!value) return { mode: "play", at: 0, after: "", offset: 0 };
+  const schedule = motion(block)?.schedule;
+  if (!schedule) return { mode: "play", at: 0, after: "", offset: 0 };
   return {
-    mode: ["play", "absolute", "after"].includes(value.mode) ? value.mode : "play",
-    at: Math.max(0, number(value.at)),
-    after: String(value.after || ""),
-    offset: Math.max(0, number(value.offset))
+    mode: ["play", "absolute", "after"].includes(schedule.mode) ? schedule.mode : "play",
+    at: Math.max(0, num(schedule.at)),
+    after: String(schedule.after || ""),
+    offset: Math.max(0, num(schedule.offset))
   };
 }
 
@@ -71,7 +67,7 @@ function effectiveMotion(block) {
   return action;
 }
 
-function buildPlan() {
+function buildActionPlan() {
   const blocks = timedBlocks();
   const byId = new Map(blocks.map((block) => [block.dataset.blockId, block]));
   const starts = new Map();
@@ -82,6 +78,7 @@ function buildPlan() {
     if (starts.has(id)) return starts.get(id);
     if (resolving.has(id)) return 0;
     resolving.add(id);
+
     const schedule = scheduleFor(block);
     let start = schedule.mode === "absolute" ? schedule.at : 0;
     if (schedule.mode === "after") {
@@ -89,13 +86,14 @@ function buildPlan() {
       if (preceding) {
         const precedingMotion = effectiveMotion(preceding);
         start = resolve(preceding)
-          + number(precedingMotion?.delay)
-          + number(precedingMotion?.duration)
+          + num(precedingMotion?.delay)
+          + num(precedingMotion?.duration)
           + schedule.offset;
       } else {
         start = schedule.offset;
       }
     }
+
     resolving.delete(id);
     starts.set(id, start);
     return start;
@@ -107,7 +105,7 @@ function buildPlan() {
   for (const block of blocks) {
     const action = effectiveMotion(block);
     const start = starts.get(block.dataset.blockId) || 0;
-    end = Math.max(end, start + number(action?.delay) + number(action?.duration));
+    end = Math.max(end, start + num(action?.delay) + num(action?.duration));
   }
 
   return { blocks, starts, end };
@@ -134,8 +132,8 @@ function returnActions() {
 
 function seekActions(time) {
   clearActionTimers();
-  const plan = buildPlan();
-  const phase = state.loopActions && plan.end > 0 ? time % plan.end : time;
+  const plan = buildActionPlan();
+  const phase = loopState.actions && plan.end > 0 ? time % plan.end : time;
   for (const block of plan.blocks) {
     const localTime = phase - (plan.starts.get(block.dataset.blockId) || 0);
     window.dispatchEvent(new CustomEvent("flashframe:seek-timed-motion", { detail: { block, time: localTime } }));
@@ -151,16 +149,16 @@ function launchAction(block, startAt = 0) {
 
 function scheduleActionCycle(fromMasterTime = 0) {
   clearActionTimers();
-  const plan = buildPlan();
+  const plan = buildActionPlan();
   if (!plan.blocks.length) return;
 
-  const phase = state.loopActions && plan.end > 0 ? fromMasterTime % plan.end : fromMasterTime;
+  const phase = loopState.actions && plan.end > 0 ? fromMasterTime % plan.end : fromMasterTime;
 
   for (const block of plan.blocks) {
     const start = plan.starts.get(block.dataset.blockId) || 0;
     const localTime = phase - start;
     const action = effectiveMotion(block);
-    const total = number(action?.delay) + number(action?.duration);
+    const total = num(action?.delay) + num(action?.duration);
 
     if (localTime >= total) {
       window.dispatchEvent(new CustomEvent("flashframe:seek-timed-motion", { detail: { block, time: total } }));
@@ -175,11 +173,12 @@ function scheduleActionCycle(fromMasterTime = 0) {
     }
   }
 
-  if (state.loopActions && plan.end > 0) {
+  // The coordinated action loop ends when the last scheduled action ends.
+  if (loopState.actions && plan.end > 0) {
     const remaining = Math.max(0.001, plan.end - phase);
     const timer = setTimeout(() => {
       actionTimers.delete(timer);
-      if (!playing || !state.loopActions) return;
+      if (!playing || !loopState.actions) return;
       returnActions();
       scheduleActionCycle(0);
     }, remaining * 1000);
@@ -196,7 +195,7 @@ function ensureMediaHooks() {
     if (mediaHooks.has(player)) continue;
     mediaHooks.add(player);
     player.addEventListener("ended", () => {
-      if (!playing || !state.loopMedia || player.loop || !player.src) return;
+      if (!playing || !loopState.media || player.loop || !player.src) return;
       try { player.currentTime = 0; } catch { return; }
       void player.play().catch(() => {});
     });
@@ -211,44 +210,55 @@ function playMedia() {
   ensureMediaHooks();
   for (const player of mediaPlayers()) {
     if (!player.src) continue;
-    if (!state.loopMedia && player.ended) continue;
+    if (!loopState.media && player.ended) continue;
+    // Never flatten unsynced media timestamps just because Play was pressed.
+    // A later SYNC layer can persist per-player offsets against master time.
     void player.play().catch(() => {});
   }
 }
 
-function seekMedia(time) {
+function seekMediaAbsolute(time) {
   ensureMediaHooks();
   for (const player of mediaPlayers()) {
     if (!Number.isFinite(player.currentTime)) continue;
     let target = Math.max(0, time);
     if (Number.isFinite(player.duration) && player.duration > 0) {
-      target = state.loopMedia ? target % player.duration : Math.min(player.duration, target);
+      target = loopState.media ? target % player.duration : Math.min(player.duration, target);
     }
     try { player.currentTime = target; } catch { /* Some streams are not seekable yet. */ }
   }
 }
 
-function setPlayingVisual(isPlaying) {
-  document.documentElement.dataset.frameSequencePlaying = isPlaying ? "true" : "false";
-  if (!isPlaying) delete document.documentElement.dataset.frameSequencePlaying;
-  topPlay?.classList.toggle("is-frame-sequence-playing", isPlaying);
-  if (topPlay) {
-    topPlay.textContent = isPlaying ? "❚❚" : "▶";
-    topPlay.title = isPlaying ? "Pause master sequence" : "Play master sequence";
-    topPlay.setAttribute("aria-label", topPlay.title);
+function shiftMedia(delta) {
+  for (const player of mediaPlayers()) {
+    if (!Number.isFinite(player.currentTime)) continue;
+    const upper = Number.isFinite(player.duration) ? player.duration : Number.POSITIVE_INFINITY;
+    try { player.currentTime = Math.min(upper, Math.max(0, player.currentTime + delta)); } catch { /* Ignore non-seekable streams. */ }
   }
-  if (presentationPlay) {
-    presentationPlay.textContent = isPlaying ? "❚❚" : "▶";
-    presentationPlay.dataset.label = isPlaying ? "Pause" : "Play";
-    presentationPlay.title = isPlaying ? "Pause master sequence" : "Play master sequence";
-    presentationPlay.setAttribute("aria-label", presentationPlay.title);
+}
+
+function setPlayingVisual(active) {
+  if (active) document.documentElement.dataset.frameSequencePlaying = "true";
+  else delete document.documentElement.dataset.frameSequencePlaying;
+  mediaPlay?.classList.toggle("is-frame-sequence-playing", active);
+
+  if (mediaPlay) {
+    mediaPlay.textContent = active ? "❚❚" : "▶";
+    mediaPlay.title = active ? "Pause master sequence" : "Play master sequence";
+    mediaPlay.setAttribute("aria-label", mediaPlay.title);
+  }
+  if (topPlay) {
+    topPlay.textContent = active ? "❚❚" : "▶";
+    topPlay.dataset.label = active ? "Pause" : "Play";
+    topPlay.title = active ? "Pause master sequence" : "Play master sequence";
+    topPlay.setAttribute("aria-label", topPlay.title);
   }
 }
 
 function updateClock() {
   if (!playing) return;
   playhead = masterTime();
-  if (sequenceClock) sequenceClock.textContent = formatTime(playhead);
+  if (clock) clock.textContent = formatTime(playhead);
   setPlayingVisual(true);
   clockFrame = requestAnimationFrame(updateClock);
 }
@@ -260,7 +270,7 @@ function clearStopTimer() {
 
 function scheduleStopIfNeeded() {
   clearStopTimer();
-  if (!playing || state.loopActions || state.loopMedia) return;
+  if (!playing || loopState.actions || loopState.media) return;
   const remaining = durationSetting() - masterTime();
   if (remaining <= 0) {
     pauseSequence();
@@ -268,7 +278,7 @@ function scheduleStopIfNeeded() {
   }
   stopTimer = setTimeout(() => {
     stopTimer = null;
-    if (playing && !state.loopActions && !state.loopMedia) pauseSequence();
+    if (playing && !loopState.actions && !loopState.media) pauseSequence();
   }, remaining * 1000);
 }
 
@@ -278,23 +288,18 @@ function playSequence() {
     return;
   }
 
-  if (!state.loopActions && !state.loopMedia && playhead >= durationSetting()) {
-    totalRewind();
-  }
+  if (!loopState.actions && !loopState.media && playhead >= durationSetting()) totalRewind();
 
   playing = true;
   startedAt = performance.now() - playhead * 1000;
   setPlayingVisual(true);
   scheduleActionCycle(playhead);
-  seekMedia(playhead);
   playMedia();
-  clearStopTimer();
   scheduleStopIfNeeded();
   cancelAnimationFrame(clockFrame);
   clockFrame = requestAnimationFrame(updateClock);
-
   window.dispatchEvent(new CustomEvent("flashframe:master-sequence-resumed", {
-    detail: { time: playhead, loopActions: state.loopActions, loopMedia: state.loopMedia }
+    detail: { time: playhead, loopActions: loopState.actions, loopMedia: loopState.media }
   }));
 }
 
@@ -306,30 +311,32 @@ function pauseSequence() {
   pauseActions();
   pauseMedia();
   setPlayingVisual(false);
-  if (sequenceClock) sequenceClock.textContent = formatTime(playhead);
-
+  if (clock) clock.textContent = formatTime(playhead);
   window.dispatchEvent(new CustomEvent("flashframe:master-sequence-paused", { detail: { time: playhead } }));
 }
 
 function seekSequence(time) {
   const wasPlaying = playing;
+  const before = masterTime();
   if (wasPlaying) pauseSequence();
-  const bounded = state.loopActions || state.loopMedia
-    ? Math.max(0, number(time))
-    : Math.min(durationSetting(), Math.max(0, number(time)));
+  const bounded = loopState.actions || loopState.media
+    ? Math.max(0, num(time))
+    : Math.min(durationSetting(), Math.max(0, num(time)));
+  const delta = bounded - before;
   playhead = bounded;
   seekActions(playhead);
-  seekMedia(playhead);
-  if (sequenceClock) sequenceClock.textContent = formatTime(playhead);
-  window.dispatchEvent(new CustomEvent("flashframe:master-sequence-seek", { detail: { time: playhead } }));
+  // Preserve the existing arrangement among media by moving each by the same delta.
+  shiftMedia(delta);
+  if (clock) clock.textContent = formatTime(playhead);
+  window.dispatchEvent(new CustomEvent("flashframe:master-sequence-seek", { detail: { time: playhead, delta } }));
 }
 
 function totalRewind() {
   pauseSequence();
   playhead = 0;
   returnActions();
-  seekMedia(0);
-  if (sequenceClock) sequenceClock.textContent = formatTime(0);
+  seekMediaAbsolute(0);
+  if (clock) clock.textContent = formatTime(0);
   window.dispatchEvent(new CustomEvent("flashframe:master-sequence-rewound"));
 }
 
@@ -345,127 +352,60 @@ function refreshLoopRuntime() {
 const style = document.createElement("style");
 style.textContent = `
   .frame-sequence-loop { display: none !important; }
-
   .frame-sequence-top-controls > .frame-sequence-loop-top {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    min-width: 64px;
-    height: 34px;
-    min-height: 34px;
-    padding: 0 9px;
-    border-radius: 8px;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: .075em;
-    line-height: 1;
-    white-space: nowrap;
-    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    display:inline-flex;align-items:center;justify-content:center;gap:5px;
+    min-width:64px;height:34px;min-height:34px;padding:0 9px;border-radius:8px;
+    font-size:10px;font-weight:900;letter-spacing:.075em;line-height:1;white-space:nowrap;
+    transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease,box-shadow 120ms ease;
   }
-
   .frame-sequence-loop-top[data-loop-summary="all"] {
-    color: #effff4 !important;
-    background: #148a43 !important;
-    border-color: #32c76d !important;
-    box-shadow: 0 0 0 1px rgba(50,199,109,.18), 0 4px 14px rgba(20,138,67,.26) !important;
+    color:#effff4!important;background:#148a43!important;border-color:#32c76d!important;
+    box-shadow:0 0 0 1px rgba(50,199,109,.18),0 4px 14px rgba(20,138,67,.26)!important;
   }
-
   .frame-sequence-loop-top[data-loop-summary="partial"] {
-    color: #241b00 !important;
-    background: #f6bf26 !important;
-    border-color: #ffd75c !important;
-    box-shadow: 0 0 0 1px rgba(246,191,38,.16), 0 4px 14px rgba(246,191,38,.24) !important;
+    color:#241b00!important;background:#f6bf26!important;border-color:#ffd75c!important;
+    box-shadow:0 0 0 1px rgba(246,191,38,.16),0 4px 14px rgba(246,191,38,.24)!important;
   }
-
   .frame-sequence-loop-top[data-loop-summary="off"] {
-    color: #fff !important;
-    background: #ef233c !important;
-    border-color: #ff596c !important;
-    box-shadow: 0 0 0 1px rgba(239,35,60,.18), 0 4px 14px rgba(239,35,60,.28) !important;
+    color:#fff!important;background:#f0142f!important;border-color:#ff5267!important;
+    box-shadow:0 0 0 1px rgba(240,20,47,.22),0 4px 15px rgba(240,20,47,.34)!important;
   }
-
   .frame-sequence-loop-top[data-loop-summary="off"] .frame-sequence-loop-word {
-    text-decoration: line-through !important;
-    text-decoration-thickness: 2px !important;
+    text-decoration:line-through!important;text-decoration-thickness:2px!important;
   }
-
   .frame-sequence-loop-top[data-loop-summary="partial"] .frame-sequence-loop-word,
-  .frame-sequence-loop-top[data-loop-summary="all"] .frame-sequence-loop-word {
-    text-decoration: none !important;
-  }
-
-  .frame-sequence-loop-chevron {
-    font-size: 9px;
-    opacity: .82;
-    letter-spacing: 0;
-  }
-
+  .frame-sequence-loop-top[data-loop-summary="all"] .frame-sequence-loop-word { text-decoration:none!important; }
+  .frame-sequence-loop-chevron { font-size:9px;opacity:.82;letter-spacing:0; }
   .frame-sequence-loop-menu {
-    position: fixed;
-    z-index: 2147483647;
-    width: 196px;
-    padding: 6px;
-    border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
-    border-radius: 11px;
-    background: color-mix(in srgb, Canvas 97%, transparent);
-    color: CanvasText;
-    box-shadow: 0 16px 42px rgba(0,0,0,.28);
-    backdrop-filter: blur(16px);
+    position:fixed;z-index:2147483647;width:196px;padding:6px;
+    border:1px solid color-mix(in srgb, CanvasText 18%, transparent);border-radius:11px;
+    background:color-mix(in srgb, Canvas 97%, transparent);color:CanvasText;
+    box-shadow:0 16px 42px rgba(0,0,0,.28);backdrop-filter:blur(16px);
   }
-
-  .frame-sequence-loop-menu[hidden] { display: none; }
-
+  .frame-sequence-loop-menu[hidden] { display:none; }
   .frame-sequence-loop-menu button {
-    display: grid;
-    grid-template-columns: 22px 1fr;
-    align-items: center;
-    width: 100%;
-    min-height: 34px;
-    padding: 6px 8px;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: inherit;
-    text-align: left;
+    display:grid;grid-template-columns:22px 1fr;align-items:center;width:100%;min-height:34px;
+    padding:6px 8px;border:0;border-radius:7px;background:transparent;color:inherit;text-align:left;
   }
-
-  .frame-sequence-loop-menu button:hover,
-  .frame-sequence-loop-menu button:focus-visible {
-    background: color-mix(in srgb, CanvasText 7%, Canvas);
-    outline: none;
+  .frame-sequence-loop-menu button:hover,.frame-sequence-loop-menu button:focus-visible {
+    background:color-mix(in srgb, CanvasText 7%, Canvas);outline:none;
   }
-
-  .frame-sequence-loop-menu button.is-active {
-    color: #27ad5d;
-    font-weight: 760;
-  }
-
-  .frame-sequence-loop-menu button.is-inactive {
-    color: #e34050;
-  }
-
+  .frame-sequence-loop-menu button.is-active { color:#27ad5d;font-weight:760; }
+  .frame-sequence-loop-menu button.is-inactive { color:#e34050; }
   .frame-sequence-loop-menu button.is-inactive .loop-menu-label {
-    text-decoration: line-through;
-    text-decoration-thickness: 1.5px;
+    text-decoration:line-through;text-decoration-thickness:1.5px;
   }
-
-  .loop-menu-mark {
-    font-size: 14px;
-    font-weight: 900;
-    text-align: center;
-  }
+  .loop-menu-mark { font-size:14px;font-weight:900;text-align:center; }
 `;
 document.head.append(style);
 
-let loopButton = presentationControls?.querySelector(".frame-sequence-loop-top");
-if (!loopButton && presentationControls) {
+let loopButton = topControls?.querySelector(".frame-sequence-loop-top");
+if (!loopButton && topControls) {
   loopButton = document.createElement("button");
   loopButton.type = "button";
   loopButton.className = "frame-sequence-loop-top";
-  const forward = presentationControls.querySelector('[data-action="forward"], .is-forward');
-  if (forward) forward.insertAdjacentElement("afterend", loopButton);
-  else presentationControls.append(loopButton);
+  if (topForward) topForward.insertAdjacentElement("afterend", loopButton);
+  else topControls.append(loopButton);
 }
 
 if (loopButton) {
@@ -486,8 +426,8 @@ loopMenu.innerHTML = `
 document.body.append(loopMenu);
 
 function loopSummary() {
-  if (state.loopActions && state.loopMedia) return "all";
-  if (state.loopActions || state.loopMedia) return "partial";
+  if (loopState.actions && loopState.media) return "all";
+  if (loopState.actions || loopState.media) return "partial";
   return "off";
 }
 
@@ -497,18 +437,14 @@ function syncLoopUi() {
     loopButton.dataset.loopSummary = summary;
     loopButton.classList.remove("is-loop-on", "is-loop-off");
     loopButton.setAttribute("aria-pressed", String(summary !== "off"));
-    loopButton.title = summary === "all"
-      ? "All looping is ON"
-      : summary === "partial"
-        ? "Some looping is ON"
-        : "Looping is OFF";
+    loopButton.title = summary === "all" ? "All looping is ON" : summary === "partial" ? "Some looping is ON" : "Looping is OFF";
     loopButton.setAttribute("aria-label", `${loopButton.title}. Open loop menu.`);
   }
 
   const values = {
-    actions: state.loopActions,
-    media: state.loopMedia,
-    everything: state.loopActions && state.loopMedia
+    actions: loopState.actions,
+    media: loopState.media,
+    everything: loopState.actions && loopState.media
   };
 
   for (const button of loopMenu.querySelectorAll("button[data-loop-mode]")) {
@@ -520,7 +456,7 @@ function syncLoopUi() {
   }
 
   window.dispatchEvent(new CustomEvent("flashframe:master-loop-state", {
-    detail: { actions: state.loopActions, media: state.loopMedia, everything: state.loopActions && state.loopMedia }
+    detail: { actions: loopState.actions, media: loopState.media, everything: loopState.actions && loopState.media }
   }));
 }
 
@@ -528,10 +464,8 @@ function positionLoopMenu() {
   if (!loopButton || loopMenu.hidden) return;
   const rect = loopButton.getBoundingClientRect();
   const margin = 8;
-  const left = Math.min(window.innerWidth - loopMenu.offsetWidth - margin, Math.max(margin, rect.left));
-  const top = Math.min(window.innerHeight - loopMenu.offsetHeight - margin, rect.bottom + 7);
-  loopMenu.style.left = `${left}px`;
-  loopMenu.style.top = `${Math.max(margin, top)}px`;
+  loopMenu.style.left = `${Math.min(window.innerWidth - loopMenu.offsetWidth - margin, Math.max(margin, rect.left))}px`;
+  loopMenu.style.top = `${Math.max(margin, Math.min(window.innerHeight - loopMenu.offsetHeight - margin, rect.bottom + 7))}px`;
 }
 
 function closeLoopMenu() {
@@ -547,12 +481,12 @@ function toggleLoopMenu() {
 }
 
 function setLoopMode(mode) {
-  if (mode === "actions") state.loopActions = !state.loopActions;
-  if (mode === "media") state.loopMedia = !state.loopMedia;
+  if (mode === "actions") loopState.actions = !loopState.actions;
+  if (mode === "media") loopState.media = !loopState.media;
   if (mode === "everything") {
-    const enable = !(state.loopActions && state.loopMedia);
-    state.loopActions = enable;
-    state.loopMedia = enable;
+    const enable = !(loopState.actions && loopState.media);
+    loopState.actions = enable;
+    loopState.media = enable;
   }
   syncLoopUi();
   refreshLoopRuntime();
@@ -572,12 +506,12 @@ document.addEventListener("click", (event) => {
 window.addEventListener("resize", positionLoopMenu);
 window.addEventListener("scroll", positionLoopMenu, true);
 
-function actionForControl(button) {
+function controlAction(button) {
   if (!button) return null;
-  if (button === topPlay || button === presentationPlay) return "play";
-  if (button === presentationRewind) return "rewind";
-  if (button === presentationBack) return "back";
-  if (button === presentationForward) return "forward";
+  if (button === mediaPlay || button === topPlay) return "play";
+  if (button === topRewind) return "rewind";
+  if (button === topBack) return "back";
+  if (button === topForward) return "forward";
   if (button.closest(".frame-sequence-panel")) {
     const action = button.dataset.action;
     if (["play", "stop", "rewind", "back", "forward"].includes(action)) return action;
@@ -596,7 +530,7 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  const action = actionForControl(button);
+  const action = controlAction(button);
   if (!action) return;
   event.preventDefault();
   event.stopImmediatePropagation();
@@ -608,38 +542,34 @@ document.addEventListener("click", (event) => {
   if (action === "forward") seekSequence(masterTime() + stepSetting());
 }, true);
 
-sequencePanel?.querySelector('[data-config="duration"]')?.addEventListener("change", scheduleStopIfNeeded);
-
-const legacyLoopCheckbox = sequencePanel?.querySelector('[data-config="loop"]');
-if (legacyLoopCheckbox) legacyLoopCheckbox.checked = false;
+panel?.querySelector('[data-config="duration"]')?.addEventListener("change", scheduleStopIfNeeded);
+const legacyLoop = panel?.querySelector('[data-config="loop"]');
+if (legacyLoop) legacyLoop.checked = false;
 
 window.addEventListener("flashframe:capture-appearance", (event) => {
   event.detail.appearance ||= {};
-  event.detail.appearance.masterLoop = {
-    actions: state.loopActions,
-    media: state.loopMedia
-  };
+  event.detail.appearance.masterLoop = { actions: loopState.actions, media: loopState.media };
 });
 
 window.addEventListener("flashframe:restore-appearance", (event) => {
   const saved = event.detail?.appearance?.masterLoop;
   const legacy = Boolean(event.detail?.appearance?.frameSequence?.loop);
-  state.loopActions = saved ? Boolean(saved.actions) : legacy;
-  state.loopMedia = saved ? Boolean(saved.media) : legacy;
+  loopState.actions = saved ? Boolean(saved.actions) : legacy;
+  loopState.media = saved ? Boolean(saved.media) : legacy;
   totalRewind();
   syncLoopUi();
 });
 
 window.addEventListener("flashframe:set-master-loop", (event) => {
   const detail = event.detail || {};
-  if (typeof detail.actions === "boolean") state.loopActions = detail.actions;
-  if (typeof detail.media === "boolean") state.loopMedia = detail.media;
+  if (typeof detail.actions === "boolean") loopState.actions = detail.actions;
+  if (typeof detail.media === "boolean") loopState.media = detail.media;
   syncLoopUi();
   refreshLoopRuntime();
 });
 
-new MutationObserver(() => ensureMediaHooks()).observe(workspace, { childList: true, subtree: true });
+new MutationObserver(ensureMediaHooks).observe(workspace, { childList: true, subtree: true });
 ensureMediaHooks();
 syncLoopUi();
 setPlayingVisual(false);
-if (sequenceClock) sequenceClock.textContent = formatTime(0);
+if (clock) clock.textContent = formatTime(0);
