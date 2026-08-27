@@ -19,28 +19,32 @@
   display: none;
 }
 
+/* The corner is always a live resize surface in frameless/image-only mode.
+   Visibility settings affect only the reverse-L glyph, never the hit target. */
 .block.is-frameless-media > .frameless-resize-handle {
   position: absolute;
-  right: -2px;
-  bottom: -2px;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
   display: block !important;
-  width: 22px;
-  height: 22px;
-  min-height: 22px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   padding: 0;
   border: 0;
-  background: transparent;
-  color: color-mix(in srgb, #f7cf4b 72%, CanvasText);
+  background: transparent !important;
+  color: transparent;
   font: 700 18px/1 sans-serif;
-  opacity: 0;
-  cursor: nwse-resize;
+  opacity: 1 !important;
+  cursor: nwse-resize !important;
+  pointer-events: auto !important;
   touch-action: none;
 }
 
 .block.is-frameless-media > .frameless-resize-handle[data-visibility-mode="always"],
 .block.is-frameless-media > .frameless-resize-handle.is-resize-handle-visible,
 .block.is-frameless-media.is-frameless-resizing > .frameless-resize-handle:not([data-visibility-mode="hide"]) {
-  opacity: 0.95;
+  color: color-mix(in srgb, #f7cf4b 72%, CanvasText);
 }
 
 .block.is-frameless-media > .image-frame,
