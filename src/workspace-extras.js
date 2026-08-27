@@ -92,3 +92,4 @@ await import("./grab-art-runtime.js");
 await import("./framechute-visible-branding.js");
 await import("./mascot.js");
 await import("./media-dock-grab-pin.js");
+await import("./gallery-ui-polish.js");
