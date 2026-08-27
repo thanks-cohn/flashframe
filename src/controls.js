@@ -435,13 +435,13 @@ async function refreshArchiveStatus() {
   const state = await getArchiveStatus();
 
   if (!state.configured) {
-    archiveStatus.textContent = "Not connected. Create/select ~/flashframe once.";
-    archiveConnect.textContent = "Choose ~/flashframe";
+    archiveStatus.textContent = "Browser-only storage is temporary.";
+    archiveConnect.textContent = "Choose or reconnect folder";
     return;
   }
 
   if (state.permission === "granted") {
-    archiveStatus.textContent = `Connected: ${state.name} · live/ + sessions/`;
+    archiveStatus.textContent = `Durable folder connected: ${state.name}`;
     archiveConnect.textContent = "Change folder";
     return;
   }
@@ -499,7 +499,7 @@ archiveConnect.addEventListener("click", async () => {
     const handle = await connectArchiveDirectory({
       chooseNew: previous.configured && previous.permission === "granted"
     });
-    archiveStatus.textContent = `Connected: ${handle.name} · live/ + sessions/`;
+    archiveStatus.textContent = `Durable folder connected: ${handle.name}`;
     window.dispatchEvent(new CustomEvent("flashframe:archive-ready"));
   } catch (error) {
     if (error?.name === "AbortError") {

@@ -1,4 +1,4 @@
-import { listSnapshots } from "./persistence.js";
+import { listFrames as listSnapshots } from "./storage.js";
 import { resolveHandle } from "./file-access.js";
 
 const reconnectAllButton = document.querySelector("#reconnect-all");

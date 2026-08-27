@@ -1,5 +1,4 @@
-const DB_NAME = "flashframe";
-const DB_VERSION = 1;
+import { listFrames } from "./storage.js";
 const FILECHUTE_DRAG_TYPE = "application/x-filechute-item+json";
 const FILECHUTE_PROTOCOL = "filechute-item";
 const FILECHUTE_VERSION = 1;
@@ -118,34 +117,12 @@ function persistAddressIntoMarker(block, record) {
   return changed;
 }
 
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 async function readSnapshots() {
-  let db;
   try {
-    db = await openDatabase();
+    return await listFrames();
   } catch {
     return [];
   }
-  if (!db.objectStoreNames.contains("snapshots")) {
-    db.close();
-    return [];
-  }
-  return new Promise((resolve) => {
-    const transaction = db.transaction("snapshots", "readonly");
-    const request = transaction.objectStore("snapshots").getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => resolve([]);
-    transaction.oncomplete = () => db.close();
-    transaction.onabort = () => db.close();
-    transaction.onerror = () => db.close();
-  });
 }
 
 async function refreshSnapshotSources() {

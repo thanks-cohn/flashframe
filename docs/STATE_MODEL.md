@@ -1,4 +1,37 @@
-# Flashframe State Model
+# FrameChute State Model
+
+## Durable storage contract (schema v3)
+
+IndexedDB is a rebuildable browser cache. Once a FrameChute folder is
+connected, that folder is the durable source of truth. It contains a versioned
+`framechute.json`, named snapshots under `sessions/`, the live checkpoint at
+`live/current.flashframe.json`, stable asset metadata in
+`manifests/assets.json`, and bytes under `assets/files/` or
+`assets/galleries/<asset-id>/`.
+
+Schema v3 sources retain legacy `handleKey` for compatibility and add the
+portable identity used by both backends:
+
+```json
+{
+  "source": {
+    "assetId": "asset:4ae4c38b-37c5-4ff5-bbf7-f9d788ce7d74",
+    "handleKey": "asset:4ae4c38b-37c5-4ff5-bbf7-f9d788ce7d74",
+    "sourceKind": "file",
+    "displayName": "lecture.mp4"
+  }
+}
+```
+
+Files are copied once during ingest. Gallery assets contain their supported
+files plus a manifest and are exposed through a directory-handle-compatible
+adapter during recovery. Snapshots reference asset IDs and never own or delete
+asset bytes. Recovery scans the archive, reconstructs runtime sources, and
+repopulates IndexedDB without deleting existing browser or external data.
+
+Versions 1 and 2 are upgraded in memory to version 3. Existing `handleKey`
+values become their stable `assetId`; unresolved sources remain in snapshots so
+the user can relink them. Migration is additive and never clears IndexedDB.
 
 This document defines the conceptual shape of Flashframe's saved state.
 

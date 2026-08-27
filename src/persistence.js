@@ -102,6 +102,15 @@ export async function getHandle(id) {
   });
 }
 
+export async function listHandles() {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction("handles", "readonly").objectStore("handles").getAll();
+    request.onsuccess = () => resolve(request.result ?? []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 export async function putContent(id, value) {
   await withStore("content", "readwrite", (store) => store.put({ id, value }));
 }

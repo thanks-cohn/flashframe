@@ -1,6 +1,5 @@
 import "./live-state.js";
-import { getSnapshot, listSnapshots, saveSnapshot } from "./persistence.js";
-import { readLiveSnapshot, readNamedSnapshots, writeLiveSnapshot, writeNamedSnapshot } from "./archive.js";
+import { listFrames, migrateCacheToArchive, recoverArchiveToCache } from "./storage.js";
 
 const LIVE_ID = "__flashframe_live__";
 const saveButton = document.querySelector("#save-frame");
@@ -8,14 +7,12 @@ const restoreButton = document.querySelector("#restore-frame");
 const savedFramesSelect = document.querySelector("#saved-frames");
 const status = document.querySelector("#status");
 
-let syncTimer = null;
-
 function setStatus(message) {
   if (status) status.textContent = message;
 }
 
 async function refreshSnapshotOptions(selectedId = "") {
-  const snapshots = (await listSnapshots()).filter((snapshot) => snapshot.id !== LIVE_ID);
+  const snapshots = (await listFrames()).filter((snapshot) => snapshot.id !== LIVE_ID);
   savedFramesSelect.replaceChildren();
 
   const placeholder = document.createElement("option");
@@ -35,14 +32,7 @@ async function refreshSnapshotOptions(selectedId = "") {
 
 async function importArchive() {
   try {
-    const archived = await readNamedSnapshots();
-    const live = await readLiveSnapshot();
-
-    for (const snapshot of archived) {
-      if (snapshot.id !== LIVE_ID) await saveSnapshot(snapshot);
-    }
-
-    if (live) await saveSnapshot({ ...live, id: LIVE_ID, name: "Current workspace" });
+    const { named: archived, live } = await recoverArchiveToCache();
 
     if (archived.length || live) {
       await refreshSnapshotOptions(archived[0]?.id ?? "");
@@ -54,50 +44,14 @@ async function importArchive() {
   }
 }
 
-async function mirrorNamedSnapshotsToDisk(preferredId = "") {
-  try {
-    const snapshots = (await listSnapshots()).filter((snapshot) => snapshot.id !== LIVE_ID);
-    if (!snapshots.length) return;
-
-    for (const snapshot of snapshots) {
-      await writeNamedSnapshot(snapshot);
-    }
-
-    const current = preferredId
-      ? snapshots.find((snapshot) => snapshot.id === preferredId) ?? null
-      : null;
-
-    if (current) await writeLiveSnapshot(current);
-  } catch (error) {
-    console.warn("Could not mirror Flashframe sessions to disk:", error);
-  }
-}
-
-function scheduleMirror(preferredId = "") {
-  if (syncTimer != null) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => {
-    syncTimer = null;
-    void mirrorNamedSnapshotsToDisk(preferredId);
-  }, 300);
-}
-
-saveButton.addEventListener("click", () => {
-  scheduleMirror(savedFramesSelect.value);
-});
-
-restoreButton.addEventListener("click", () => {
-  const id = savedFramesSelect.value;
-  if (!id || id === LIVE_ID) return;
-
-  setTimeout(async () => {
-    const snapshot = await getSnapshot(id);
-    if (snapshot) await writeLiveSnapshot(snapshot);
-  }, 300);
-});
-
 window.addEventListener("flashframe:archive-ready", async () => {
   await importArchive();
-  await mirrorNamedSnapshotsToDisk(savedFramesSelect.value);
+  try {
+    await migrateCacheToArchive();
+  } catch (error) {
+    console.warn("Could not migrate every browser-cached asset to the FrameChute folder:", error);
+    setStatus("Folder connected, but some browser-only assets still require relinking.");
+  }
 });
 
 setTimeout(() => void importArchive(), 0);

@@ -1,4 +1,4 @@
-import { getContent, putContent } from "./persistence.js";
+import { getContent, putContent } from "./storage.js";
 
 const PREFS_KEY = "flashframe.appearance.v1";
 const BACKGROUND_CONTENT_ID = "flashframe:background-image";
