@@ -18,6 +18,7 @@ ensureStylesheet("./media-dock-layout.css");
 ensureStylesheet("./donation-card.css");
 ensureStylesheet("./framechute-final-polish.css");
 ensureStylesheet("./handoff-fixes.css");
+ensureStylesheet("./classic-context-menu.css");
 
 // Advanced mode changes the visible control surface. Classic deliberately
 // keeps the simpler toolbar, while the right-click menu remains the bridge to
