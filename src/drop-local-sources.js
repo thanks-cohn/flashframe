@@ -509,6 +509,8 @@ async function loadVideo(block, payload) {
   clearUnavailable(block);
 
   const player = block.querySelector(".video-player");
+  if (Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
+  else delete player.dataset.masterTimelineOffset;
   player.src = url;
   player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this video, but Chromium cannot decode its codec."), { once: true });
   player.volume = Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1;
@@ -572,6 +574,9 @@ function renderVideo(payload, options = {}) {
     payload.playbackRate = player.playbackRate;
     payload.loop = player.loop;
     payload.syncGroup = block.dataset.syncGroup || "all";
+    payload.masterTimelineOffset = Number.isFinite(Number.parseFloat(player.dataset.masterTimelineOffset || ""))
+      ? Number.parseFloat(player.dataset.masterTimelineOffset)
+      : null;
     time.textContent = formatTime(payload.currentTime);
     const now = Date.now();
     if (force || now - lastPersist > 1200) {
@@ -612,6 +617,8 @@ async function loadAudio(block, payload) {
   replaceObjectUrl(block, url);
   clearUnavailable(block);
   const player = block.querySelector(".audio-player");
+  if (Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
+  else delete player.dataset.masterTimelineOffset;
   player.src = url;
   player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this audio file, but Chromium cannot decode its codec."), { once: true });
   player.volume = Number.isFinite(payload.volume) ? Math.min(1, Math.max(0, payload.volume)) : 1;
@@ -656,6 +663,9 @@ function renderAudio(payload, options = {}) {
       paused: player.paused, volume: player.volume, muted: player.muted,
       playbackRate: player.playbackRate, loop: player.loop,
       syncGroup: block.dataset.syncGroup || "all",
+      masterTimelineOffset: Number.isFinite(Number.parseFloat(player.dataset.masterTimelineOffset || ""))
+        ? Number.parseFloat(player.dataset.masterTimelineOffset)
+        : null,
       visibility: block.dataset.audioVisibility || "visible"
     });
     if (force || Date.now() - lastPersist > 1200) { writeMarker(block, payload, true); lastPersist = Date.now(); }

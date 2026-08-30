@@ -31,14 +31,16 @@ function stepSetting() {
 }
 
 function masterTime() {
-  return playing ? Math.max(0, (performance.now() - startedAt) / 1000) : playhead;
+  return playing ? (performance.now() - startedAt) / 1000 : playhead;
 }
 
 function formatTime(seconds) {
-  const safe = Math.max(0, seconds);
+  const value = Number.isFinite(seconds) ? seconds : 0;
+  const sign = value < 0 ? "−" : "";
+  const safe = Math.abs(value);
   const minutes = Math.floor(safe / 60);
   const remainder = (safe % 60).toFixed(1).padStart(4, "0");
-  return `${minutes}:${remainder}`;
+  return `${sign}${minutes}:${remainder}`;
 }
 
 function timedBlocks() {
@@ -133,7 +135,7 @@ function returnActions() {
 function seekActions(time) {
   clearActionTimers();
   const plan = buildActionPlan();
-  const phase = loopState.actions && plan.end > 0 ? time % plan.end : time;
+  const phase = loopState.actions && plan.end > 0 && time >= 0 ? time % plan.end : time;
   for (const block of plan.blocks) {
     const localTime = phase - (plan.starts.get(block.dataset.blockId) || 0);
     window.dispatchEvent(new CustomEvent("flashframe:seek-timed-motion", { detail: { block, time: localTime } }));
@@ -152,7 +154,7 @@ function scheduleActionCycle(fromMasterTime = 0) {
   const plan = buildActionPlan();
   if (!plan.blocks.length) return;
 
-  const phase = loopState.actions && plan.end > 0 ? fromMasterTime % plan.end : fromMasterTime;
+  const phase = loopState.actions && plan.end > 0 && fromMasterTime >= 0 ? fromMasterTime % plan.end : fromMasterTime;
 
   for (const block of plan.blocks) {
     const start = plan.starts.get(block.dataset.blockId) || 0;
@@ -190,14 +192,78 @@ function mediaPlayers() {
   return [...new Set(workspace.querySelectorAll("video, audio"))];
 }
 
+const programmaticMediaSeeks = new WeakSet();
+
+function savedMediaOffset(player) {
+  const value = Number.parseFloat(player.dataset.masterTimelineOffset || "");
+  return Number.isFinite(value) ? value : null;
+}
+
+function rememberMediaOffset(player, referenceTime = masterTime()) {
+  const saved = savedMediaOffset(player);
+  if (saved != null) return saved;
+  const offset = (Number.isFinite(player.currentTime) ? player.currentTime : 0) - referenceTime;
+  player.dataset.masterTimelineOffset = String(offset);
+  return offset;
+}
+
+function rememberMediaOffsets(referenceTime = masterTime()) {
+  ensureMediaHooks();
+  for (const player of mediaPlayers()) rememberMediaOffset(player, referenceTime);
+}
+
+function setMediaTime(player, target) {
+  if (!Number.isFinite(target) || !Number.isFinite(player.currentTime)) return;
+  if (Math.abs(player.currentTime - target) < 0.08) return;
+  programmaticMediaSeeks.add(player);
+  try { player.currentTime = target; }
+  catch { programmaticMediaSeeks.delete(player); }
+}
+
+function mediaTarget(player, time) {
+  const offset = rememberMediaOffset(player, time);
+  const virtualTime = time + offset;
+  const duration = Number.isFinite(player.duration) && player.duration > 0
+    ? player.duration
+    : Number.POSITIVE_INFINITY;
+
+  if (loopState.media && Number.isFinite(duration) && virtualTime >= 0) {
+    return { virtualTime, target: virtualTime % duration, active: true };
+  }
+
+  return {
+    virtualTime,
+    target: Math.min(duration, Math.max(0, virtualTime)),
+    active: virtualTime >= 0 && virtualTime < duration
+  };
+}
+
+function applyMediaAtMaster(time, resume = false) {
+  ensureMediaHooks();
+  for (const player of mediaPlayers()) {
+    if (!player.src) continue;
+    const state = mediaTarget(player, time);
+    setMediaTime(player, state.target);
+    if (resume && state.active) void player.play().catch(() => {});
+    else if (!state.active) player.pause();
+  }
+}
+
 function ensureMediaHooks() {
   for (const player of mediaPlayers()) {
     if (mediaHooks.has(player)) continue;
     mediaHooks.add(player);
+    player.addEventListener("seeked", () => {
+      if (programmaticMediaSeeks.has(player)) {
+        programmaticMediaSeeks.delete(player);
+        return;
+      }
+      if (playing || !Number.isFinite(player.currentTime)) return;
+      player.dataset.masterTimelineOffset = String(player.currentTime - playhead);
+    });
     player.addEventListener("ended", () => {
       if (!playing || !loopState.media || player.loop || !player.src) return;
-      try { player.currentTime = 0; } catch { return; }
-      void player.play().catch(() => {});
+      applyMediaAtMaster(masterTime(), true);
     });
   }
 }
@@ -207,34 +273,8 @@ function pauseMedia() {
 }
 
 function playMedia() {
-  ensureMediaHooks();
-  for (const player of mediaPlayers()) {
-    if (!player.src) continue;
-    if (!loopState.media && player.ended) continue;
-    // Never flatten unsynced media timestamps just because Play was pressed.
-    // A later SYNC layer can persist per-player offsets against master time.
-    void player.play().catch(() => {});
-  }
-}
-
-function seekMediaAbsolute(time) {
-  ensureMediaHooks();
-  for (const player of mediaPlayers()) {
-    if (!Number.isFinite(player.currentTime)) continue;
-    let target = Math.max(0, time);
-    if (Number.isFinite(player.duration) && player.duration > 0) {
-      target = loopState.media ? target % player.duration : Math.min(player.duration, target);
-    }
-    try { player.currentTime = target; } catch { /* Some streams are not seekable yet. */ }
-  }
-}
-
-function shiftMedia(delta) {
-  for (const player of mediaPlayers()) {
-    if (!Number.isFinite(player.currentTime)) continue;
-    const upper = Number.isFinite(player.duration) ? player.duration : Number.POSITIVE_INFINITY;
-    try { player.currentTime = Math.min(upper, Math.max(0, player.currentTime + delta)); } catch { /* Ignore non-seekable streams. */ }
-  }
+  rememberMediaOffsets(playhead);
+  applyMediaAtMaster(playhead, true);
 }
 
 function setPlayingVisual(active) {
@@ -258,6 +298,7 @@ function setPlayingVisual(active) {
 function updateClock() {
   if (!playing) return;
   playhead = masterTime();
+  applyMediaAtMaster(playhead, true);
   if (clock) clock.textContent = formatTime(playhead);
   setPlayingVisual(true);
   clockFrame = requestAnimationFrame(updateClock);
@@ -318,24 +359,27 @@ function pauseSequence() {
 function seekSequence(time) {
   const wasPlaying = playing;
   const before = masterTime();
+  rememberMediaOffsets(before);
   if (wasPlaying) pauseSequence();
+  const requested = num(time);
   const bounded = loopState.actions || loopState.media
-    ? Math.max(0, num(time))
-    : Math.min(durationSetting(), Math.max(0, num(time)));
+    ? requested
+    : Math.min(durationSetting(), requested);
   const delta = bounded - before;
   playhead = bounded;
   seekActions(playhead);
-  // Preserve the existing arrangement among media by moving each by the same delta.
-  shiftMedia(delta);
+  applyMediaAtMaster(playhead, false);
   if (clock) clock.textContent = formatTime(playhead);
   window.dispatchEvent(new CustomEvent("flashframe:master-sequence-seek", { detail: { time: playhead, delta } }));
 }
 
 function totalRewind() {
+  const before = masterTime();
+  rememberMediaOffsets(before);
   pauseSequence();
   playhead = 0;
   returnActions();
-  seekMediaAbsolute(0);
+  applyMediaAtMaster(0, false);
   if (clock) clock.textContent = formatTime(0);
   window.dispatchEvent(new CustomEvent("flashframe:master-sequence-rewound"));
 }

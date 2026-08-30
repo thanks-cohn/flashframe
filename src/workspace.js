@@ -586,6 +586,9 @@ registerBlockType("video", {
       playbackRate: player.playbackRate,
       loop: player.loop,
       syncGroup: block.dataset.syncGroup || "all",
+      masterTimelineOffset: Number.isFinite(Number.parseFloat(player.dataset.masterTimelineOffset || ""))
+        ? Number.parseFloat(player.dataset.masterTimelineOffset)
+        : null,
       frameless: block.dataset.frameless === "true",
       headerVisibility: block.dataset.headerVisibility || "inherit",
       footerVisibility: block.dataset.footerVisibility || "inherit"
@@ -599,7 +602,10 @@ registerBlockType("video", {
     block.dataset.headerVisibility = state.headerVisibility ?? "inherit";
     block.dataset.footerVisibility = state.footerVisibility ?? "inherit";
     window.dispatchEvent(new CustomEvent("flashframe:restore-media-chrome", { detail: { block } }));
-    block.querySelector(".video-player").loop = Boolean(state.loop);
+    const restoredPlayer = block.querySelector(".video-player");
+    restoredPlayer.loop = Boolean(state.loop);
+    if (Number.isFinite(Number(state.masterTimelineOffset))) restoredPlayer.dataset.masterTimelineOffset = String(Number(state.masterTimelineOffset));
+    else delete restoredPlayer.dataset.masterTimelineOffset;
     block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);
     const handle = await storedReadableHandle(source);
 
