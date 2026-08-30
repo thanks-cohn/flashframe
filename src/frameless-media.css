@@ -20,11 +20,12 @@
 }
 
 /* The corner is always a live resize surface in frameless/image-only mode.
-   Visibility settings affect only the reverse-L glyph, never the hit target. */
+   The generous hit target stays invisible while the visible reverse-L is
+   drawn as a compact corner mark inset over the media itself. */
 .block.is-frameless-media > .frameless-resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: 2px;
+  bottom: 2px;
   z-index: 50;
   display: block !important;
   width: 36px;
@@ -34,11 +35,27 @@
   border: 0;
   background: transparent !important;
   color: transparent;
-  font: 700 18px/1 sans-serif;
+  font-size: 0;
+  line-height: 0;
   opacity: 1 !important;
   cursor: nwse-resize !important;
   pointer-events: auto !important;
   touch-action: none;
+}
+
+.block.is-frameless-media > .frameless-resize-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  border-radius: 0 0 2px 0;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(255,255,255,.7)) drop-shadow(0 1px 2px rgba(0,0,0,.28));
 }
 
 .block.is-frameless-media > .frameless-resize-handle[data-visibility-mode="always"],
