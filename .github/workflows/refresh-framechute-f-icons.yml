@@ -1,0 +1,35 @@
+name: Refresh FrameChute ƒ icons
+
+on:
+  push:
+    paths:
+      - .github/workflows/refresh-framechute-f-icons.yml
+
+permissions:
+  contents: write
+
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write FrameChute icons
+        shell: bash
+        run: |
+          mkdir -p icons
+          echo 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABLklEQVR42mNkgILrkgr/GUgAms8fMDIwMDAw4dPMxM3FoHR0PwN/eCgDs6Agg8L2TQzMIsIoFjLis5k/LJhBpDCP4a6lPcRAHm6Gf1++olqCSzOnmQkDr7cnw+/nLxi4ba0Z2FSUMTTjN8DIkIHT1Jjh7/v3DBz6egwsoiJY1eH0AiMbG4PanWsMjyNiGL4dO4EzMHG6gF1TnYGRmYnhx5WreGMDpwEcujoMvx8+Yvj36TOZBuhoM/y4fJVgesDtBR1thh+Xr5BpADMzA4eWBkH/oxjAyMHBwMTFBXG+liYDAxMTw/ez5wgawAJjCESFM7BISTJ8WLiEQaQoj+HdnPkM/z5/IWgAPB1waGsx8Pp5MzCysDJ8P32G4fOOXURlKkZyciJyjmRCzprkZGcAb7VWvkT5CDcAAAAASUVORK5CYII=' | base64 -d > icons/icon16.png
+          echo 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACdklEQVR42sWXzU8TURDAf/vRdqGlElup1FZLPUHbgwejAWIEYmJijAeNRDH8AURDPHjw4sGDJw8ETQgxEgz/gSdiPBlDiBoVW+AihfgB1hgtgZR+0fUALRRbTHbb7Tvtm7dv5vdm5r3MCOwZ880+lSqO1pUlYfdcqJRx+6WLOO/cxuxvKZJnYzFid++xNvmiJIRYCeOOWwO4R4YRbTaWBwZZONnBYs95Nt6+Q3a5ULPZsl4W9BpXggF8k89BFPly5RqJqekir7hHhvl84hTZ2M+S4RD0xrx56CEHrl4mHV0k2tldtCY22JCbmkgvRMvul/Umla37LEDRyfMjt7ZOem193/2iHuMmrwfJ6QAgOfNJkw5NHmjs78Pk9WDyegqy+vbTmHzHCvM/Y8/Irvz4ry5NOeB/9RLJcRDRakUwm0FV2YzHd35QIdrRxebqanUA8sMzMYatp4vk7BxL5y5o0qErB5RgAIBUOKJZh2YA+ZAT2dW0lYDhWeMBLKFg4bsmAEoeIJcjNTdfA4BgGwDp6CK5RKJ2HkhGZvXksTYA0d6A6ah3O/4R4wGUXQmYCs/VAGD7/tcsBHmAzLfvxU+wUQCWUKAip9cEICgKluN+3U+wZgAlFARJAmDjw0z1AMz+Fixtrf/IrWc6C9VOYvqNboCyBYnrwX0QBL723tihra+n8XrvVsHxdBw1mawegBIKINoaaOzvI/n+I/IRN87Bm8jNh0m8nuLX0KOKNColCxKxrg736GOsne0IilKQZ5ZXiI9P8Hv0CWomWz2AwqJJRnI6kex2NuPxkrW9bgAj+sH9+kSxVMNolPGia2gkRMnm1CiIvTb+Ak/S05sMqIMIAAAAAElFTkSuQmCC' | base64 -d > icons/icon32.png
+          echo 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAADlUlEQVR42tWa728TZRzAP0/v2rvuV1i3tsGQrJipbG0xRAmJwSwLMUYjWfgDTAyJmmyBF4QABoO/Et+bmPiDF7wwYiAYY0A0oia+wUkiTFoGEjDTrSztYIxu9gd3vfqi0lsprkXvjt731X1zz3Pf7+f747k+T0+wglxcHSnTAjIwOyX+7Z5oZcebARFOOu6N9NH90ot0bBnG9/BaEKb50vxNCucTLJ36nltHjmHkck2BCKecD4y+QnDvboTXC4CRz6OnriGtWoXU21Mz9sqGTejpTFPZkJ1IfXDfbnp2jlUcX/qL9OtvkP3iS8qaDoD/iQ2sOXQQqbcHPTPX0Pnl4rE7+m2bn6Jnx2hVn925i1tHP686D5D/5RwLn34GQCGRbOq5d3z22B390Gt7qrVe+DXB4jff3nOclrqGNpMi99P4fT1f2Bl9NTpI5NRXVT3z9rvMf3jQUhu2ZqB96OkaPXd63HIbtgL4N22sXpeLRYqTk+4CUNfHq9fFyUuU9ZLlNixdRtVYFCnYW4lMextyOGS+qLJZ2oeH6ubcvnIVbXrmP9u0tInXfncSZXDgvuakXh1j8fjJFsiAJCG8XrSpPypqIICnq9NcJmdSoOt10wrnk//LrG3L6JpDH9Px7DOVBtY0LvdHKWuae5pYicfMBv7tsi3O2wYgdXfjfWi1WSaJpF1xsgdAjUdr9GJy0mUAsailjeo4gLLerH8Mg+LFS24rIRPg9tXfV9xdtRyAp70NX6TPkQa2BUCNRWv2ugUbG9gWAOXuBnZdBpbVP0AxccG9ANqf05SyWfcACJ8P3yP9jpWP5QDK4DqELDnWwJYDqA43sPUAdzdw8oJ7AfR0Bj0z5yIASUIZeMzR8rEUQHm0H6EojvyEtgVg+REKQP7chLsA/BufNJVSidzPZ1oHoHPr8wRe3o78z5lP/VM8dGwZrqpLP/yIkV10BKCpY5XwO28ih4LkTo+jz12vB3zhuZpDrPkPPsIpaZgBORxGDgUBaBvaXHffF+kj/NaBqr7wyWFy42ccA5AbN6f5dg3t34caHSR/dgIMAzUepXNkKx6/H4DFE1+T3n8AJ6UhgJC96Jm5ShaEoGvbCF3bRmrGaNMz3HjvfRYOH8Fpae5kTgjUx+Oo8RhysBcpEKBcKKKn0+TPTlSWTMPgQYiA1v1fuJEMzE4JDy4Xzx0SN0bfli3lA8mA27Jwz08NlotrP/ZoVZCVquNvu2E+jAJ9nu0AAAAASUVORK5CYII=' | base64 -d > icons/icon48.png
+          echo 'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAIwElEQVR42u2da2wU1xXH/7Ozu+O1d9d4gdhrMHYCNtg8WkIoAdI6kKCmSVBQI0VRVKlVS2lATfOllfqSokqJEtSXqrRpGrVqKY1FpEhpG9F8SEIIJRjNoch4bRNi8ANsr+0Ys2vv7nhnZ6YfSpSAvb7X7NP3nvPROp7H/n/3PO7cuaMgi9YdrLNBlnNrHO5TsnUshQSXGwiFhJcbBIWElxsEhcTPzNRABbQ1q+GqDsJZWQmHzwulpARQFNixOKxYDFYsBmNwEMnefhj9A7ANo2ggUEj8+ZnDWwbvV3fBe2czSrfdDmewan4HsCwke/sQb3sPibZ3ET/9LoyLlwoGgULC85m2ugGB/fvg230vHB5PVo+tn+lA9J+vIvqvV5EaDucVBIXEn9uclZW46Ymfwv/AbkBRcnquVDiMnlu35jUaOEni9OZ/cA+qnn4SDm9ZXs6nd3TmH3Aa/bMwegeqnvoFFn3zG/ypPR6HcWkQ1pUIzGgUDp8PzqVL4L65jjty6Gc6cnZL3cE6e7Yo4CTxr8uJThXVzz0L3/1fY4sencTEocOYev0Y9PZ22EZqZwezaBF8992DxY8dgGtFTcEASAeBQuJfa8HfHET5ww8x/Sb++nd8cvDXMKNRvqDi82LZX55H2R3b0/r0bNyC1MhoXltEB2X6zyzw3W+zxbcshH/0E4z87Alu8QHAmpzC0N4DSI19MnsBODKaF/FngEmj/2qb19SIpT//MdNv7Jlf4cqLR27oHGY0ikjLkTThP5S3e/281hQBAEBRUHXwKSgu19w5+sN2jD/3p4xOFW9tK0j+nzMCyD76/V9/AJ5NG5l+o08+DVhWZr1+mhSgd4Tyes+fak4RwOHAkse/z27RPmxPO3rndTqft+ApgDkPIJN5d90F96qV7Kr/cEtWzqeW+2dEAXNiAqlwmAAohC165GGmj20YmDz6n6ycb+r1Y+j5wubiCYAy5381UAHvzmZ24fZOK6zJKeHuvztYZ0tdA3jv3gmoKtMv9tbb4pZAUgOwcwdf63bqNAEgonm23Mb0seJx6Gc/IgBEM1fNcjgrK9ntX0cnYJoEgGhW8sUNX6TPkQa2BUCNRWv2ugUbG9gWAOXuBnZdBpbVP0AxccG9ANqf05SyWfcACJ8P3yP9jpWP5QDK4DqELDnWwJYDqA43sPUAdzdw8oJ7AfR0Bj0z5yIASUIZeMzR8rEUQHm0H6EojvyEtgVg+REKQP7chLsA/BufNJVSidzPZ1oHoHPr8wRe3o78z5lP/VM8dGwZrqpLP/yIkV10BKCpY5XwO28ih4LkTo+jz12vB3zhuZpDrPkPPsIpaZgBORxGDgUBaBvaXHffF+kj/NaBqr7wyWFy42ccA5AbN6f5dg3t34caHSR/dgIMAzUepXNkKx6/H4DFE1+T3n8AJ6UhgJC96Jm5ShaEoGvbCF3bRmrGaNMz3HjvfRYOH8Fpae5kTgjUx+Oo8RhysBcpEKBcKKKn0+TPTlSWTMPgQYiA1v1fuJEMzE4JDy4Xzx0SN0bfli3lA8mA27Jwz08NlotrP/ZoVZCVquNvu2E+jAJ9nu0AAAAASUVORK5CYII=' | base64 -d > icons/icon128.png
+      - name: Commit icons
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add icons/icon16.png icons/icon32.png icons/icon48.png icons/icon128.png
+          if git diff --cached --quiet; then
+            echo "Icons already current."
+            exit 0
+          fi
+          git commit -m "Use red ƒ FrameChute extension icon"
+          git push
