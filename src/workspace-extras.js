@@ -1,85 +1,64 @@
-const href = new URL("./web-drop.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === href)) {
+await import("./advanced-mode.js");
+
+const advancedMode = window.frameChuteAdvancedMode === true;
+
+function ensureStylesheet(path) {
+  const href = new URL(path, import.meta.url).href;
+  if ([...document.styleSheets].some((sheet) => sheet.href === href)) return;
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = href;
   document.head.append(link);
 }
 
-const polishHref = new URL("./media-ux-polish.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === polishHref)) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = polishHref;
-  document.head.append(link);
+ensureStylesheet("./web-drop.css");
+ensureStylesheet("./media-ux-polish.css");
+ensureStylesheet("./theme-customization.css");
+ensureStylesheet("./media-dock-layout.css");
+ensureStylesheet("./donation-card.css");
+ensureStylesheet("./framechute-final-polish.css");
+ensureStylesheet("./handoff-fixes.css");
+
+// Classic mode intentionally mirrors the feature surface of the Chrome Web
+// Store submission branch. Advanced mode layers the current GitHub-only tools
+// on top without changing the saved workspace format or deleting any data.
+if (advancedMode) {
+  await import("./toolbar-paradigm.js");
+  await import("./source-locations.js");
+  await import("./reconnect-location-picker.js");
 }
 
-const themeHref = new URL("./theme-customization.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === themeHref)) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = themeHref;
-  document.head.append(link);
-}
-
-const mediaDockHref = new URL("./media-dock-layout.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === mediaDockHref)) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = mediaDockHref;
-  document.head.append(link);
-}
-
-const donationHref = new URL("./donation-card.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === donationHref)) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = donationHref;
-  document.head.append(link);
-}
-
-const frameChuteFinalHref = new URL("./framechute-final-polish.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === frameChuteFinalHref)) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = frameChuteFinalHref;
-  document.head.append(link);
-}
-
-const handoffFixesHref = new URL("./handoff-fixes.css", import.meta.url).href;
-if (![...document.styleSheets].some((sheet) => sheet.href === handoffFixesHref)) {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = handoffFixesHref;
-  document.head.append(link);
-}
-
-// Install source-location memory before the handoff bridges so it can capture
-// the exact FileChute relative path while the original drag payload still
-// exists. The location remains copyable even if the live media source later
-// loses permission.
-await import("./source-locations.js");
-// Reconnect pickers use the persisted block id + handle key as a durable hint.
-// If Chrome cannot silently reuse the handle, its picker opens at that saved
-// location instead of forcing the user to remember where the file lived.
-await import("./reconnect-location-picker.js");
 await import("./picker-guard.js");
-await import("./extension-gallery.js");
-await import("./synthetic-file-handle.js");
-await import("./filechute-bridge.js");
-await import("./filechute-export.js");
+
+if (advancedMode) {
+  await import("./extension-gallery.js");
+  await import("./synthetic-file-handle.js");
+  await import("./filechute-bridge.js");
+  await import("./filechute-export.js");
+}
+
 await import("./web-drop.js");
-await import("./frameless-media.js");
-await import("./timed-events.js");
-await import("./frame-sequence.js");
-await import("./master-loop-runtime.js");
-await import("./layer-rules.js");
+
+if (advancedMode) {
+  await import("./frameless-media.js");
+  await import("./timed-events.js");
+  await import("./frame-sequence.js");
+  await import("./master-loop-runtime.js");
+  await import("./layer-rules.js");
+}
+
 await import("./drop-local-sources.js");
-await import("./fit-to-size.js");
+
+if (advancedMode) await import("./fit-to-size.js");
+
 await import("./remote-video.js");
-await import("./offscreen-rescue.js");
+
+if (advancedMode) await import("./offscreen-rescue.js");
+
 await import("./layer-menu.js");
-await import("./media-context-loop.js");
+
+if (advancedMode) await import("./media-context-loop.js");
+
 await import("./appearance.js");
 await import("./media-ux-polish.js");
 await import("./theme-customization.js");
@@ -92,4 +71,5 @@ await import("./grab-art-runtime.js");
 await import("./framechute-visible-branding.js");
 await import("./mascot.js");
 await import("./media-dock-grab-pin.js");
-await import("./gallery-ui-polish.js");
+
+if (advancedMode) await import("./gallery-ui-polish.js");
