@@ -11,6 +11,18 @@
   touch-action: none;
 }
 
+/* For frameless images, the transparent outer block is not itself interactive.
+   Only the clipped visible image and its resize corner can receive the mouse. */
+.block.is-frameless-media:has(> .image-frame) {
+  pointer-events: none;
+  cursor: default;
+}
+
+.block.is-frameless-media:has(> .image-frame) > .image-frame,
+.block.is-frameless-media:has(> .image-frame) > .frameless-resize-handle {
+  pointer-events: auto !important;
+}
+
 .block.is-frameless-media > :not(.image-frame):not(.video-player):not(.custom-state-store):not(.remote-video-state):not(.frameless-resize-handle) {
   display: none !important;
 }
@@ -76,6 +88,18 @@
   cursor: grab;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+/* Clip the image element's hit-testing to the actual object-fit: contain
+   picture bounds. The invisible letterbox gutters no longer receive clicks,
+   grabs, hover cursors, or context-menu targeting. */
+.block.is-frameless-media > .image-frame {
+  clip-path: inset(
+    var(--frameless-content-top-gap, 0px)
+    var(--frameless-content-right-gap, 0px)
+    var(--frameless-content-bottom-gap, 0px)
+    var(--frameless-content-left-gap, 0px)
+  );
 }
 
 .block.is-frameless-media.is-frameless-dragging,
