@@ -1,0 +1,355 @@
+name: Add signed media timeline
+
+on:
+  push:
+    paths:
+      - .github/workflows/add-signed-media-timeline.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add signed master timeline behavior
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/master-loop-runtime.js')
+          text = path.read_text()
+
+          def replace_once(old, new, label):
+              global text
+              if old not in text:
+                  raise SystemExit(f'missing master-loop pattern: {label}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+          '''function masterTime() {
+            return playing ? Math.max(0, (performance.now() - startedAt) / 1000) : playhead;
+          }
+
+          function formatTime(seconds) {
+            const safe = Math.max(0, seconds);
+            const minutes = Math.floor(safe / 60);
+            const remainder = (safe % 60).toFixed(1).padStart(4, "0");
+            return `${minutes}:${remainder}`;
+          }''',
+          '''function masterTime() {
+            return playing ? (performance.now() - startedAt) / 1000 : playhead;
+          }
+
+          function formatTime(seconds) {
+            const value = Number.isFinite(seconds) ? seconds : 0;
+            const sign = value < 0 ? "−" : "";
+            const safe = Math.abs(value);
+            const minutes = Math.floor(safe / 60);
+            const remainder = (safe % 60).toFixed(1).padStart(4, "0");
+            return `${sign}${minutes}:${remainder}`;
+          }''', 'signed master clock')
+
+          text = text.replace(
+            'const phase = loopState.actions && plan.end > 0 ? time % plan.end : time;',
+            'const phase = loopState.actions && plan.end > 0 && time >= 0 ? time % plan.end : time;',
+            1
+          )
+          text = text.replace(
+            'const phase = loopState.actions && plan.end > 0 ? fromMasterTime % plan.end : fromMasterTime;',
+            'const phase = loopState.actions && plan.end > 0 && fromMasterTime >= 0 ? fromMasterTime % plan.end : fromMasterTime;',
+            1
+          )
+
+          old_media = '''function ensureMediaHooks() {
+            for (const player of mediaPlayers()) {
+              if (mediaHooks.has(player)) continue;
+              mediaHooks.add(player);
+              player.addEventListener("ended", () => {
+                if (!playing || !loopState.media || player.loop || !player.src) return;
+                try { player.currentTime = 0; } catch { return; }
+                void player.play().catch(() => {});
+              });
+            }
+          }
+
+          function pauseMedia() {
+            for (const player of mediaPlayers()) player.pause();
+          }
+
+          function playMedia() {
+            ensureMediaHooks();
+            for (const player of mediaPlayers()) {
+              if (!player.src) continue;
+              if (!loopState.media && player.ended) continue;
+              // Never flatten unsynced media timestamps just because Play was pressed.
+              // A later SYNC layer can persist per-player offsets against master time.
+              void player.play().catch(() => {});
+            }
+          }
+
+          function seekMediaAbsolute(time) {
+            ensureMediaHooks();
+            for (const player of mediaPlayers()) {
+              if (!Number.isFinite(player.currentTime)) continue;
+              let target = Math.max(0, time);
+              if (Number.isFinite(player.duration) && player.duration > 0) {
+                target = loopState.media ? target % player.duration : Math.min(player.duration, target);
+              }
+              try { player.currentTime = target; } catch { /* Some streams are not seekable yet. */ }
+            }
+          }
+
+          function shiftMedia(delta) {
+            for (const player of mediaPlayers()) {
+              if (!Number.isFinite(player.currentTime)) continue;
+              const upper = Number.isFinite(player.duration) ? player.duration : Number.POSITIVE_INFINITY;
+              try { player.currentTime = Math.min(upper, Math.max(0, player.currentTime + delta)); } catch { /* Ignore non-seekable streams. */ }
+            }
+          }'''
+
+          new_media = '''const programmaticMediaSeeks = new WeakSet();
+
+          function savedMediaOffset(player) {
+            const value = Number.parseFloat(player.dataset.masterTimelineOffset || "");
+            return Number.isFinite(value) ? value : null;
+          }
+
+          function rememberMediaOffset(player, referenceTime = masterTime()) {
+            const saved = savedMediaOffset(player);
+            if (saved != null) return saved;
+            const offset = (Number.isFinite(player.currentTime) ? player.currentTime : 0) - referenceTime;
+            player.dataset.masterTimelineOffset = String(offset);
+            return offset;
+          }
+
+          function rememberMediaOffsets(referenceTime = masterTime()) {
+            ensureMediaHooks();
+            for (const player of mediaPlayers()) rememberMediaOffset(player, referenceTime);
+          }
+
+          function setMediaTime(player, target) {
+            if (!Number.isFinite(target) || !Number.isFinite(player.currentTime)) return;
+            if (Math.abs(player.currentTime - target) < 0.08) return;
+            programmaticMediaSeeks.add(player);
+            try { player.currentTime = target; }
+            catch { programmaticMediaSeeks.delete(player); }
+          }
+
+          function mediaTarget(player, time) {
+            const offset = rememberMediaOffset(player, time);
+            const virtualTime = time + offset;
+            const duration = Number.isFinite(player.duration) && player.duration > 0
+              ? player.duration
+              : Number.POSITIVE_INFINITY;
+
+            if (loopState.media && Number.isFinite(duration) && virtualTime >= 0) {
+              return { virtualTime, target: virtualTime % duration, active: true };
+            }
+
+            return {
+              virtualTime,
+              target: Math.min(duration, Math.max(0, virtualTime)),
+              active: virtualTime >= 0 && virtualTime < duration
+            };
+          }
+
+          function applyMediaAtMaster(time, resume = false) {
+            ensureMediaHooks();
+            for (const player of mediaPlayers()) {
+              if (!player.src) continue;
+              const state = mediaTarget(player, time);
+              setMediaTime(player, state.target);
+              if (resume && state.active) void player.play().catch(() => {});
+              else if (!state.active) player.pause();
+            }
+          }
+
+          function ensureMediaHooks() {
+            for (const player of mediaPlayers()) {
+              if (mediaHooks.has(player)) continue;
+              mediaHooks.add(player);
+              player.addEventListener("seeked", () => {
+                if (programmaticMediaSeeks.has(player)) {
+                  programmaticMediaSeeks.delete(player);
+                  return;
+                }
+                if (playing || !Number.isFinite(player.currentTime)) return;
+                player.dataset.masterTimelineOffset = String(player.currentTime - playhead);
+              });
+              player.addEventListener("ended", () => {
+                if (!playing || !loopState.media || player.loop || !player.src) return;
+                applyMediaAtMaster(masterTime(), true);
+              });
+            }
+          }
+
+          function pauseMedia() {
+            for (const player of mediaPlayers()) player.pause();
+          }
+
+          function playMedia() {
+            rememberMediaOffsets(playhead);
+            applyMediaAtMaster(playhead, true);
+          }'''
+
+          replace_once(old_media, new_media, 'media timeline engine')
+
+          replace_once(
+          '''function updateClock() {
+            if (!playing) return;
+            playhead = masterTime();
+            if (clock) clock.textContent = formatTime(playhead);
+            setPlayingVisual(true);
+            clockFrame = requestAnimationFrame(updateClock);
+          }''',
+          '''function updateClock() {
+            if (!playing) return;
+            playhead = masterTime();
+            applyMediaAtMaster(playhead, true);
+            if (clock) clock.textContent = formatTime(playhead);
+            setPlayingVisual(true);
+            clockFrame = requestAnimationFrame(updateClock);
+          }''', 'clock media boundary updates')
+
+          replace_once(
+          '''function seekSequence(time) {
+            const wasPlaying = playing;
+            const before = masterTime();
+            if (wasPlaying) pauseSequence();
+            const bounded = loopState.actions || loopState.media
+              ? Math.max(0, num(time))
+              : Math.min(durationSetting(), Math.max(0, num(time)));
+            const delta = bounded - before;
+            playhead = bounded;
+            seekActions(playhead);
+            // Preserve the existing arrangement among media by moving each by the same delta.
+            shiftMedia(delta);
+            if (clock) clock.textContent = formatTime(playhead);
+            window.dispatchEvent(new CustomEvent("flashframe:master-sequence-seek", { detail: { time: playhead, delta } }));
+          }
+
+          function totalRewind() {
+            pauseSequence();
+            playhead = 0;
+            returnActions();
+            seekMediaAbsolute(0);
+            if (clock) clock.textContent = formatTime(0);
+            window.dispatchEvent(new CustomEvent("flashframe:master-sequence-rewound"));
+          }''',
+          '''function seekSequence(time) {
+            const wasPlaying = playing;
+            const before = masterTime();
+            rememberMediaOffsets(before);
+            if (wasPlaying) pauseSequence();
+            const requested = num(time);
+            const bounded = loopState.actions || loopState.media
+              ? requested
+              : Math.min(durationSetting(), requested);
+            const delta = bounded - before;
+            playhead = bounded;
+            seekActions(playhead);
+            applyMediaAtMaster(playhead, false);
+            if (clock) clock.textContent = formatTime(playhead);
+            window.dispatchEvent(new CustomEvent("flashframe:master-sequence-seek", { detail: { time: playhead, delta } }));
+          }
+
+          function totalRewind() {
+            const before = masterTime();
+            rememberMediaOffsets(before);
+            pauseSequence();
+            playhead = 0;
+            returnActions();
+            applyMediaAtMaster(0, false);
+            if (clock) clock.textContent = formatTime(0);
+            window.dispatchEvent(new CustomEvent("flashframe:master-sequence-rewound"));
+          }''', 'signed seek and rewind')
+
+          path.write_text(text)
+
+          # Persist each base video block's offset with its saved state.
+          path = Path('src/workspace.js')
+          text = path.read_text()
+          old = '''      syncGroup: block.dataset.syncGroup || "all",
+                frameless: block.dataset.frameless === "true",'''
+          new = '''      syncGroup: block.dataset.syncGroup || "all",
+                masterTimelineOffset: Number.isFinite(Number.parseFloat(player.dataset.masterTimelineOffset || ""))
+                  ? Number.parseFloat(player.dataset.masterTimelineOffset)
+                  : null,
+                frameless: block.dataset.frameless === "true",'''
+          if old not in text:
+              raise SystemExit('missing workspace capture pattern')
+          text = text.replace(old, new, 1)
+          old = '''    block.querySelector(".video-player").loop = Boolean(state.loop);
+              block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);'''
+          new = '''    const restoredPlayer = block.querySelector(".video-player");
+              restoredPlayer.loop = Boolean(state.loop);
+              if (Number.isFinite(Number(state.masterTimelineOffset))) restoredPlayer.dataset.masterTimelineOffset = String(Number(state.masterTimelineOffset));
+              else delete restoredPlayer.dataset.masterTimelineOffset;
+              block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);'''
+          if old not in text:
+              raise SystemExit('missing workspace restore pattern')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+          # Persist offsets for dropped MP3/MP4 objects as part of their marker payload.
+          path = Path('src/drop-local-sources.js')
+          text = path.read_text()
+          old = '''  const player = block.querySelector(".video-player");
+            player.src = url;'''
+          new = '''  const player = block.querySelector(".video-player");
+            if (Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
+            else delete player.dataset.masterTimelineOffset;
+            player.src = url;'''
+          if old not in text:
+              raise SystemExit('missing dropped video load pattern')
+          text = text.replace(old, new, 1)
+          old = '''    payload.syncGroup = block.dataset.syncGroup || "all";
+              time.textContent = formatTime(payload.currentTime);'''
+          new = '''    payload.syncGroup = block.dataset.syncGroup || "all";
+              payload.masterTimelineOffset = Number.isFinite(Number.parseFloat(player.dataset.masterTimelineOffset || ""))
+                ? Number.parseFloat(player.dataset.masterTimelineOffset)
+                : null;
+              time.textContent = formatTime(payload.currentTime);'''
+          if old not in text:
+              raise SystemExit('missing dropped video capture pattern')
+          text = text.replace(old, new, 1)
+          old = '''  const player = block.querySelector(".audio-player");
+            player.src = url;'''
+          new = '''  const player = block.querySelector(".audio-player");
+            if (Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
+            else delete player.dataset.masterTimelineOffset;
+            player.src = url;'''
+          if old not in text:
+              raise SystemExit('missing dropped audio load pattern')
+          text = text.replace(old, new, 1)
+          old = '''      playbackRate: player.playbackRate, loop: player.loop,
+                syncGroup: block.dataset.syncGroup || "all",
+                visibility: block.dataset.audioVisibility || "visible"'''
+          new = '''      playbackRate: player.playbackRate, loop: player.loop,
+                syncGroup: block.dataset.syncGroup || "all",
+                masterTimelineOffset: Number.isFinite(Number.parseFloat(player.dataset.masterTimelineOffset || ""))
+                  ? Number.parseFloat(player.dataset.masterTimelineOffset)
+                  : null,
+                visibility: block.dataset.audioVisibility || "visible"'''
+          if old not in text:
+              raise SystemExit('missing dropped audio capture pattern')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          node --check src/master-loop-runtime.js
+          node --check src/workspace.js
+          node --check src/drop-local-sources.js
+      - name: Commit signed timeline
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/master-loop-runtime.js src/workspace.js src/drop-local-sources.js
+          git commit -m "Add signed master media timeline with pre-roll and post-roll"
+          git push
