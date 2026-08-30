@@ -1,0 +1,37 @@
+/* Classic mode is deliberately light, but the object context menu is a dark
+   self-contained surface. Do not let global Classic button colors leak into it. */
+body.framechute-classic .flashframe-layer-menu {
+  color-scheme: dark !important;
+  background: rgba(20, 22, 24, .98) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, .18) !important;
+}
+
+body.framechute-classic .flashframe-layer-menu button {
+  background: transparent !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+body.framechute-classic .flashframe-layer-menu button:hover,
+body.framechute-classic .flashframe-layer-menu button:focus-visible {
+  background: rgba(255, 255, 255, .12) !important;
+  color: #fff !important;
+}
+
+body.framechute-classic .flashframe-layer-menu .flashframe-layer-menu-shortcut {
+  color: rgba(255, 255, 255, .78) !important;
+  -webkit-text-fill-color: currentColor;
+  border-color: rgba(255, 255, 255, .22) !important;
+  background: rgba(255, 255, 255, .04) !important;
+}
+
+body.framechute-classic .flashframe-layer-menu .flashframe-layer-menu-close {
+  color: #ffb1a2 !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+body.framechute-classic .flashframe-layer-menu-separator {
+  background: rgba(255, 255, 255, .16) !important;
+}
