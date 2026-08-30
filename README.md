@@ -1,300 +1,300 @@
 # FrameChute
 
-### Your browser has tabs. FrameChute gives it a desk, a stage, and a clock.
+**Put things on a browser canvas. Leave them where they make sense. Come back later.**
 
-FrameChute is a **local-first spatial workspace and lightweight scene composer for Chrome and Chromium**.
+FrameChute is a freeform workspace that runs inside Chrome and other Chromium browsers.
 
-It lets you place notes, PDFs, images, image directories, audio, video, local files, and webpages together on one freeform canvas. You can move them, resize them, layer them, hide their interface chrome, save the arrangement, restore it later, and coordinate media and timed actions from a shared master timeline.
+You can put notes, PDFs, images, folders of images, music, videos, local files, and webpages on one large canvas. Move them around. Resize them. Put one above another. Play media. Save the whole arrangement and restore it later.
 
-That combination is the point.
+That is the basic idea.
 
-Most browser tools remember **which things were open**.
+```text
+PDF          image
+  \          /
+   \        /
+     note
+      |
+    video       music
+```
 
-FrameChute tries to remember **the useful moment**:
+Instead of remembering ten tabs and six files, you can remember **the arrangement itself**.
 
-- where each object was
+## The simple version
+
+FrameChute can be as simple as this:
+
+1. Open FrameChute.
+2. Add a note, PDF, image folder, video, or webpage.
+3. Put it where you want it.
+4. Resize it if you want.
+5. Save the FrameChute.
+6. Restore it later.
+
+You do not need to understand timelines, layer rules, animation, or any of the newer tools to use FrameChute.
+
+## Classic and ƒ Advanced
+
+The current GitHub version contains **two ways to use FrameChute**.
+
+### Classic mode
+
+This is the default.
+
+The **Advanced button stays red and says OFF**. FrameChute keeps the simpler feature surface and layout of the Chrome Web Store version.
+
+Classic is for someone who mainly wants:
+
+- notes
+- text files
+- PDFs
+- image folders / galleries
+- videos
+- webpages
+- moving and resizing objects
+- saved workspaces
+- reconnecting local files
+- simple media controls
+
+### ƒ Advanced mode
+
+Click the red **Advanced** button at the top to turn Advanced mode on.
+
+The GitHub FrameChute mark is a **white ƒ on red**.
+
+Advanced reveals the newer GitHub tools, including things such as:
+
+- frameless images and media
+- finer control over headers, footers, and resize handles
+- timed movement
+- a master sequence clock
+- coordinated media controls
+- action looping and media looping
+- timed layer changes
+- richer gallery controls
+- better source reconnection
+- Chute / FileChute handoff tools
+- more advanced workspace and media behavior
+
+Turning Advanced back off does **not** delete your workspace. It simply returns the interface to the simpler Classic view.
+
+## What can FrameChute hold?
+
+### Notes
+
+Write directly on the canvas.
+
+You can use notes for ideas, captions, instructions, drafts, labels, or anything else you would normally keep in a separate text window.
+
+### Text files
+
+Open a local text file and place its contents on the canvas as an editable note.
+
+### PDFs
+
+Open a PDF, move it wherever you want, resize it, and keep your useful page with the saved workspace.
+
+### Images
+
+Open local images and use them as visual objects on the canvas.
+
+In Advanced mode, images can become nearly frameless so the picture itself is what you see rather than a large application box around it.
+
+### Image folders and galleries
+
+Choose a folder of images and keep it as one gallery object.
+
+You can move through the folder with previous and next controls instead of opening dozens of separate files.
+
+FrameChute remembers where you were in the gallery.
+
+### Audio
+
+FrameChute can play local audio such as MP3 files and other formats Chromium can decode.
+
+Audio can live beside the images, notes, PDFs, or videos it belongs with instead of being kept in a completely separate player.
+
+### Video
+
+FrameChute can play local video such as MP4 files and other formats Chromium can decode.
+
+Video objects remember useful playback state when a FrameChute is saved.
+
+### Webpages and links
+
+You can place webpages on the canvas when the website allows itself to be embedded.
+
+Some websites block embedding. FrameChute cannot override a website that deliberately refuses to appear in an embedded frame, so those pages can instead be opened normally.
+
+### Other local files
+
+FrameChute can keep track of other local sources and help reconnect them when browser permissions need to be granted again.
+
+## Move things like objects on a desk
+
+A FrameChute is not a list of tabs.
+
+Objects can be:
+
+- moved
+- resized
+- renamed
+- maximized
+- put in front of other objects
+- put behind other objects
+- saved in place
+- restored later
+
+The position matters because the position can carry meaning.
+
+Maybe the PDF belongs beside one note. Maybe three videos are being compared. Maybe a soundtrack belongs underneath one group of images. FrameChute lets that relationship remain visible.
+
+## Save the useful moment
+
+When you save a FrameChute, the goal is to bring back the useful working state rather than merely reopening a collection of files.
+
+Depending on the object and mode, FrameChute can remember things such as:
+
+- where an object was
 - how large it was
-- what was above or below what
-- which PDF page mattered
-- which image in a directory you were viewing
-- where media playback was
-- which objects were grouped
-- which actions happened when
-- which parts of the interface you intentionally hid
+- its name
+- which object was in front
+- note contents
+- PDF page
+- gallery position
+- media position
+- media volume and playback choices
+- loop choices
+- media grouping
+- whether an image or media object was frameless
+- hidden or visible controls
+- timed movement
+- timed layer rules
+- workspace appearance
 
-**Space is state. Time is becoming state too.**
+Local files may occasionally need to be reconnected because Chrome deliberately limits long-term file access. FrameChute tries to make that reconnection understandable instead of simply leaving a broken object behind.
 
-<p align="center">
-  <img src="assets/images/default.png" alt="FrameChute mascot" width="180">
-</p>
+# ƒ Advanced features
 
-## In plain English: what is this?
+Everything below is optional. If you do not want these tools, leave Advanced off.
 
-Imagine taking the useful parts of a browser session, a visual board, a media controller, a storyboard, and a very lightweight animation timeline, then putting them on one persistent browser canvas.
+## Frameless objects
 
-That is FrameChute.
+Sometimes you want the picture or video, not a big application window around it.
 
-It is useful when your work makes more sense as an **arrangement** than as a list of tabs or files.
+Advanced mode can hide parts of an object's frame so images and media can feel more like loose objects on the canvas.
+
+Controls can still be restored later.
+
+## Resize without permanent clutter
+
+Advanced mode can keep the resize corner visible, let it fade away, or hide the visible mark while leaving the corner itself usable.
+
+The idea is simple: controls should be available when you need them without having to stay on top of the material forever.
+
+## One media controller
+
+FrameChute can control participating audio and video together.
+
+You can play, pause, rewind, or move participating media forward without opening every player separately.
+
+This is useful when several pieces of media describe the same moment but do **not** begin at the same timestamp.
 
 For example:
 
 ```text
-research PDF        reference image
-      \                 /
-       \               /
-        note / draft
-             |
-      video at 12:43
-             |
-       soundtrack
+Video A: 0:23
+Video B: 0:12
+Audio C: 1:04
 ```
 
-In an ordinary browser those are separate tabs, windows, players, and applications.
+Those three positions can still represent the same point in your project.
 
-In FrameChute they can be one saved workspace.
+## Master timeline direction
 
-And once timing is added, that same workspace can become a simple coordinated scene:
+The Advanced version is moving toward a true shared media timeline.
 
-```text
-0.0s   image begins moving
-2.0s   second object begins
-4.5s   first action ends
-4.5s   chained action begins
-8.0s   layer relationship changes
-10.0s  sequence ends or loops
-```
+The important idea is that synchronized media should keep its relative timing even when one file reaches its beginning or end.
 
-FrameChute is not trying to turn the browser into a heavyweight professional video editor. It is trying to make **spatial and temporal composition unusually immediate**.
+For example, if one video reaches `0:00` while you keep rewinding, FrameChute should be able to remember that the master timeline has continued moving backward. The video can wait at its first frame while another longer piece of media continues rewinding.
 
-There should be almost no perceptible distance between thinking:
+The same applies after a shorter file ends: the master timeline can keep moving while that file waits at its final frame.
 
-> I want this here, that there, this video at this moment, and that object to move afterward.
-
-and actually doing it.
-
-## What makes FrameChute different
-
-### 1. The arrangement itself is meaningful
-
-Most applications save content and treat placement as decoration.
-
-FrameChute treats placement as part of the state.
-
-A PDF beside a note can mean something. A reference image above a paragraph can mean something. Three videos positioned around a diagram can mean something. You do not have to translate that relationship back into folders, tabs, page trees, or database rows.
-
-### 2. Local files behave like workspace objects
-
-FrameChute is designed around explicit user-selected local files rather than requiring everything to be uploaded into somebody else's cloud first.
-
-A local image can become a spatial object. A directory can become a gallery. A local MP3 can sit beside a local MP4. A missing source can be reconnected without destroying the rest of the saved workspace.
-
-### 3. Media is part of the composition
-
-Audio and video are not just attachments.
-
-FrameChute has a movable unified Media controller that can rewind, play/pause, and move eligible media forward together. Media groups allow coordinated playback while still permitting individual media to remain independent.
-
-Individual audio/video objects can loop. The master sequence can also loop media, actions, or both.
-
-### 4. Objects can have time
-
-FrameChute now supports saved timed movement.
-
-An object can begin:
-
-- with master Play
-- at an exact master time
-- after another action finishes
-- after another action plus an offset
-
-That means a workspace can behave as a sequence instead of remaining a static board.
-
-### 5. The interface can disappear without the object becoming useless
-
-Headers, footers, controls, and frames are optional where appropriate.
-
-Images can become nearly naked spatial objects. The resize glyph can fade or be hidden while the bottom-right resize hotspot remains functional. Directory-gallery headers and navigation arrows can independently be shown or hidden.
-
-The goal is not minimalism for its own sake. The goal is to let the material become the interface when that is what you want.
-
-### 6. It is browser-native and local-first
-
-FrameChute is a Manifest V3 Chrome/Chromium extension.
-
-The current build does not require:
-
-- a native companion executable
-- Python
-- a localhost service
-- native messaging
-- a FrameChute account
-- a developer-operated cloud backend
-- broad host permissions just to function
-
-The current manifest requests no Chrome extension API permissions and no host permissions.
-
-## What FrameChute can hold
-
-- **Notes and text** written directly in the workspace
-- **Text files** opened into editable notes
-- **PDFs** with remembered page position
-- **Local images** as spatial objects
-- **Image directories / galleries** with previous and next navigation
-- **Local audio** including MP3 and other Chromium-playable formats
-- **Local video** including MP4 and other Chromium-playable formats
-- **Direct browser-playable media URLs** where supported
-- **Web pages and URLs** where the destination permits embedding
-- **Generic local sources** with reconnect behavior
-
-## Spatial controls
-
-FrameChute objects can be:
-
-- moved
-- resized
-- named
-- maximized
-- layered
-- brought to the front
-- sent to the back
-- saved and restored
-
-Images can also be switched into an image-only / frameless presentation.
-
-For frameless images, the lower-right corner remains a working resize hotspot even when the visible resize mark is faded or hidden.
-
-## Directory lightboxes and galleries
-
-An image directory can stay a single object instead of exploding into dozens or hundreds of tabs.
-
-Directory galleries support:
-
-- previous image
-- next image
-- remembered gallery position
-- source reconnection
-- optional header
-- optional footer/navigation arrows
-- maximized lightbox-style viewing
-
-The controls are intentionally reversible. Someone who wants only the image can hide the chrome. Someone who likes the arrows can keep them.
+This is the basis for **pre-roll, post-roll, and persistent media offsets** in the Advanced timeline.
 
 ## Timed movement
 
-FrameChute currently supports timed object movement with:
+An object can have a movement that plays over time.
 
-- Start point
-- End point
-- Curve/control point
-- straight or curved path
-- delay
-- duration
-- optional visible path
-- preview
-- edit
-- return to start
-- remove action
+A movement can use:
 
-Timed actions are saved with the workspace.
+- a start point
+- an end point
+- a straight or curved path
+- a delay
+- a duration
+- an optional visible path
 
-### Master scheduling
+You can preview the movement, edit it, return the object to its start, or remove the action.
 
-Actions can use the shared master clock.
+## Start actions at different times
 
-A movement may be scheduled:
+Advanced mode has a shared master clock.
+
+An action can begin:
+
+- when Play is pressed
+- at a specific master time
+- after another action finishes
+- after another action finishes plus an extra delay
+
+For example:
 
 ```text
-With Play
-At 4.0 seconds
-After Action B
-After Action B + 1.5 seconds
+0.0s   first image moves
+2.0s   second object starts
+4.5s   first action ends
+5.0s   next action begins
+8.0s   layer changes
 ```
 
-This is deliberately more important than the movement effect itself.
+This lets a FrameChute behave like a simple scene rather than only a static board.
 
-The scheduling model is the foundation for future action types.
+## Timed layers
 
-## Layer timing
+Objects can also change which one is in front during a period of time.
 
-Layering can also change over time.
+For example, an image can move above another object for part of a sequence and then return to its normal layer afterward.
 
-An object can be told to remain above or below another object during a time range. FrameChute restores the baseline stacking order when the timed relationship ends and rejects contradictory layer cycles rather than silently creating nonsense.
+## Master sequence controls
 
-Layer rules can follow the master clock or, where appropriate, an object's own action clock.
-
-## Master sequence and LOOP
-
-FrameChute has a master transport with:
+Advanced mode has shared sequence controls for things such as:
 
 - Play / Pause
-- total rewind
+- rewind
 - step backward
 - step forward
-- configurable step size
-- visible master clock
+- step size
+- master time
 - sequence duration
 
-The top LOOP control has three useful states:
+## Loop what you want
 
-- **Loop actions**
-- **Loop media**
-- **Loop everything**
+Advanced mode can treat looping separately.
 
-The button summarizes the result:
+You can loop:
 
-- **green** means actions and media are both looping
-- **yellow** means only one category is looping
-- **bright red with crossed-out LOOP** means looping is off
+- actions
+- media
+- both
+- neither
 
-Timed-action looping uses the coordinated action plan. The action loop can restart when the final scheduled action finishes rather than requiring every action to have the same length.
+A single video or audio object can also have its own loop choice.
 
-Individual audio/video objects can still have their own local loop setting from the object controls or right-click menu.
+## Chute + FrameChute
 
-## Media groups today
+FrameChute works especially well with [Chute](https://github.com/thanks-cohn/chute).
 
-FrameChute can coordinate eligible audio and video through the floating Media controller.
-
-Media can be grouped or made independent. Rewind and forward operations move participating media by the same delta rather than arbitrarily flattening every item to the same timestamp.
-
-This matters because synchronization often means:
-
-```text
-Video A = 0:23
-Video B = 0:12
-Video C = 12:23
-```
-
-representing one conceptual moment, not all three files literally reading `0:23`.
-
-A more explicit persistent offset-based SYNC/UNSYNC system is part of the roadmap below.
-
-## Save the useful state
-
-A saved FrameChute can preserve details such as:
-
-- object position and size
-- stacking order
-- object names
-- note contents
-- PDF page
-- gallery position
-- media timestamps and playback state
-- loop choices
-- media grouping state
-- frameless state
-- header/footer visibility
-- timed movement
-- timed layer rules
-- workspace appearance
-- background configuration
-
-The goal is not to snapshot RAM.
-
-The goal is to recreate the useful arrangement.
-
-## FrameChute + Chute
-
-FrameChute works especially well with [Chute](https://github.com/thanks-cohn/chute), the local cross-browser basket for files, images, links, and text.
+A simple way to remember the pair is:
 
 **Chute catches things. FrameChute arranges them.**
 
@@ -305,321 +305,101 @@ webpage / file / image
         ↓
     FrameChute
         ↓
-place · resize · layer · time · save
+ move · resize · compare · play · save
 ```
 
-The projects remain useful independently. Together they shorten the path from finding something to giving it a persistent place.
+The **current fixed GitHub Chute** can drag images into the Chrome Web Store version of FrameChute. The older Chute version currently on the Chrome Web Store may not have that compatibility fix yet.
 
-### [Get Chute](https://github.com/thanks-cohn/chute)
+Neither extension requires the other.
 
-## What does FrameChute compete with?
+# What is FrameChute similar to?
 
-FrameChute crosses several categories, so there is no single exact competitor.
+There is not one exact competitor because FrameChute overlaps several kinds of software.
 
-It competes for **parts of workflows** that are currently spread across different tools.
+The closest comparisons depend on what you are doing.
 
-| Category | Examples | What those tools are usually good at | What FrameChute offers instead |
-| --- | --- | --- | --- |
-| Browser tabs and session managers | browser tab groups, saved sessions | remembering pages and windows | remembers a spatial working arrangement containing local files, media, notes and pages |
-| Visual boards / whiteboards | Miro, Milanote and similar tools | arranging ideas visually and collaborating | local-file-first objects, real media playback, browser-native persistence and timed behavior |
-| Note/workspace tools | Notion and similar document/database workspaces | structured notes, documents and databases | free spatial placement with less obligation to fit information into a hierarchy |
-| Storyboards / presentation canvases | slide and storyboard tools | ordered presentation frames | one continuous spatial canvas whose objects can also gain timed actions |
-| Media players | desktop/browser media players | playing one or several media files | media exists beside the documents, images and notes it relates to, with shared transport and looping |
-| Video / motion editors | NLEs and motion-graphics software | deep editing, compositing, effects and final rendering | dramatically lighter setup for arranging live browser objects and simple timed behavior |
+| If you normally use... | Examples | FrameChute is different because... |
+| --- | --- | --- |
+| Browser tabs / session managers | tab groups, saved browser sessions | FrameChute remembers a visual arrangement, not just which pages were open |
+| Visual boards | Miro, Milanote | FrameChute is centered on live local files, playable media, PDFs, and a persistent browser canvas rather than mainly cards and collaboration |
+| Reference boards | PureRef and similar tools | FrameChute can mix references with notes, PDFs, galleries, webpages, audio, and video instead of mainly images |
+| Note workspaces | Notion and similar tools | FrameChute is freeform and spatial rather than requiring everything to live in pages, blocks, tables, or a hierarchy |
+| Media players | VLC and browser media players | FrameChute puts media beside the documents, images, notes, and other media it relates to and can coordinate several pieces together |
+| Video / motion editors | Premiere Pro, DaVinci Resolve, After Effects | those tools are vastly more powerful for professional editing and rendering; FrameChute is much lighter and keeps objects live on a browser canvas |
+| Presentation tools | PowerPoint, Google Slides | FrameChute is one open spatial workspace rather than a fixed sequence of slides, although Advanced timing can make the workspace behave like a scene |
 
-FrameChute is **not claiming to replace all of those applications**.
+## Does FrameChute replace those tools?
 
-A professional editor should beat FrameChute at professional editing. A database workspace should beat FrameChute at databases. A collaborative whiteboard should beat it at large-team whiteboarding.
+No.
 
-FrameChute's advantage is the unusual overlap:
+A professional video editor is better at professional video editing.
 
-**local files + spatial arrangement + persistent browser state + live media + increasingly programmable time.**
+A collaborative whiteboard is better at large-team whiteboarding.
 
-You can get pieces of that elsewhere. FrameChute is trying to make the combination feel native.
+A database workspace is better at databases.
 
-## Why not just use tabs?
+A dedicated image reference program may be simpler if all you need is a wall of pictures.
 
-Because tabs preserve membership, not meaning.
+FrameChute is useful when you want several of these ideas **in the same place**:
 
-A row of twelve tabs tells you that twelve things exist.
+**local files + free placement + saved state + notes + PDFs + galleries + live media + webpages + optional timing.**
 
-It does not naturally preserve:
+That combination is the point.
+
+# Why not just use tabs?
+
+Tabs tell you that things are open.
+
+They do not naturally tell you:
 
 - this PDF belongs beside this note
-- this image is the visual reference for that paragraph
-- these three videos form one comparison
-- this soundtrack belongs to this scene
-- this object should move after that one
-- this layer should rise only during this interval
+- these three videos are one comparison
+- this image is the reference for this paragraph
+- this soundtrack belongs with these visuals
+- this object should appear above that object
 
-FrameChute makes those relationships visible.
+FrameChute leaves those relationships visible.
 
-## Why not just use a whiteboard?
+# Why not just use a whiteboard?
 
-A whiteboard is excellent for cards, sketches, diagrams, and collaboration.
+A whiteboard is excellent for cards, drawings, diagrams, and collaboration.
 
-FrameChute is intentionally closer to a **live browser work surface**. Its objects can be actual PDFs, playable media, directories, local files, and browser content rather than screenshots or references to them.
+FrameChute is closer to a **live work surface**. Its objects can be real PDFs, playable media, local image folders, text, and webpages rather than only screenshots or links to those things.
 
-And the timing system is pushing the canvas toward something a conventional whiteboard normally is not: a spatial composition that can **run**.
+# Why not just use a video editor?
 
-## Why not just use a video editor?
+A video editor is built around importing media, editing it, and producing a finished video.
 
-A video editor is designed around creating a rendered audiovisual output.
+FrameChute is built around keeping the objects live.
 
-FrameChute is designed around keeping objects live.
+You can still read the PDF, change the note, browse the gallery, move the picture, play the video, and rearrange the scene.
 
-You should be able to move a real image, interact with a real PDF, browse a real image directory, play a real video, edit a note, and then coordinate some of those things in time without first importing an entire project into a production pipeline.
+Advanced timing borrows a few useful ideas from editing and animation software without trying to become a full production suite.
 
-The tradeoff is deliberate. FrameChute is lighter, more immediate, and less powerful than a professional NLE.
+# Privacy and local files
 
-## Roadmap: from spatial workspace to programmable scene
+FrameChute is local-first.
 
-The current timed-movement system is only the first action type.
+The current extension does not require a FrameChute account or a FrameChute cloud service just to use your canvas.
 
-The longer-term direction is to let FrameChute record and reproduce more changes to an object over time while keeping them inside the same master scheduling model.
+Files you choose remain local unless **you** deliberately send or upload them somewhere else.
 
-### Recorded transforms
+Browser security still applies. Chrome may ask you to reconnect a local file or folder after permissions are lost or the extension is reloaded.
 
-Planned / explored action types include:
+# Install
 
-- **spin / rotation**
-- **flip horizontally or vertically**
-- **scale / grow / shrink**
-- **recorded resizing**
-- **recorded movement** beyond the current path model
-- **image distortion / warping** where practical in the browser
-- **opacity / fade in / fade out**
-- **show / disappear**
-- **replace one visual with another**
+## Chrome / Chromium
 
-The important part is not a giant menu of effects.
+The public Chrome Web Store build is the simpler FrameChute experience.
 
-The important part is that a transform can be **recorded as an action**, placed on the same time system, saved, restored, rewound and looped.
+For the newest GitHub features, use the current repository version and turn on **ƒ Advanced** from the top toolbar.
 
-### Stop points
+When Advanced is OFF, the current GitHub build intentionally returns to the simpler Store-style interface.
 
-A future **stop point** would let the master sequence pause at a defined moment.
+## Development / current GitHub build
 
-That creates presentation-like behavior without forcing FrameChute into a slide model.
+Clone or download this repository, then load the extension directory through your Chromium browser's **Extensions → Developer mode → Load unpacked** flow.
 
-A scene could run, reach a meaningful point, stop, wait for the user, and then continue.
+# The idea in one sentence
 
-### Action points
-
-A stop point may also be an **action point**.
-
-At a point in time, FrameChute could trigger an action such as:
-
-```text
-show object
-hide object
-fade object
-replace image
-spin object
-start media
-change layer
-run another action
-```
-
-This keeps new capabilities modular. The timeline does not need to be rewritten every time a new action type is invented.
-
-### Persistent offset SYNC / UNSYNC
-
-The planned synchronization model treats different media timestamps as offsets from the same master moment.
-
-For example:
-
-```text
-SYNC moment
-A = 0:23
-B = 0:12
-C = 12:23
-```
-
-After synchronization, moving the master transport by `+10s` would produce:
-
-```text
-A = 0:33
-B = 0:22
-C = 12:33
-```
-
-The relative arrangement remains intact.
-
-That relationship should survive save/restore. **UNSYNC** should remove the relationship without jumping any media to a different position.
-
-### Conditional actions and greater complexity
-
-Farther down the road, the same scheduling model could support conditions without turning FrameChute into a conventional programming environment.
-
-Examples being explored conceptually include:
-
-```text
-IF Action A completes, start Action B
-IF A and B are active, trigger C
-IF this condition is true, choose an action
-IF the conditions are met, run this action with a probability
-```
-
-That could eventually allow surprisingly complex synthetic scenes and systems to emerge from a relatively small set of understandable rules.
-
-This is a direction, not a promise that every conditional feature above ships in the next release.
-
-## The architectural idea
-
-The model is intentionally moving toward:
-
-```text
-Workspace
-  ├── Objects
-  │     id
-  │     type
-  │     source
-  │     geometry
-  │     visual state
-  │     media state
-  │
-  └── Actions
-        id
-        target
-        type
-        schedule
-        duration
-        payload
-```
-
-An action should be able to say:
-
-```text
-WHEN: 4.0 seconds
-WHAT: move
-TARGET: image-7
-DURATION: 2.5 seconds
-```
-
-or:
-
-```text
-WHEN: after action-12
-WHAT: fade
-TARGET: image-7
-DURATION: 1 second
-```
-
-Then the master clock coordinates the result.
-
-That is how FrameChute can add new effects later without building a new timing system for every effect.
-
-## Interface philosophy
-
-Controls should exist when useful and get out of the way when they are not.
-
-FrameChute therefore supports things such as:
-
-- optional block headers
-- optional footers
-- frameless images/video where supported
-- fadeable controls
-- movable Settings
-- movable unified Media controller
-- optional toolbar text
-- compact toolbar behavior
-- customizable workspace colors and imagery
-- customizable Grab artwork
-
-You can leave the full editing interface visible or reduce a workspace until it is nearly just the material itself.
-
-## Grab things. Literally.
-
-FrameChute includes a dedicated **Grab** affordance so moving an object does not become a fight with the controls inside it.
-
-Grab artwork has states such as:
-
-- Default
-- Hover
-- Faded
-- Expanded
-
-Those visuals can be replaced from Settings. The mechanics remain separate from the decoration.
-
-That same principle now applies to frameless-image resizing: hiding the visual resize mark does not remove the resize hotspot.
-
-## Local-first on purpose
-
-FrameChute stores normal workspace state locally and does not require uploading the workspace to a FrameChute-operated service.
-
-All executable extension JavaScript ships with the extension package.
-
-If Chromium can render or decode a format, FrameChute can work with it where supported. If Chromium cannot decode it, FrameChute should fail clearly rather than pretend the source never existed.
-
-A temporarily missing local file should not erase the layout around it.
-
-## Privacy
-
-FrameChute does not require a FrameChute account and does not upload normal workspace contents to a FrameChute-operated cloud backend.
-
-See [PRIVACY.md](PRIVACY.md) for the current privacy policy and Chrome Web Store data-handling disclosures.
-
-## Download
-
-### [Download the latest FrameChute release](https://github.com/thanks-cohn/framechute/releases/latest)
-
-### Install it
-
-1. Open the latest release link above.
-2. Download the packaged FrameChute ZIP.
-3. Extract it.
-4. Open `chrome://extensions`.
-5. Turn on **Developer mode**.
-6. Click **Load unpacked**.
-7. Select the extracted FrameChute folder.
-8. Open FrameChute.
-
-No native companion. No Python runtime. No localhost daemon.
-
-## Repository map
-
-- `src/` contains the extension workspace and interaction code
-- `assets/images/` contains mascot artwork
-- `assets/grab/` contains packaged Grab states
-- `scripts/` contains packaging and validation tools
-- `docs/` contains architecture and implementation notes
-- `bugs/` contains regression and implementation handoff notes
-
-Build the Chrome Web Store package on Linux/macOS with:
-
-```bash
-sh scripts/package-web-store.sh
-```
-
-The release gate validates the extension and writes the Store ZIP under `dist/`.
-
-## Historical compatibility
-
-Some internal compatibility identifiers still use historical `flashframe.*` names so existing saved work can continue to restore correctly.
-
-The user-facing product is **FrameChute**.
-
-## The idea
-
-The browser already knows how to display documents, images, audio, video, and the web.
-
-FrameChute asks a different question:
-
-**What if those things did not have to live in separate little application-shaped boxes?**
-
-Put the things you need where you need them.
-
-Move them.
-
-Resize them.
-
-Layer them.
-
-Let them act.
-
-Save the arrangement.
-
-Come back later.
-
-And eventually, press Play.
+**FrameChute gives the browser a place where files, pages, notes, images, and media can stay where you put them.**
