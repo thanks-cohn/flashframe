@@ -20,12 +20,12 @@
 }
 
 /* The corner is always a live resize surface in frameless/image-only mode.
-   The generous hit target stays invisible while the visible reverse-L is
-   drawn as a compact corner mark inset over the media itself. */
+   Its anchor follows the actual rendered image edge, not merely the outer
+   object-fit container, so letterboxing cannot leave the mark floating away. */
 .block.is-frameless-media > .frameless-resize-handle {
   position: absolute;
-  right: 2px;
-  bottom: 2px;
+  right: var(--frameless-content-right-gap, 0px);
+  bottom: var(--frameless-content-bottom-gap, 0px);
   z-index: 50;
   display: block !important;
   width: 36px;

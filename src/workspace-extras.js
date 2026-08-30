@@ -42,6 +42,7 @@ await import("./web-drop.js");
 
 // Right-click capabilities are intentionally available in Classic too.
 await import("./frameless-media.js");
+await import("./frameless-resize-anchor.js");
 await import("./timed-events.js");
 await import("./layer-rules.js");
 
