@@ -76,6 +76,14 @@ style.textContent = `
     color: #4a4a4a;
   }
 
+  /* Classic hides the Advanced visibility preference for the frameless resize
+     corner, so the resize affordance must remain visibly available here. */
+  body.framechute-classic .block.is-frameless-media > .frameless-resize-handle {
+    color: #8b6d00 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
   .framechute-mode-toggle {
     display: inline-flex;
     align-items: center;
@@ -247,6 +255,7 @@ if (toolbar && advancedToolbar) {
     proxyButton("New note", "add-text"),
     proxyButton("Open text", "open-text"),
     proxyButton("Open PDF", "open-pdf"),
+    proxyButton("Open image", "open-image"),
     proxyButton("Open gallery", "open-gallery"),
     proxyButton("Open video", "open-video"),
     proxyButton("Open URL", "open-url")
