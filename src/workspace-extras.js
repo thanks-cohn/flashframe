@@ -19,9 +19,9 @@ ensureStylesheet("./donation-card.css");
 ensureStylesheet("./framechute-final-polish.css");
 ensureStylesheet("./handoff-fixes.css");
 
-// Classic mode intentionally mirrors the feature surface of the Chrome Web
-// Store submission branch. Advanced mode layers the current GitHub-only tools
-// on top without changing the saved workspace format or deleting any data.
+// Advanced mode changes the visible control surface. Classic deliberately
+// keeps the simpler toolbar, while the right-click menu remains the bridge to
+// object-level power features in both modes.
 if (advancedMode) {
   await import("./toolbar-paradigm.js");
   await import("./source-locations.js");
@@ -39,12 +39,14 @@ if (advancedMode) {
 
 await import("./web-drop.js");
 
+// Right-click capabilities are intentionally available in Classic too.
+await import("./frameless-media.js");
+await import("./timed-events.js");
+await import("./layer-rules.js");
+
 if (advancedMode) {
-  await import("./frameless-media.js");
-  await import("./timed-events.js");
   await import("./frame-sequence.js");
   await import("./master-loop-runtime.js");
-  await import("./layer-rules.js");
 }
 
 await import("./drop-local-sources.js");
@@ -53,11 +55,11 @@ if (advancedMode) await import("./fit-to-size.js");
 
 await import("./remote-video.js");
 
-if (advancedMode) await import("./offscreen-rescue.js");
+// Reachability is a safety feature, not an Advanced feature.
+await import("./offscreen-rescue.js");
 
 await import("./layer-menu.js");
-
-if (advancedMode) await import("./media-context-loop.js");
+await import("./media-context-loop.js");
 
 await import("./appearance.js");
 await import("./media-ux-polish.js");
