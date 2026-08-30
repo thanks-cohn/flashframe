@@ -23,12 +23,9 @@ function imageContentInsets(block) {
 
 function placeHandle(block) {
   if (!(block instanceof HTMLElement)) return;
-  const handle = block.querySelector(":scope > .frameless-resize-handle");
-  if (!(handle instanceof HTMLElement)) return;
-
   const { right, bottom } = imageContentInsets(block);
-  handle.style.setProperty("--frameless-content-right-gap", `${right}px`);
-  handle.style.setProperty("--frameless-content-bottom-gap", `${bottom}px`);
+  block.style.setProperty("--frameless-content-right-gap", `${right}px`);
+  block.style.setProperty("--frameless-content-bottom-gap", `${bottom}px`);
 }
 
 function bind(block) {
