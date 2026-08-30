@@ -29,9 +29,14 @@ function placeHandle(block) {
 }
 
 function bind(block) {
-  if (!(block instanceof HTMLElement) || block.dataset.visibleImageResizeAnchor === "true") return;
+  if (!(block instanceof HTMLElement)) return;
   const image = block.querySelector(":scope > .image-frame");
   if (!(image instanceof HTMLImageElement)) return;
+
+  if (block.dataset.visibleImageResizeAnchor === "true") {
+    placeHandle(block);
+    return;
+  }
 
   block.dataset.visibleImageResizeAnchor = "true";
   const update = () => placeHandle(block);
