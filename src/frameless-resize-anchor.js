@@ -2,30 +2,38 @@ const workspace = document.querySelector("#workspace");
 
 function imageContentInsets(block) {
   const image = block?.querySelector(":scope > .image-frame");
-  if (!(image instanceof HTMLImageElement)) return { right: 0, bottom: 0 };
+  if (!(image instanceof HTMLImageElement)) {
+    return { top: 0, right: 0, bottom: 0, left: 0 };
+  }
 
   const box = image.getBoundingClientRect();
   const naturalWidth = image.naturalWidth;
   const naturalHeight = image.naturalHeight;
   if (!box.width || !box.height || !naturalWidth || !naturalHeight) {
-    return { right: 0, bottom: 0 };
+    return { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
   const scale = Math.min(box.width / naturalWidth, box.height / naturalHeight);
   const renderedWidth = naturalWidth * scale;
   const renderedHeight = naturalHeight * scale;
+  const horizontalGap = Math.max(0, (box.width - renderedWidth) / 2);
+  const verticalGap = Math.max(0, (box.height - renderedHeight) / 2);
 
   return {
-    right: Math.max(0, (box.width - renderedWidth) / 2),
-    bottom: Math.max(0, (box.height - renderedHeight) / 2)
+    top: verticalGap,
+    right: horizontalGap,
+    bottom: verticalGap,
+    left: horizontalGap
   };
 }
 
 function placeHandle(block) {
   if (!(block instanceof HTMLElement)) return;
-  const { right, bottom } = imageContentInsets(block);
+  const { top, right, bottom, left } = imageContentInsets(block);
+  block.style.setProperty("--frameless-content-top-gap", `${top}px`);
   block.style.setProperty("--frameless-content-right-gap", `${right}px`);
   block.style.setProperty("--frameless-content-bottom-gap", `${bottom}px`);
+  block.style.setProperty("--frameless-content-left-gap", `${left}px`);
 }
 
 function bind(block) {
