@@ -1,4 +1,5 @@
 const workspace = document.querySelector("#workspace");
+const toolbar = document.querySelector(".toolbar");
 
 if (workspace) {
   const BASE_WIDTH = 2400;
@@ -6,6 +7,7 @@ if (workspace) {
   const EXTENT_PADDING = 180;
   const MIN_GRAB_LEFT = -28;
   const MIN_GRAB_TOP = -6;
+  const TOOLBAR_GRAB_GAP = 6;
 
   const style = document.createElement("style");
   style.textContent = `
@@ -28,24 +30,54 @@ if (workspace) {
     return Number.isFinite(parsed) ? parsed : fallback;
   }
 
+  function toolbarBottom() {
+    if (!toolbar || document.body.classList.contains("toolbar-hidden")) return 0;
+    const rect = toolbar.getBoundingClientRect();
+    return rect.height > 0 ? rect.bottom : 0;
+  }
+
+  function grabSurface(block) {
+    const compact = block.querySelector(":scope > .compact-drag-handle");
+    if (compact && getComputedStyle(compact).display !== "none") return compact;
+    const header = block.querySelector(":scope > .block-header");
+    if (header && getComputedStyle(header).display !== "none") return header;
+    return block;
+  }
+
   function keepGrabAreaReachable(block) {
     if (!(block instanceof HTMLElement) || block.classList.contains("is-maximized")) return false;
 
-    const left = number(block.style.left, block.offsetLeft);
-    const top = number(block.style.top, block.offsetTop);
+    let left = number(block.style.left, block.offsetLeft);
+    let top = number(block.style.top, block.offsetTop);
     let changed = false;
 
     // Browsers cannot scroll into negative document coordinates. Permit a
-    // small amount of intentional overhang, but always leave enough of the
-    // compact grab control reachable to pull the block back.
+    // little visual overhang, but never lose the left/top recovery surface.
     if (left < MIN_GRAB_LEFT) {
-      block.style.left = `${MIN_GRAB_LEFT}px`;
+      left = MIN_GRAB_LEFT;
+      block.style.left = `${left}px`;
       changed = true;
     }
     if (top < MIN_GRAB_TOP) {
-      block.style.top = `${MIN_GRAB_TOP}px`;
+      top = MIN_GRAB_TOP;
+      block.style.top = `${top}px`;
       changed = true;
     }
+
+    // A sticky toolbar can grow after a toolbar command opens/wraps. In that
+    // case a perfectly valid block coordinate can suddenly leave its draggable
+    // header underneath the toolbar. Keep the current grab surface below the
+    // toolbar's *actual current* bottom edge, not merely below viewport y=0.
+    const grab = grabSurface(block);
+    const grabRect = grab.getBoundingClientRect();
+    const safeViewportTop = toolbarBottom() + TOOLBAR_GRAB_GAP;
+    if (grabRect.top < safeViewportTop) {
+      const delta = safeViewportTop - grabRect.top;
+      top = number(block.style.top, block.offsetTop) + delta;
+      block.style.top = `${top}px`;
+      changed = true;
+    }
+
     return changed;
   }
 
@@ -72,7 +104,7 @@ if (workspace) {
         rect.right > window.innerWidth ||
         rect.bottom > window.innerHeight ||
         rect.left < 0 ||
-        rect.top < 0
+        rect.top < toolbarBottom()
       ) {
         anyOffscreen = true;
       }
@@ -94,13 +126,19 @@ if (workspace) {
   }
 
   // Grow the scrollable canvas while a block is being moved or resized. Do
-  // not clamp during the gesture; rescue negative coordinates only once the
-  // gesture is finished so movement remains natural.
+  // not clamp during the gesture; rescue coordinates once the gesture ends.
   workspace.addEventListener("pointermove", () => schedule(), true);
   document.addEventListener("pointerup", () => schedule({ rescueNegative: true }), true);
   document.addEventListener("pointercancel", () => schedule({ rescueNegative: true }), true);
   window.addEventListener("resize", () => schedule({ rescueNegative: true }));
   window.addEventListener("scroll", () => schedule(), { passive: true });
+  window.addEventListener("flashframe:rescue-reachability", () => schedule({ rescueNegative: true }));
+
+  // The toolbar can morph/wrap after a button is used. Re-run reachability
+  // whenever its dimensions change so a block header cannot become trapped.
+  if (toolbar) {
+    new ResizeObserver(() => schedule({ rescueNegative: true })).observe(toolbar);
+  }
 
   const mutations = new MutationObserver(() => schedule({ rescueNegative: true }));
   mutations.observe(workspace, { childList: true });

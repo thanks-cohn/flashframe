@@ -49,6 +49,7 @@ menu.setAttribute("role", "menu");
 menu.innerHTML = `
   <button type="button" data-layer-action="front" role="menuitem">Bring to front</button>
   <button type="button" data-layer-action="back" role="menuitem">Send to back</button>
+  <button type="button" data-layer-action="grab" role="menuitem">Grab object <span class="flashframe-layer-menu-shortcut">G</span></button>
   <div class="flashframe-layer-menu-separator" role="separator"></div>
   <button type="button" data-layer-action="sync" role="menuitem">Sync with…</button>
   <button type="button" data-layer-action="independent" role="menuitem">Make independent</button>
@@ -77,7 +78,7 @@ style.textContent = `
   .flashframe-layer-menu {
     position: fixed;
     z-index: 2147483647;
-    min-width: 158px;
+    min-width: 178px;
     max-height: calc(100vh - 16px);
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -91,7 +92,10 @@ style.textContent = `
   }
   .flashframe-layer-menu[hidden] { display: none; }
   .flashframe-layer-menu button {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     width: 100%;
     padding: 8px 10px;
     border: 0;
@@ -107,6 +111,16 @@ style.textContent = `
     background: rgba(255,255,255,.10);
     outline: none;
   }
+  .flashframe-layer-menu-shortcut {
+    min-width: 18px;
+    padding: 1px 5px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 5px;
+    color: rgba(255,255,255,.7);
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+  }
   .flashframe-layer-menu .flashframe-layer-menu-close {
     color: #ffb1a2;
   }
@@ -115,14 +129,63 @@ style.textContent = `
     margin: 5px 4px;
     background: rgba(255,255,255,.14);
   }
+  .block.is-menu-grabbed {
+    outline: 2px solid #f7cf4b;
+    outline-offset: 2px;
+    cursor: grabbing !important;
+  }
+  body.framechute-menu-grabbing,
+  body.framechute-menu-grabbing * {
+    cursor: grabbing !important;
+  }
 `;
 document.head.append(style);
 
 let targetBlock = null;
+let lastContextPoint = { clientX: 0, clientY: 0 };
+let menuGrab = null;
 
 function hideMenu() {
   menu.hidden = true;
   targetBlock = null;
+}
+
+function number(value, fallback = 0) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function finishMenuGrab({ cancel = false } = {}) {
+  if (!menuGrab) return;
+  const { block, startLeft, startTop } = menuGrab;
+  if (cancel && block?.isConnected) {
+    block.style.left = `${startLeft}px`;
+    block.style.top = `${startTop}px`;
+  }
+  block?.classList.remove("is-menu-grabbed");
+  document.body.classList.remove("framechute-menu-grabbing");
+  menuGrab = null;
+  if (block?.isConnected) {
+    workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+    window.dispatchEvent(new CustomEvent("flashframe:rescue-reachability"));
+  }
+}
+
+function startMenuGrab(block, point = lastContextPoint) {
+  if (!(block instanceof HTMLElement)) return;
+  if (menuGrab) finishMenuGrab({ cancel: false });
+  bringToFront(block);
+  const startLeft = number(block.style.left, block.offsetLeft);
+  const startTop = number(block.style.top, block.offsetTop);
+  menuGrab = {
+    block,
+    startLeft,
+    startTop,
+    pointerX: Number.isFinite(point?.clientX) ? point.clientX : 0,
+    pointerY: Number.isFinite(point?.clientY) ? point.clientY : 0
+  };
+  block.classList.add("is-menu-grabbed");
+  document.body.classList.add("framechute-menu-grabbing");
 }
 
 function showMenu(block, x, y) {
@@ -131,6 +194,7 @@ function showMenu(block, x, y) {
   const timed = Boolean(block) && (block.dataset.timedMedia === "true" || Boolean(block.querySelector("video, audio")));
   menu.querySelector('[data-layer-action="front"]').hidden = !block;
   menu.querySelector('[data-layer-action="back"]').hidden = !block;
+  menu.querySelector('[data-layer-action="grab"]').hidden = !block;
   menu.querySelector('[data-layer-action="sync"]').hidden = !timed;
   menu.querySelector('[data-layer-action="independent"]').hidden = !timed;
   const isImage = block?.dataset.customKind === "image"
@@ -181,7 +245,7 @@ function showMenu(block, x, y) {
   menu.style.left = `${left}px`;
   menu.style.top = `${top}px`;
 
-  menu.querySelector("button")?.focus({ preventScroll: true });
+  menu.querySelector("button:not([hidden])")?.focus({ preventScroll: true });
 }
 
 // Existing blocks normally rise on pointerdown. Suppress that behavior for
@@ -196,6 +260,7 @@ workspace.addEventListener("contextmenu", (event) => {
   const block = event.target.closest(".block");
   event.preventDefault();
   event.stopPropagation();
+  lastContextPoint = { clientX: event.clientX, clientY: event.clientY };
   showMenu(block, event.clientX, event.clientY);
 });
 
@@ -203,6 +268,13 @@ menu.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-layer-action]");
   if (!button) return;
 
+  if (button.dataset.layerAction === "grab") {
+    const block = targetBlock;
+    const point = { clientX: event.clientX, clientY: event.clientY };
+    hideMenu();
+    if (block) startMenuGrab(block, point);
+    return;
+  }
   if (button.dataset.layerAction === "reveal-menus") {
     makeMenusVisible();
     hideMenu();
@@ -280,16 +352,59 @@ menu.addEventListener("click", (event) => {
 });
 
 menu.addEventListener("keydown", (event) => {
+  if (event.key.toLowerCase() === "g" && targetBlock) {
+    event.preventDefault();
+    const block = targetBlock;
+    hideMenu();
+    startMenuGrab(block, lastContextPoint);
+    return;
+  }
   if (event.key === "Escape") {
     event.preventDefault();
     hideMenu();
   }
 });
 
+// No-hold move mode: after Grab object/G is selected, pointer movement moves
+// the frame without requiring a mouse button. Click, Enter, or Space drops it;
+// Escape cancels and restores the starting position.
+document.addEventListener("pointermove", (event) => {
+  if (!menuGrab?.block?.isConnected) return;
+  const dx = event.clientX - menuGrab.pointerX;
+  const dy = event.clientY - menuGrab.pointerY;
+  menuGrab.block.style.left = `${menuGrab.startLeft + dx}px`;
+  menuGrab.block.style.top = `${menuGrab.startTop + dy}px`;
+}, true);
+
+document.addEventListener("pointerdown", (event) => {
+  if (!menuGrab || event.button !== 0) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  finishMenuGrab({ cancel: false });
+}, true);
+
+document.addEventListener("keydown", (event) => {
+  if (!menuGrab) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    finishMenuGrab({ cancel: true });
+    return;
+  }
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    finishMenuGrab({ cancel: false });
+  }
+}, true);
+
 document.addEventListener("pointerdown", (event) => {
   if (!menu.hidden && !menu.contains(event.target)) hideMenu();
 }, true);
 
-window.addEventListener("blur", hideMenu);
+window.addEventListener("blur", () => {
+  hideMenu();
+  if (menuGrab) finishMenuGrab({ cancel: false });
+});
 window.addEventListener("resize", hideMenu);
 window.addEventListener("scroll", hideMenu, true);

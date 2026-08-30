@@ -18,6 +18,64 @@ document.title = advanced ? "ƒ FrameChute — Advanced" : "ƒ FrameChute";
 
 const style = document.createElement("style");
 style.textContent = `
+  html[data-framechute-mode="classic"] {
+    color-scheme: light !important;
+    background: #fff;
+    color: #111;
+  }
+
+  body.framechute-classic {
+    background: #fff;
+    color: #111;
+  }
+
+  body.framechute-classic .toolbar,
+  body.framechute-classic .floating-dock,
+  body.framechute-classic .toolbar-slot-panel,
+  body.framechute-classic .block {
+    color: #111;
+  }
+
+  body.framechute-classic .toolbar {
+    background: rgba(255, 255, 255, .96);
+    border-bottom-color: #d7d7d7;
+  }
+
+  body.framechute-classic .floating-dock,
+  body.framechute-classic .toolbar-slot-panel,
+  body.framechute-classic .block {
+    background: #fff;
+    border-color: #d2d2d2;
+  }
+
+  body.framechute-classic button,
+  body.framechute-classic select,
+  body.framechute-classic input,
+  body.framechute-classic textarea,
+  body.framechute-classic .block-name,
+  body.framechute-classic .pdf-page,
+  body.framechute-classic .rewind-amount input {
+    background: #fff;
+    color: #111;
+    border-color: #c9c9c9;
+  }
+
+  body.framechute-classic button:hover,
+  body.framechute-classic select:hover,
+  body.framechute-classic .setting-row:hover {
+    background: #f3f3f3;
+  }
+
+  body.framechute-classic .status,
+  body.framechute-classic small,
+  body.framechute-classic .archive-status,
+  body.framechute-classic .gallery-position,
+  body.framechute-classic .gallery-filename,
+  body.framechute-classic .url-host,
+  body.framechute-classic .embed-note {
+    color: #4a4a4a;
+  }
+
   .framechute-mode-toggle {
     display: inline-flex;
     align-items: center;
