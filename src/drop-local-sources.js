@@ -509,7 +509,7 @@ async function loadVideo(block, payload) {
   clearUnavailable(block);
 
   const player = block.querySelector(".video-player");
-  if (Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
+  if (payload.masterTimelineOffset != null && Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
   else delete player.dataset.masterTimelineOffset;
   player.src = url;
   player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this video, but Chromium cannot decode its codec."), { once: true });
@@ -617,7 +617,7 @@ async function loadAudio(block, payload) {
   replaceObjectUrl(block, url);
   clearUnavailable(block);
   const player = block.querySelector(".audio-player");
-  if (Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
+  if (payload.masterTimelineOffset != null && Number.isFinite(Number(payload.masterTimelineOffset))) player.dataset.masterTimelineOffset = String(Number(payload.masterTimelineOffset));
   else delete player.dataset.masterTimelineOffset;
   player.src = url;
   player.addEventListener("error", () => setUnavailable(block, "Flashframe recognizes this audio file, but Chromium cannot decode its codec."), { once: true });

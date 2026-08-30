@@ -604,7 +604,7 @@ registerBlockType("video", {
     window.dispatchEvent(new CustomEvent("flashframe:restore-media-chrome", { detail: { block } }));
     const restoredPlayer = block.querySelector(".video-player");
     restoredPlayer.loop = Boolean(state.loop);
-    if (Number.isFinite(Number(state.masterTimelineOffset))) restoredPlayer.dataset.masterTimelineOffset = String(Number(state.masterTimelineOffset));
+    if (state.masterTimelineOffset != null && Number.isFinite(Number(state.masterTimelineOffset))) restoredPlayer.dataset.masterTimelineOffset = String(Number(state.masterTimelineOffset));
     else delete restoredPlayer.dataset.masterTimelineOffset;
     block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);
     const handle = await storedReadableHandle(source);
