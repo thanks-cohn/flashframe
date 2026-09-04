@@ -14,7 +14,7 @@ import {
   storeHandle
 } from "./file-access.js";
 import { writeCompleteBlob, saveDocumentAs } from "./documents/document-save.js";
-import { openPdfDocument, renderPdfPage, serializeEditedPdf, transformPdfPages, extractPdfPages, mergePdfBytes, cropPdfMargins, conservativelyCompressPdf } from "./documents/pdf-document.js";
+import { openPdfDocument, renderPdfPage, serializeEditedPdf, transformPdfPages, extractPdfPages, mergePdfBytes, cropPdfMargins, conservativelyCompressPdf, chooseSmallerPdf } from "./documents/pdf-document.js";
 import { DOCX_MIME, parseDocx, serializeDocx } from "./documents/docx-document.js";
 import { duplicateBlockRecord } from "./actions/block-records.js";
 
@@ -97,6 +97,7 @@ function replaceObjectUrl(block, url) {
 }
 
 function releaseBlockResources(block) {
+  block.dispatchEvent(new CustomEvent("framechute:release-resources"));
   const url = objectUrls.get(block);
   if (url) URL.revokeObjectURL(url);
   objectUrls.delete(block);
@@ -364,25 +365,25 @@ async function loadPdfHandle(block, handle, state = {}) {
 
   const model = await openPdfDocument(await file.arrayBuffer());
   const edits = Array.isArray(state.edits) ? structuredClone(state.edits) : [];
-  const runtime = { handle, model, edits };
+  const runtime = { handle, model, edits, structurallyDirty: Boolean(state.structurallyDirty) };
   runtime.serialize = () => serializeEditedPdf(model, edits);
   runtimeSources.set(block, runtime);
   clearSourceUnavailable(block);
   setDocumentDirty(block, Boolean(state.dirty));
   await setPdfPage(block, state.page ?? block.dataset.currentPage ?? 1);
 }
-async function loadPdfBytes(block, bytes, state={}) { const model=await openPdfDocument(bytes),edits=Array.isArray(state.edits)?structuredClone(state.edits):[],runtime={handle:null,model,edits};runtime.serialize=()=>serializeEditedPdf(model,edits);runtimeSources.set(block,runtime);clearSourceUnavailable(block);setDocumentDirty(block,Boolean(state.dirty));await setPdfPage(block,state.page??1); }
+async function loadPdfBytes(block, bytes, state={}) { const model=await openPdfDocument(bytes),edits=Array.isArray(state.edits)?structuredClone(state.edits):[],runtime={handle:null,model,edits,structurallyDirty:Boolean(state.structurallyDirty)};runtime.serialize=()=>serializeEditedPdf(model,edits);runtimeSources.set(block,runtime);clearSourceUnavailable(block);setDocumentDirty(block,Boolean(state.dirty));await setPdfPage(block,state.page??1); }
 
 async function applyPdfPageOperation(block, operation) {
   const previous = runtimeSources.get(block); if (!previous?.model) return;
   const edited = await previous.serialize();
   const bytes = await transformPdfPages(new Uint8Array(await edited.arrayBuffer()), operation);
-  const model = await openPdfDocument(bytes); const runtime = { handle: previous.handle, model, edits: [] };
+  const model = await openPdfDocument(bytes); const runtime = { handle: previous.handle, model, edits: [], structurallyDirty: true };
   runtime.serialize = () => serializeEditedPdf(model, runtime.edits); runtimeSources.set(block, runtime);
   setDocumentDirty(block, true); await setPdfPage(block, Math.min(Number(operation.to || operation.page), model.pageCount));
   setStatus("PDF page change is ready. Use native Save or Save As to write the PDF.");
 }
-async function replacePdfRuntime(block, bytes, page=1) { const previous=runtimeSources.get(block),model=await openPdfDocument(bytes),runtime={handle:previous?.handle,model,edits:[]};runtime.serialize=()=>serializeEditedPdf(model,runtime.edits);runtimeSources.set(block,runtime);setDocumentDirty(block,true);await setPdfPage(block,Math.min(page,model.pageCount)); }
+async function replacePdfRuntime(block, bytes, page=1) { const previous=runtimeSources.get(block),model=await openPdfDocument(bytes),runtime={handle:previous?.handle,model,edits:[],structurallyDirty:true};runtime.serialize=()=>serializeEditedPdf(model,runtime.edits);runtimeSources.set(block,runtime);setDocumentDirty(block,true);await setPdfPage(block,Math.min(page,model.pageCount)); }
 
 async function showGalleryIndex(block, index) {
   const runtime = runtimeSources.get(block);
@@ -435,7 +436,7 @@ async function loadVideoHandle(block, handle, state = {}) {
   const player = block.querySelector(".video-player");
   const url = URL.createObjectURL(file);
   replaceObjectUrl(block, url);
-  runtimeSources.set(block, { handle, url });
+  runtimeSources.set(block, { handle, url, file });
   clearSourceUnavailable(block);
 
   player.src = url;
@@ -521,7 +522,7 @@ registerBlockType("pdf", {
     block.querySelector(".pdf-merge").addEventListener("click",async()=>{try{const [handle]=await showOpenFilePicker({multiple:false,types:[{description:"PDF",accept:{"application/pdf":[".pdf"]}}]});if(!handle)return;const runtime=runtimeSources.get(block),base=await runtime.serialize(),added=await handle.getFile(),after=Number(block.dataset.currentPage||runtime.model.pageCount),bytes=await mergePdfBytes(new Uint8Array(await base.arrayBuffer()),new Uint8Array(await added.arrayBuffer()),after);await replacePdfRuntime(block,bytes,after+1);setStatus(`${added.name} inserted. Use Save As to preserve the original.`);}catch(error){if(error.name!=="AbortError")setStatus(error.message);}});
     block.querySelector(".pdf-images").addEventListener("click",async()=>{const runtime=runtimeSources.get(block);for(let number=1;number<=runtime.model.pageCount;number++){const page=await runtime.model.pdf.getPage(number),viewport=page.getViewport({scale:2}),canvas=document.createElement("canvas");canvas.width=viewport.width;canvas.height=viewport.height;await page.render({canvasContext:canvas.getContext("2d"),viewport}).promise;const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));window.dispatchEvent(new CustomEvent("framechute:add-result-object",{detail:{blob,name:`page-${number}.png`,kind:"image"}}));}});
     block.querySelector(".pdf-crop").addEventListener("click",async()=>{const margin=Number(prompt("Crop all margins by PDF points (72 = 1 inch)","18"));if(!Number.isFinite(margin))return;const runtime=runtimeSources.get(block),blob=await runtime.serialize(),page=Number(block.dataset.currentPage||1),bytes=await cropPdfMargins(new Uint8Array(await blob.arrayBuffer()),page,{left:margin,right:margin,top:margin,bottom:margin});await replacePdfRuntime(block,bytes,page);});
-    block.querySelector(".pdf-compress").addEventListener("click",async()=>{const runtime=runtimeSources.get(block),blob=await runtime.serialize(),before=blob.size,bytes=await conservativelyCompressPdf(new Uint8Array(await blob.arrayBuffer()));await replacePdfRuntime(block,bytes,Number(block.dataset.currentPage||1));setStatus(`Conservative PDF rewrite: ${before.toLocaleString()} → ${bytes.length.toLocaleString()} bytes. Embedded images were not recompressed.`);});
+    block.querySelector(".pdf-compress").addEventListener("click",async()=>{const runtime=runtimeSources.get(block),blob=await runtime.serialize(),original=new Uint8Array(await blob.arrayBuffer()),candidate=await conservativelyCompressPdf(original),choice=chooseSmallerPdf(original,candidate);if(!choice.changed){setStatus(`No smaller safe PDF was produced (${original.length.toLocaleString()} → ${candidate.length.toLocaleString()} bytes); the current PDF was kept.`);return;}await replacePdfRuntime(block,choice.bytes,Number(block.dataset.currentPage||1));setStatus(`PDF compressed conservatively: ${original.length.toLocaleString()} → ${candidate.length.toLocaleString()} bytes. Embedded images were not recompressed.`);});
 
     block.querySelector(".pdf-text-layer").addEventListener("dblclick", (event) => {
       const span = event.target.closest(".pdf-text-item");
@@ -566,15 +567,16 @@ registerBlockType("pdf", {
 
   capture(block) {
     const runtime = runtimeSources.get(block);
-    return { page: clampInteger(block.querySelector(".pdf-page").value, 1), edits: structuredClone(runtime?.edits || []), dirty: block.dataset.documentDirty === "true", embeddedPdfBase64: getSourceRecord(block) ? null : runtime?.model?.bytes ? bytesToBase64(runtime.model.bytes) : null };
+    return { page: clampInteger(block.querySelector(".pdf-page").value, 1), edits: structuredClone(runtime?.edits || []), dirty: block.dataset.documentDirty === "true", structurallyDirty:Boolean(runtime?.structurallyDirty), embeddedBlob:(!getSourceRecord(block)||runtime?.structurallyDirty)&&runtime?.model?.bytes?new Blob([runtime.model.bytes],{type:"application/pdf"}):null };
   },
 
   async restore(block, state = {}, source = null) {
     setPdfPage(block, state.page ?? 1);
     const handle = await storedReadableHandle(source);
 
-    if (handle) await loadPdfHandle(block, handle, state);
+    if(state.embeddedBlob instanceof Blob)await loadPdfBytes(block,new Uint8Array(await state.embeddedBlob.arrayBuffer()),state);
     else if(state.embeddedPdfBase64)await loadPdfBytes(block,base64ToBytes(state.embeddedPdfBase64),state);
+    else if (handle) await loadPdfHandle(block, handle, state);
     else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this PDF"} to display it.`);
   }
 });
@@ -625,8 +627,8 @@ registerBlockType("docx", {
     for (const [selector, command] of [[".docx-bold", "bold"], [".docx-italic", "italic"], [".docx-underline", "underline"]]) block.querySelector(selector).addEventListener("click", () => { editor.focus(); document.execCommand(command); setDocumentDirty(block, true); });
     block.querySelector(".reconnect-source").addEventListener("click", async () => { try { await reconnectSource(block, pickDocxFile, (handle) => loadDocxHandle(block, handle, this.capture(block))); } catch (error) { console.error(error); setStatus("Could not reconnect that DOCX."); } });
   },
-  capture(block) { return { blocks: docxBlocksFromEditor(block.querySelector(".docx-editor")), scrollTop: block.querySelector(".docx-editor").scrollTop, dirty: block.dataset.documentDirty === "true" }; },
-  async restore(block, state = {}, source = null) { if (state.blocks) renderDocxEditor(block, state.blocks); setDocumentDirty(block, Boolean(state.dirty)); const handle = await storedReadableHandle(source); if (handle) await loadDocxHandle(block, handle, state); else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this DOCX"} to continue editing and save it.`); }
+  capture(block) { const runtime=runtimeSources.get(block);return { blocks: docxBlocksFromEditor(block.querySelector(".docx-editor")), scrollTop: block.querySelector(".docx-editor").scrollTop, dirty: block.dataset.documentDirty === "true", embeddedBlob:getSourceRecord(block)?null:runtime?.serialize?.()||null }; },
+  async restore(block, state = {}, source = null) { if (state.blocks) renderDocxEditor(block, state.blocks); setDocumentDirty(block, Boolean(state.dirty)); const handle = await storedReadableHandle(source); if(state.embeddedBlob instanceof Blob){const file=new File([state.embeddedBlob],block.querySelector(".block-name").value,{type:DOCX_MIME});await loadDocxHandle(block,{kind:"file",name:file.name,__framechuteSyntheticFile:file},state);}else if (handle) await loadDocxHandle(block, handle, state); else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this DOCX"} to continue editing and save it.`); }
 });
 
 registerBlockType("gallery", {
@@ -732,6 +734,7 @@ registerBlockType("video", {
 
   capture(block) {
     const player = block.querySelector(".video-player");
+    const runtime = runtimeSources.get(block);
     return {
       currentTime: Number.isFinite(player.currentTime) ? player.currentTime : 0,
       paused: player.paused,
@@ -745,7 +748,8 @@ registerBlockType("video", {
         : null,
       frameless: block.dataset.frameless === "true",
       headerVisibility: block.dataset.headerVisibility || "inherit",
-      footerVisibility: block.dataset.footerVisibility || "inherit"
+      footerVisibility: block.dataset.footerVisibility || "inherit",
+      embeddedBlob: getSourceRecord(block) ? null : runtime?.file || null
     };
   },
 
@@ -763,7 +767,10 @@ registerBlockType("video", {
     block.querySelector(".video-time").textContent = formatTime(state.currentTime ?? 0);
     const handle = await storedReadableHandle(source);
 
-    if (handle) await loadVideoHandle(block, handle, state);
+    if (state.embeddedBlob instanceof Blob) {
+      const file=new File([state.embeddedBlob],block.querySelector(".block-name").value,{type:state.embeddedBlob.type});
+      await loadVideoHandle(block,{kind:"file",name:file.name,__framechuteSyntheticFile:file},state);
+    } else if (handle) await loadVideoHandle(block, handle, state);
     else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this video"} to play it.`);
   }
 });
@@ -993,11 +1000,12 @@ window.addEventListener("framechute:open-document-handle", (event) => {
 window.addEventListener("framechute:open-result-file", (event) => {
   const { file, kind } = event.detail || {}; if (!(file instanceof File)) return;
   event.detail.promise = (async () => {
-    const type = kind === "pdf" ? "pdf" : (kind === "video" || kind === "audio") ? "video" : null;
-    if (!type) { setStatus(`${file.name} was extracted. Use Save As because this file type has no workspace editor yet.`); return; }
+    const type = kind === "pdf" ? "pdf" : (kind === "video" || kind === "audio") ? "video" : kind === "docx" ? "docx" : null;
+    if (!type) { window.dispatchEvent(new CustomEvent("framechute:save-result-file",{detail:{blob:file,name:file.name}})); return; }
     const handle = { kind: "file", name: file.name, __framechuteSyntheticFile: file };
-    const block = await createBlock({ type, name: file.name, state: type === "pdf" ? { page: 1 } : { currentTime: 0, paused: true } });
-    if (type === "pdf") await loadPdfHandle(block, handle, { page: 1 }); else await loadVideoHandle(block, handle, { currentTime: 0, paused: true });
+    const state=type==="pdf"?{page:1,embeddedBlob:file}:type==="docx"?{}:{currentTime:0,paused:true,embeddedBlob:file};
+    const block = await createBlock({ type, name: file.name, state });
+    if (type === "pdf") await loadPdfHandle(block, handle, state); else if(type==="docx")await loadDocxHandle(block,handle,state);else await loadVideoHandle(block, handle, state);
   })();
 });
 

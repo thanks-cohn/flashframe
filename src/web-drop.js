@@ -7,6 +7,7 @@ import {
   storeHandle
 } from "./file-access.js";
 import { classifyLocalFile, looksLikeImageUrl, nativeImagePickerExtensions } from "./media-types.js";
+import { parseCsv } from "./actions/csv.js";
 
 const MARKER = "__FLASHFRAME_CUSTOM_BLOCK_V1__";
 const LEGACY_EMBED_KIND = "you" + "tube";
@@ -391,6 +392,7 @@ function createCustomBlock(payload, options = {}) {
 window.addEventListener("framechute:add-result-object", async (event) => {
   const { blob, name, kind } = event.detail || {};
   if (!(blob instanceof Blob)) return;
+  if(kind==="csv"){await window.FrameChuteWorkspace.createBlock({type:"csv",name:name||"result.csv",state:{rows:parseCsv(await blob.text())}});return;}
   if (kind === "text") { await createDroppedText(await blob.text(), { x: 120, y: 120 }); const block=[...workspace.querySelectorAll('.block[data-block-type="text"]')].at(-1); if(block)block.querySelector(".block-name").value=name||"Extracted text"; return; }
   if (kind !== "image") { window.dispatchEvent(new CustomEvent("framechute:open-result-file", { detail: { file: new File([blob], name || "result", { type: blob.type }), kind } })); return; }
   const dataUrl = await fileAsDataUrl(new File([blob], name || "result.png", { type: blob.type }));
