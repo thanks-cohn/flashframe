@@ -607,6 +607,19 @@ body.hide-block-headers .compact-drag-handle {
   background: color-mix(in srgb, CanvasText 5%, Canvas);
 }
 
+.document-dirty { color: #9a5a00; font-size: 12px; font-weight: 700; }
+.pdf-surface { position: relative; overflow: auto; flex: 1; padding: 10px; background: #777; text-align: center; }
+.pdf-canvas { display: block; margin: 0 auto; background: white; box-shadow: 0 2px 10px #0005; }
+.pdf-text-layer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); text-align: left; }
+.pdf-text-item { position: absolute; color: transparent; white-space: pre; line-height: 1; cursor: text; transform-origin: 0 0; }
+.pdf-text-item:hover { outline: 1px dashed #276ee8; background: #eaf2ff99; color: #111; }
+.pdf-text-item[contenteditable="true"] { color: #111; background: white; outline: 2px solid #276ee8; z-index: 2; }
+.docx-block { min-width: 420px; min-height: 360px; }
+.docx-editor { flex: 1; overflow: auto; margin: 0; padding: 48px 56px; background: white; color: #171717; font: 16px/1.5 Arial, sans-serif; outline: none; }
+.docx-editor h1, .docx-editor h2, .docx-editor h3 { line-height: 1.2; }
+.docx-editor table { border-collapse: collapse; width: 100%; }
+.docx-editor td { border: 1px solid #888; padding: 5px; vertical-align: top; }
+
 .gallery-block {
   min-width: 360px;
   min-height: 320px;

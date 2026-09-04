@@ -255,6 +255,7 @@ if (toolbar && advancedToolbar) {
     proxyButton("New note", "add-text"),
     proxyButton("Open text", "open-text"),
     proxyButton("Open PDF", "open-pdf"),
+    proxyButton("Open DOCX", "open-docx"),
     proxyButton("Open image", "open-image"),
     proxyButton("Open gallery", "open-gallery"),
     proxyButton("Open video", "open-video"),
