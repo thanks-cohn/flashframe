@@ -1,268 +1,286 @@
 # FrameChute
 
+**Open it. Change it. Save it.**
+
+FrameChute is a **lightweight, intuitive, easy-to-use document and media editing surface** for Chrome and Chromium browsers.
+
+It combines a freeform spatial workspace with practical file utilities, so images, PDFs, DOCX files, video, audio, CSV tables, archives, notes, and webpages can live together on one canvas and be worked on directly.
+
 **Your browser has tabs. FrameChute gives it a desk.**
 
-FrameChute is a freeform spatial workspace for Chrome and other Chromium browsers.
+The larger idea is simple:
 
-Put notes, PDFs, images, image folders, video, local files, and webpages on one large canvas. Move them. Resize them. Put one in front of another. Play media. Save the arrangement. Come back later and restore it.
+> **Give me the file. I’ll figure out what to do with it.**
 
-Instead of remembering ten tabs and six files, you can remember **where everything was**.
+Instead of asking which application should open a thing, FrameChute tries to ask the more useful question:
 
-## The 30-second version
+> **What do you want to do to it?**
 
-1. Open FrameChute.
-2. Add a note, PDF, image, gallery, video, or webpage.
-3. Put it where it makes sense.
-4. Resize and arrange it.
-5. Save the FrameChute.
-6. Restore it later.
+# Why FrameChute exists
 
-That is enough to use FrameChute. Everything else is optional.
+A surprising amount of ordinary computer work is made harder than it needs to be.
 
-# Classic vs Advanced
+Crop an image. Resize forty pictures. Pull a frame from a video. Reorder a PDF. Merge two PDFs. Edit a Word document. Clean a CSV. Open a ZIP. Put a note beside a reference image. Convert something. Save the result.
 
-FrameChute has two interface modes:
+For jobs like these, people are often pushed toward a collection of separate applications, converter websites, subscriptions, and professional suites.
 
-| | Classic / Advanced OFF | Advanced ON |
-| --- | --- | --- |
-| Best for | Everyday use | More visible power tools |
-| Top bar | Simple | Expanded |
-| Open notes, text, PDFs, images, galleries, video, URLs | Yes | Yes |
-| Move and resize objects | Yes | Yes |
-| Save / restore workspaces | Yes | Yes |
-| Right-click object tools | Yes | Yes |
-| Frameless / Show image only | Yes | Yes |
-| Timed movement and layer tools | Available from right-click | More controls exposed |
-| Shared sequence / timeline tools | Mostly hidden | Visible |
-| Advanced source, gallery, handoff and media tools | Mostly hidden | Visible |
+**For a lightweight browser extension, FrameChute deliberately seeks to fill the niche that a lot of expensive suites seem to demand ownership of.**
 
-## Classic / Advanced OFF
+FrameChute is not trying to replace every specialist tool. It is trying to make the common job obvious, quick, and local.
 
-Classic is the default.
+> **Select the thing. Do the obvious thing. Save the result.**
 
-The **Advanced** button is red and says **OFF**.
+# What FrameChute can do today
 
-Classic is intentionally simple on the surface, but it is **not a crippled mode**. The top toolbar keeps the common actions easy to find:
+FrameChute is both a **spatial workspace** and an increasingly capable **document and media utility layer**.
 
-- New note
-- Open text
-- Open PDF
-- Open image
-- Open gallery
-- Open video
-- Open URL
-- Save FrameChute
-- Restore
-- Reconnect all
+## Put different kinds of material on one canvas
 
-For most people, this is enough for normal daily use.
+FrameChute can work with:
 
-## Advanced ON
+- notes and text
+- PDFs
+- DOCX documents
+- images
+- image folders / galleries
+- local video and audio
+- webpages when the site permits embedding
+- CSV tables
+- ZIP and CBZ archives
 
-Click the **Advanced** button and it turns green and says **ON**.
+Objects can be moved, resized, renamed, layered, maximized, arranged beside related material, and kept together as a working surface instead of disappearing into separate applications and tabs.
 
-Advanced keeps the same workspace, but exposes more of FrameChute's newer controls directly in the interface. This includes things such as:
+A PDF can sit beside the note about it. A video can sit beside its reference images. A table can stay beside the document it came from. The position itself can carry meaning.
 
-- master sequence and timing controls
-- richer media coordination
-- source-location and reconnection tools
-- expanded gallery behavior
-- extra workspace and media controls
-- Chute / FileChute handoff tools
-- more direct access to experimental or power-user features
+# Quick Actions
 
-Turning Advanced back OFF does **not** delete or reset the workspace. It simply returns to the cleaner Classic interface.
+FrameChute has a contextual Quick Actions system built around the selected object or objects.
 
-## The right-click menu is the bridge
+Rather than expose every command all the time, it asks what makes sense for what you selected.
 
-This is the easiest way to understand the two modes:
+The action system supports:
 
-**Classic hides clutter. Right-click keeps the power nearby. Advanced puts more of that power on screen.**
+- single-object actions
+- multi-selection
+- batch work
+- progress-aware operations
+- generated result objects that can continue living on the workspace
+- native Save As flows
 
-Right-click an object and you can access object-level commands without switching modes just to do one thing.
+This is the foundation for a much broader browser-native utility layer.
 
-Depending on the object, the menu can include commands such as:
+# Image editing
 
-- Bring to front
-- Send to back
-- Grab object
-- Sync with another media object
-- Make independent
-- Show or hide the top bar
-- Show or hide the footer / player controls
-- Show image only / Show video only
-- Restore the full frame
-- Create or edit timed movement
-- Preview or remove movement
-- Set timed layer behavior
-- Set media looping
-- Close the object
+Current image tools include:
 
-So Advanced OFF means **simple interface**, not **no advanced actions**.
+- visual crop
+- resize with aspect locking
+- rotate
+- flip
+- straighten
+- basic perspective correction
+- PNG / JPEG / WebP conversion
+- compression
+- metadata-stripping re-encode
+- trim transparent margins
+- make a selected color transparent
+- fill transparent backgrounds
+- blur / pixelate a region
+- basic annotation
+- stitch images vertically or horizontally
+- create contact sheets
+- generate common icon sizes
+- compare two images
+- create a PDF from selected images
+- batch resize / convert / compress
+- native Save As
 
-# Frameless images and media
+Many image changes remain non-destructive inside the workspace until the user chooses to bake them into a saved result.
 
-Sometimes you want the image, not a miniature application window around it.
+# Video and media
 
-Choose **Show image only** from the right-click menu and FrameChute removes the visible frame so the picture can sit directly on the canvas.
+FrameChute can open local playable media directly on the canvas, beside the documents, images, notes, and other media that belong with it.
 
-The frameless behavior is designed to feel like a real loose object:
-
-- the visible image itself can be dragged
-- invisible letterboxed space around the image is not grabbable
-- transparent leftover frame edges behave like empty workspace
-- the resize corner follows the actual visible image edge
-- the resize mark sits inside the image's bottom-right corner instead of floating outside it
-- the large invisible resize hit target remains easy to grab
-
-### The little resize corner
-
-A small reverse-L style corner appears at the bottom-right of a frameless image.
-
-In **Classic**, it stays visible so you never remove the frame and accidentally remove the obvious way to resize the picture.
-
-In **Advanced**, its visibility can be configured to stay visible, fade, or hide while keeping the resize hotspot usable.
-
-# Grab an object without holding the mouse button
-
-FrameChute also has **Grab object**.
-
-Right-click an object and choose **Grab object**, or press **G** while the object menu is open.
-
-Then:
-
-- move the mouse to move the object
-- click, Enter, or Space to drop it
-- press Escape to cancel and put it back
-
-This is useful for awkwardly positioned objects or when click-and-hold dragging is inconvenient.
-
-# What can FrameChute hold?
-
-## Notes
-
-Write directly on the canvas. Notes are useful for ideas, captions, instructions, drafts, labels, reminders, or anything that belongs beside the material you are working with.
-
-## Text files
-
-Open a local text file and use its contents as an editable note.
-
-## PDFs
-
-Open a PDF, move it, resize it, keep it beside related material, and return to the useful page later.
-
-## Images
-
-Open individual local images and arrange them like objects on a desk.
-
-You can keep the normal frame or switch to **Show image only** for a cleaner visual workspace.
-
-## Image folders / galleries
-
-Open a folder of images as one gallery object instead of creating dozens of separate objects.
-
-Move through the folder with previous and next controls. FrameChute can remember your gallery position as part of the saved workspace.
-
-## Video and media
-
-Play local media beside the notes, PDFs, images, or other media it belongs with.
-
-FrameChute can remember useful playback state and can coordinate participating media when you need several pieces to represent the same moment.
-
-## Webpages
-
-Place webpages on the canvas when the website allows embedding.
-
-Some sites deliberately block being shown inside another page. FrameChute cannot override that browser security rule, so those sites can instead be opened normally.
-
-# Move things like objects on a desk
-
-A FrameChute is not a list of tabs.
-
-Objects can be:
-
-- moved
-- resized
-- renamed
-- maximized
-- placed in front of other objects
-- placed behind other objects
-- shown with or without parts of their frame
-- saved in place
-- restored later
-
-The position itself can carry meaning.
-
-A PDF can live beside the note about it. Three videos can sit together for comparison. A picture can remain beside the paragraph it inspired. A soundtrack can stay with the visual group it belongs to.
-
-FrameChute keeps those relationships visible.
-
-# Save the useful moment
-
-A saved FrameChute is more than a list of files.
-
-Depending on the object and feature, FrameChute can remember things such as:
-
-- position
-- size
-- object name
-- front/back order
-- note contents
-- PDF page
-- gallery position
-- media position
-- volume and playback choices
-- loop choices
-- media grouping
-- frameless state
-- visible or hidden controls
-- timed movement
-- timed layer rules
-- workspace appearance
-
-Chrome may occasionally require a local file or folder to be reconnected because browser permissions are intentionally restrictive. FrameChute provides reconnection controls instead of silently leaving a dead object behind.
-
-# Advanced timing and sequence tools
-
-You do **not** need these features to use FrameChute.
-
-Advanced mode makes them easier to see and manage.
-
-## Timed movement
-
-Objects can move over time using a start point, end point, duration, delay, and optional path behavior.
-
-Movement can be previewed, edited, returned to its starting position, or removed.
-
-## Shared master time
-
-Advanced mode includes shared sequence controls so several actions can relate to one master clock.
-
-An action can begin immediately, at a particular master time, or relative to another action.
-
-That allows a FrameChute to behave like a lightweight scene as well as a static workspace.
-
-## Timed layers
-
-An object can temporarily move above or below another object during part of a sequence and later return to its normal layer.
-
-## Coordinated media
-
-Participating media can be controlled together while keeping different individual timestamps.
-
-For example, these can all represent the same project moment:
+A signature workflow is **Extract Frame**:
 
 ```text
-Video A: 0:23
-Video B: 0:12
-Audio C: 1:04
+video
+  ↓
+seek to the moment
+  ↓
+Extract Frame
+  ↓
+normal FrameChute image object
+  ↓
+crop · resize · annotate · convert · save
 ```
 
-The point is coordination, not forcing every file to have the same timestamp.
+The extracted frame is not merely downloaded and forgotten. It becomes another editable object on the FrameChute substrate.
 
-## Looping
+FrameChute also supports media state, looping, synchronization, timing, and scene-oriented behavior.
 
-FrameChute can handle looping at more than one level, including per-media choices and sequence/action behavior where supported.
+The interaction direction is intentionally physical: a visible video should behave spatially like an image while still retaining time. In other words, move it to change **where** it is; scrub it to change **when** it is.
+
+# PDFs
+
+FrameChute can open PDFs as editable document objects.
+
+Current PDF capabilities include:
+
+- page navigation
+- editing visible PDF text through the current editing model
+- rotate pages
+- delete pages
+- duplicate pages
+- reorder / move pages
+- extract pages
+- insert / merge another PDF
+- turn PDF pages into PNG result objects
+- crop page margins
+- conservative PDF optimization
+- native Save
+- native Save As
+
+A core rule is:
+
+> **The thing you open should remain independently saveable as that thing.**
+
+A PDF stays a PDF. Workspace persistence does not replace native file saving.
+
+# DOCX
+
+DOCX files open as editable document objects instead of being treated as opaque downloads.
+
+FrameChute provides a practical browser-native editing surface and native Save / Save As behavior while preserving the original OOXML package where practical.
+
+The goal is not to recreate every corner of Microsoft Word. The goal is that a normal document still looks and behaves like a document, and ordinary edits do not require leaving the browser.
+
+# CSV tables
+
+Drop a CSV and FrameChute can treat it as a table rather than a text blob.
+
+Current table work includes:
+
+- editable cells
+- add and remove rows
+- remove columns
+- sort
+- find / filter
+- remove exact duplicate rows
+- merge compatible CSV tables
+- Save As CSV
+
+# ZIP and CBZ
+
+Archives can be opened as containers rather than dead files.
+
+FrameChute can browse entries, show file paths and sizes, open supported contents into the workspace, and treat CBZ archives as image-oriented comic/gallery sequences.
+
+# Batch work
+
+Multi-selection is part of the architecture rather than an afterthought.
+
+For example:
+
+```text
+40 images
+→ Resize
+→ 1200 px
+→ apply once
+→ results
+```
+
+or:
+
+```text
+several images
+→ Convert
+→ WebP
+→ one configuration
+→ packaged results
+```
+
+The same action engine is intended to serve both tiny one-off jobs and deeper workflows later.
+
+# Frameless objects
+
+Sometimes you want the content, not a miniature application window around it.
+
+FrameChute can remove visible framing so images and media sit directly on the substrate.
+
+For images, the visible object itself can be dragged and resized, with the resize affordance following the actual visible image rather than invisible letterboxed space.
+
+The broader interaction rule is:
+
+> **Anything visible on the substrate should be directly movable and resizable unless there is a strong reason otherwise.**
+
+That rule is being carried across image, video, document, and future scene-based workflows.
+
+# Save the file vs save the workspace
+
+FrameChute intentionally separates two different concepts.
+
+## Native Save / Save As
+
+The thing you opened stays independently saveable in its native or chosen output format.
+
+Examples:
+
+```text
+image → PNG / JPEG / WebP
+PDF   → PDF
+DOCX  → DOCX
+CSV   → CSV
+```
+
+## Export Snapshot
+
+**Export Snapshot** saves the larger FrameChute workspace as `.fcx`.
+
+FCX exists to preserve the arrangement and state of the workspace, including supported embedded assets and generated results.
+
+Ordinary editing does not require adopting FCX.
+
+# Classic and Advanced
+
+FrameChute keeps everyday work approachable while allowing deeper controls to exist on the same substrate.
+
+Classic keeps the interface cleaner. Advanced exposes more timing, sequencing, media, movement, source, and coordination tools.
+
+Turning Advanced on or off does not create a different project. It changes the amount of machinery shown around the same objects.
+
+The long-term direction is to separate deeper workflows into clearer specialized surfaces rather than turn one Advanced screen into a giant cockpit.
+
+# Timing, movement, and scenes
+
+FrameChute already contains ideas that go beyond a static file canvas.
+
+Objects can participate in:
+
+- timed movement
+- shared master time
+- timed layer behavior
+- coordinated media
+- looping
+- scene-like arrangements
+
+A useful way to think about the direction is:
+
+> **A scene is a collection of objects arranged in space, optionally arranged in time.**
+
+That creates a natural bridge between ordinary file work and future video, web, presentation, and interactive workflows.
+
+# Local-first by design
+
+FrameChute is local-first.
+
+It does not require a FrameChute account or cloud service simply to use the workspace and utility tools.
+
+Files you choose remain local unless **you** deliberately send or upload them somewhere else.
+
+Normal browser security still applies, including file-permission prompts and situations where Chrome may require the user to reconnect a local source.
+
+FrameChute does not use remote file-processing services as a shortcut for local editing.
 
 # Chute + FrameChute
 
@@ -270,7 +288,7 @@ FrameChute works especially well with [Chute](https://github.com/thanks-cohn/chu
 
 A simple way to remember the pair:
 
-**Chute catches things. FrameChute arranges them.**
+**Chute catches things. FrameChute arranges and works on them.**
 
 ```text
 webpage / file / image
@@ -279,44 +297,66 @@ webpage / file / image
         ↓
     FrameChute
         ↓
- move · resize · compare · play · save
+move · edit · resize · compare · play · save
 ```
 
 Neither extension requires the other.
 
-# Why not just use tabs?
+# Where FrameChute is going
 
-Tabs tell you what is open.
+The immediate goal is to make FrameChute an unusually complete **lightweight document and media editing surface**: the place where a normal person can handle the annoying little file jobs that otherwise send them searching for a new application or website.
 
-They do not naturally tell you:
+That means continuing to deepen practical support for things such as:
 
-- this PDF belongs beside this note
-- these three videos are one comparison
-- this image is the reference for this paragraph
-- this soundtrack belongs with these visuals
-- this object should sit above that one
+- richer PDF editing, forms, signatures, redaction, and annotation
+- stronger DOCX editing and conversion
+- OCR and scanned-document workflows
+- screenshots and screen recording
+- audio extraction and editing
+- video trim, split, crop, speed, mute, subtitle, and conversion tools
+- broader media compatibility
+- spreadsheet work beyond CSV, including XLSX
+- presentations, including PPTX
+- stronger batch operations
+- better print / capture / scan flows
+- more robust undo, recovery, large-file handling, and keyboard workflows
 
-FrameChute leaves those relationships visible.
+Beyond that, the same underlying object system is intended to support specialized creative modes without turning them into unrelated products:
 
-# What FrameChute is not
+```text
+Everyday
+  files + actions
 
-FrameChute is not trying to replace every specialized application.
+Image Editing
+  objects + layers + visual transforms
 
-A professional video editor is better for professional video editing. A collaborative whiteboard is better for large-team whiteboarding. A database tool is better for databases.
+Video Editing
+  objects + scenes + time + audio
 
-FrameChute is useful when you want several kinds of material together in one live spatial workspace:
+Web Builder
+  objects + scenes + time + events + state + logic
 
-**local files + free placement + saved state + notes + PDFs + galleries + images + live media + webpages + optional timing.**
+Game Builder
+  objects + scenes + input + physics + gameplay state
+```
 
-# Privacy and local files
+The important part is that these modes should share the same objects, files, assets, transforms, save/export behavior, and scenes.
 
-FrameChute is local-first.
+An image edited in one place should still be the same image when used in a video. A video scene should be transferable into a web scene without being flattened. A future game scene should be able to reuse the same images, sounds, video, timing, and layout work already created elsewhere in FrameChute.
 
-The extension does not require a FrameChute account or FrameChute cloud service simply to use the canvas.
+# The argument
 
-Files you choose remain local unless **you** deliberately send or upload them somewhere else.
+FrameChute is deliberately small in spirit even as its capability grows.
 
-Normal browser security still applies, including permission prompts and occasional local-file reconnection.
+It is not based on the idea that every ordinary task deserves another heavyweight application.
+
+It is based on the opposite idea:
+
+> **A lightweight, intuitive document and media editing surface should be able to handle a surprisingly large amount of everyday computer work.**
+
+For a lightweight extension, FrameChute seeks to fill the niche that many expensive suites seem to demand: opening the thing, making the obvious change, combining it with something else, and getting a useful file back out.
+
+If the browser can already display the material, FrameChute asks how much of the rest of the job can happen right there too.
 
 # Install
 
@@ -324,7 +364,7 @@ Normal browser security still applies, including permission prompts and occasion
 
 The Chrome Web Store build provides the straightforward FrameChute experience.
 
-The current GitHub build includes the Classic / Advanced switch and the newest features described above.
+The GitHub build generally contains the newest work first.
 
 ## Development / current GitHub build
 
@@ -336,4 +376,4 @@ Clone or download this repository, then open your Chromium browser's extension p
 
 # The idea in one sentence
 
-**FrameChute gives the browser a place where files, pages, notes, images, and media can stay where you put them.**
+**FrameChute is a lightweight browser-native document and media editing surface where files become things you can move, change, combine, and save.**
