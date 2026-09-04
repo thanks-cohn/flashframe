@@ -49,3 +49,23 @@ export async function serializeEditedPdf(model, edits) {
   }
   return new Blob([await output.save()], { type: "application/pdf" });
 }
+
+export async function transformPdfPages(bytes, operation) {
+  const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const pdf = await PDFDocument.load(source.slice(), { ignoreEncryption: false });
+  const count = pdf.getPageCount();
+  const pageIndex = Math.max(0, Math.min(count - 1, Number(operation.page) - 1));
+  if (operation.type === "rotate") {
+    const page = pdf.getPage(pageIndex);
+    page.setRotation(degrees((page.getRotation().angle + Number(operation.degrees || 90) + 360) % 360));
+  } else if (operation.type === "delete") {
+    if (count <= 1) throw new Error("A PDF must keep at least one page");
+    pdf.removePage(pageIndex);
+  } else if (operation.type === "duplicate") {
+    const [copy] = await pdf.copyPages(pdf, [pageIndex]); pdf.insertPage(pageIndex + 1, copy);
+  } else if (operation.type === "move") {
+    const target = Math.max(0, Math.min(count - 1, Number(operation.to) - 1));
+    if (target !== pageIndex) { const [copy] = await pdf.copyPages(pdf, [pageIndex]); pdf.removePage(pageIndex); pdf.insertPage(target, copy); }
+  } else throw new Error(`Unsupported PDF page operation: ${operation.type}`);
+  return new Uint8Array(await pdf.save());
+}

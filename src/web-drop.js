@@ -387,6 +387,18 @@ function createCustomBlock(payload, options = {}) {
   return block;
 }
 
+window.addEventListener("framechute:add-result-object", async (event) => {
+  const { blob, name, kind } = event.detail || {};
+  if (!(blob instanceof Blob) || kind !== "image") return;
+  const dataUrl = await fileAsDataUrl(new File([blob], name || "result.png", { type: blob.type }));
+  const block = createCustomBlock({ kind: "image", name: name || "Result", displayName: name || "Result", dataUrl });
+  if (block) {
+    block.dataset.resultObject = "true";
+    setStatus(`${name || "Image result"} added to the workspace.`);
+    workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+  }
+});
+
 function convertRestoredMarker(block) {
   if (!block?.isConnected || block.classList.contains("custom-flashframe-block")) return false;
   const editor = block.querySelector(".text-editor");

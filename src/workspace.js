@@ -14,7 +14,7 @@ import {
   storeHandle
 } from "./file-access.js";
 import { writeCompleteBlob, saveDocumentAs } from "./documents/document-save.js";
-import { openPdfDocument, renderPdfPage, serializeEditedPdf } from "./documents/pdf-document.js";
+import { openPdfDocument, renderPdfPage, serializeEditedPdf, transformPdfPages } from "./documents/pdf-document.js";
 import { DOCX_MIME, parseDocx, serializeDocx } from "./documents/docx-document.js";
 
 const workspace = document.querySelector("#workspace");
@@ -369,6 +369,16 @@ async function loadPdfHandle(block, handle, state = {}) {
   await setPdfPage(block, state.page ?? block.dataset.currentPage ?? 1);
 }
 
+async function applyPdfPageOperation(block, operation) {
+  const previous = runtimeSources.get(block); if (!previous?.model) return;
+  const edited = await previous.serialize();
+  const bytes = await transformPdfPages(new Uint8Array(await edited.arrayBuffer()), operation);
+  const model = await openPdfDocument(bytes); const runtime = { handle: previous.handle, model, edits: [] };
+  runtime.serialize = () => serializeEditedPdf(model, runtime.edits); runtimeSources.set(block, runtime);
+  setDocumentDirty(block, true); await setPdfPage(block, Math.min(Number(operation.to || operation.page), model.pageCount));
+  setStatus("PDF page change is ready. Use native Save or Save As to write the PDF.");
+}
+
 async function showGalleryIndex(block, index) {
   const runtime = runtimeSources.get(block);
   if (!runtime?.entries?.length) return;
@@ -498,6 +508,10 @@ registerBlockType("pdf", {
     block.querySelector(".pdf-page").addEventListener("change", (event) => {
       void setPdfPage(block, event.currentTarget.value);
     });
+    block.querySelector(".pdf-rotate").addEventListener("click", () => void applyPdfPageOperation(block, { type: "rotate", page: Number(block.dataset.currentPage || 1), degrees: 90 }));
+    block.querySelector(".pdf-delete").addEventListener("click", () => void applyPdfPageOperation(block, { type: "delete", page: Number(block.dataset.currentPage || 1) }).catch((error) => setStatus(error.message)));
+    block.querySelector(".pdf-duplicate").addEventListener("click", () => void applyPdfPageOperation(block, { type: "duplicate", page: Number(block.dataset.currentPage || 1) }));
+    block.querySelector(".pdf-move").addEventListener("click", () => { const to = Number(prompt("Move current page to position", block.dataset.currentPage || "1")); if (to) void applyPdfPageOperation(block, { type: "move", page: Number(block.dataset.currentPage || 1), to }); });
 
     block.querySelector(".pdf-text-layer").addEventListener("dblclick", (event) => {
       const span = event.target.closest(".pdf-text-item");
