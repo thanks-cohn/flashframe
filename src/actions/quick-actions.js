@@ -63,7 +63,7 @@ register({ id: "object.duplicate", label: "Duplicate", appliesTo: (s) => s.lengt
 } });
 register({id:"object.copy-to",label:"Copy To…",appliesTo:(s)=>s.length>0&&typeof window.showDirectoryPicker==="function",async run({selection:items}){let directory;try{directory=await window.showDirectoryPicker({mode:"readwrite"});}catch(error){if(error.name==="AbortError")return;throw error;}let copied=0,excluded=[];for(const item of items){const blob=imageOf(item)?await transformed(item,{format:"png"}):await window.FrameChuteWorkspace.sourceBlob(item);if(!blob){excluded.push(nameOf(item));continue;}const filename=imageOf(item)?`${nameOf(item).replace(/\.[^.]+$/,"")}.png`:nameOf(item),handle=await directory.getFileHandle(filename,{create:true}),writer=await handle.createWritable();await writer.write(blob);await writer.close();copied++;}announce(`${copied} file(s) copied. Originals were not deleted.${excluded.length?` Unsupported: ${excluded.join(", ")}.`:""}`);}});
 register({ id: "image.rotate-left", label: "↶ Rotate", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { rotate: (transforms.get(item)?.rotate || 0) - 90 })); } });
-register({ id: "image.paint", label: "Edit Image", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) { await enterPaintMode(item); announce("Draw on the image, then choose Done. Your source stays unchanged."); } });
+register({ id: "image.paint", label: "Edit", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) { await enterPaintMode(item); announce("Draw on the object, then choose Done. Your source stays unchanged."); } });
 register({ id: "image.rotate-right", label: "Rotate ↷", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { rotate: (transforms.get(item)?.rotate || 0) + 90 })); } });
 register({ id: "image.flip-x", label: "Flip Horizontal", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { flipX: !transforms.get(item)?.flipX })); } });
 register({ id: "image.flip-y", label: "Flip Vertical", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { flipY: !transforms.get(item)?.flipY })); } });
@@ -139,10 +139,10 @@ function render() {
   const buttons = bar.querySelector(".quick-actions-buttons"); buttons.replaceChildren();
   for (const action of registry.available(items)) { const button = document.createElement("button"); button.type="button"; button.textContent=action.label; button.addEventListener("click", async () => { try { button.disabled=true; await registry.run(action.id,{selection:items, progress:(done,total)=>{const p=bar.querySelector("progress");p.hidden=false;p.max=total;p.value=done;}}); } catch(error) { console.error(error); announce(error.message); } finally { button.disabled=false;bar.querySelector("progress").hidden=true;render(); } }); buttons.append(button); }
 }
-function enhanceSelectionControl(block) {
-  if (block.querySelector(":scope > .quick-select-toggle")) return;
-  const button = document.createElement("button"); button.type = "button"; button.className = "quick-select-toggle"; button.title = "Add or remove from selection"; button.setAttribute("aria-label", "Add or remove from Quick Actions selection"); button.textContent = "✓";
-  button.addEventListener("click", (event) => { event.stopPropagation(); selection.toggle(block); }); block.append(button);
+function enhanceObjectMenuControl(block) {
+  if (block.querySelector(":scope > .object-menu-toggle")) return;
+  const button = document.createElement("button"); button.type = "button"; button.className = "object-menu-toggle"; button.title = "Open object menu"; button.setAttribute("aria-label", "Open object menu"); button.textContent = "☰";
+  button.addEventListener("click", (event) => { event.stopPropagation(); if (!selection.has(block)) selection.replace(block); window.dispatchEvent(new CustomEvent("framechute:open-object-menu", { detail: { block, clientX:event.clientX, clientY:event.clientY } })); }); block.append(button);
 }
 window.addEventListener("framechute:block-captured", (event) => {
   const { block, record } = event.detail; const value = transforms.get(block); if (!value) return;
@@ -165,7 +165,7 @@ window.addEventListener("keydown", (event) => {
 });
 workspace.addEventListener("click", (event) => { const block=event.target.closest(".block"); if (!block || event.target.closest("button,input,textarea,[contenteditable=true]")) return; if (event.ctrlKey||event.metaKey||event.shiftKey) selection.toggle(block); else selection.replace(block); });
 workspace.addEventListener("contextmenu", (event) => { const block=event.target.closest(".block"); if (!block) return; event.preventDefault(); selection.has(block) ? render() : selection.replace(block); });
-new MutationObserver((mutations) => { selection.items.filter((item)=>!item.isConnected).forEach((item)=>selection.remove(item)); for (const mutation of mutations) for (const node of mutation.addedNodes) if (node instanceof HTMLElement && node.classList.contains("block")) enhanceSelectionControl(node); }).observe(workspace,{childList:true});
-workspace.querySelectorAll(".block").forEach(enhanceSelectionControl);
+new MutationObserver((mutations) => { selection.items.filter((item)=>!item.isConnected).forEach((item)=>selection.remove(item)); for (const mutation of mutations) for (const node of mutation.addedNodes) if (node instanceof HTMLElement && node.classList.contains("block")) enhanceObjectMenuControl(node); }).observe(workspace,{childList:true});
+workspace.querySelectorAll(".block").forEach(enhanceObjectMenuControl);
 
 window.FrameChuteActions = Object.freeze({ registry, selection, runBatch, addResult });

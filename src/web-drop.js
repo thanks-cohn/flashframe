@@ -1,3 +1,4 @@
+import { createCanvasPayload, validateCanvasSize } from "./standalone-canvas.mjs";
 import {
   fileFromHandle,
   hasReadPermission,
@@ -53,6 +54,7 @@ function defaultPlacement(kind, point = null) {
   customOffset += 28;
   const sizes = {
     image: { width: 520, height: 440 },
+    canvas: { width: 520, height: 440 },
     web: { width: 720, height: 560 }
   };
   const size = sizes[kind] ?? sizes.web;
@@ -341,8 +343,15 @@ async function renderImage(block, payload) {
   });
 }
 
+async function blankCanvasDataUrl(width, height) {
+  const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("Could not create the transparent canvas.")), "image/png"));
+  return fileAsDataUrl(new File([blob], "transparent-canvas.png", { type: "image/png" }));
+}
+
 function renderImageBlock(payload, options = {}) {
   const block = buildShell(payload, options);
+  if(payload.kind==="canvas")block.dataset.canvasObject="true";
   const detail = document.createElement("span");
   detail.className = "custom-detail";
   detail.textContent = payload.displayName || "Image";
@@ -379,6 +388,7 @@ function renderWebBlock(payload, options = {}) {
 function createCustomBlock(payload, options = {}) {
   let block = null;
   if (payload.kind === "image") block = renderImageBlock(payload, options);
+  if (payload.kind === "canvas") block = renderImageBlock(payload, options);
   if (payload.kind === LEGACY_EMBED_KIND) payload = { kind: "web", name: payload.name || "Web page", url: payload.url }; // migrate old snapshots
   if (payload.kind === "web") block = renderWebBlock(payload, options);
   if (!block) return null;
@@ -388,6 +398,18 @@ function createCustomBlock(payload, options = {}) {
   window.dispatchEvent(new CustomEvent("framechute:custom-block-ready", { detail: { block, payload } }));
   return block;
 }
+
+window.addEventListener("framechute:add-canvas", event => {
+  event.detail.promise = (async () => {
+    try {
+      const { width, height } = validateCanvasSize(event.detail?.width, event.detail?.height);
+      const payload = createCanvasPayload(width, height, await blankCanvasDataUrl(width, height));
+      const block = createCustomBlock(payload); if (!block) return;
+      setStatus(`Transparent ${width} × ${height} canvas added.`);
+      workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+    } catch (error) { console.error(error); setStatus(error?.message || "The canvas could not be created."); }
+  })();
+});
 
 window.addEventListener("framechute:add-result-object", async (event) => {
   const { blob, name, kind, point } = event.detail || {};
