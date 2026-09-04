@@ -1,315 +1,368 @@
-# DRAFT — Next FrameChute image utility pass
+# DRAFT — Next FrameChute utility pass
 
-> Planning document only. Build this request incrementally and do not run it until the user says it is ready.
+> Planning document only. Keep extending this request incrementally. Do not implement it until the user explicitly says it is ready.
 
 ## Product rule
 
-FrameChute image utilities should support both a quick one-off job and the natural batch version of the same job without forcing unnecessary workspace clutter.
+FrameChute should make ordinary visual/file jobs feel immediate rather than forcing the user into separate specialist apps.
 
 > **Preview it. Save it. Keep working with it only if you want to.**
 
-The original source must remain untouched unless the user explicitly chooses an overwrite-capable workflow.
+Preserve existing object, save, FCX, ingestion, menu, timing, and media systems. Do not solve these items by creating parallel architectures.
 
 ---
 
-# 1. Image Resize — single image workflow
+# 1. Image Resize — complete single-image workflow
 
-Upgrade the existing image resize action into a complete, user-facing workflow.
+Upgrade the existing Resize Image action into a complete workflow:
 
-## Required flow
-
-`Resize Image → set dimensions/options → live preview → Save As… and/or Add to Workspace`
+`Resize Image → dimensions/options → live preview → Save As… and/or Add to Workspace`
 
 Requirements:
 
-- show width and height controls
-- preserve-aspect-ratio option
-- update a real preview as the user changes dimensions
-- preview should represent the actual resized output as closely as practical, not merely CSS-scale the existing object and call that the result
-- expose **Save As…** directly from the resize workflow
-- native Save As must create a real resized image file
-- preserve sensible source/output formats; allow PNG/JPEG/WebP choices where the existing image pipeline can encode them reliably
-- do not modify the original image automatically
-- provide **Add to Workspace** as an explicit optional action
-- if the user only saves the file, do not automatically add another FrameChute object
-- after a successful Save As, a small optional **Add result to workspace** action may remain available
-- if the user chooses Add to Workspace first, create a normal first-class FrameChute image result using the existing result-object pipeline
-- generated workspace results must remain FCX-durable under the existing result persistence rules
-
-The intended interaction is:
-
-> **Preview → Save it, keep working with it, or both.**
-
-## Resize dialog must close normally
-
-The existing Resize UI currently has a usability bug: once opened, the visible **×** close control does not actually dismiss it, leaving Escape as the practical way out.
-
-Fix this as part of the next pass.
-
-Required behavior:
-
-- the visible **×** button must always close/dismiss the Resize dialog
-- Escape should continue to close it as a secondary keyboard path
-- any visible **Cancel** control must also close it
-- closing without applying must not mutate the image or leave partial resize state behind
-- reopening Resize after closing should produce a clean, usable dialog rather than a stale/half-open state
-- focus should return sensibly to the invoking object/control after dismissal where practical
-- do not require the user to know the Escape-key workaround
-
-This should use the existing dialog lifecycle instead of adding a second resize modal implementation.
-
----
-
-# 2. Resize Folder / batch image resize
-
-The same resize capability must scale naturally to an explicitly selected directory.
-
-Add a user-facing **Resize Folder…** / **Resize Images in Folder…** workflow.
-
-## Input directory
-
-- user explicitly chooses a directory through the browser-native directory picker / File System Access path where available
-- FrameChute enumerates supported image files in that directory
-- unsupported/non-image files are skipped honestly rather than treated as failures
-- do not silently recurse into subdirectories in the initial version unless the UI explicitly offers that option
-- the user must be shown how many supported images were found before processing
-
-## Resize settings
-
-At minimum:
-
-- width
-- height
+- width and height controls
 - preserve aspect ratio
-- a clear fit behavior if both dimensions are supplied (for example contain/fit rather than accidental distortion)
-- output format only where the existing encoder can produce it reliably
+- real live preview of the resized result, not only CSS scaling
+- Save As… directly from Resize
+- real output bytes at the selected dimensions
+- PNG/JPEG/WebP where the existing encoder supports them reliably
+- original remains untouched unless overwrite is explicitly chosen
+- Add to Workspace is optional, never automatic
+- after Save As, optionally offer **Add result to workspace**
+- workspace result must use the existing result-object pipeline and remain FCX-durable
 
-The batch operation should reuse the same resize implementation as the single-image workflow rather than adding a second image-resize engine.
+### Resize dialog bug
 
-## Output directory
+The current Resize dialog can become effectively trapped because the visible × does not close it.
 
-- allow the user to explicitly choose an output directory
-- input and output directories may be different
-- default behavior must never silently overwrite source files
-- if the selected output location would collide with existing files, use a safe conflict strategy or ask before overwrite
-- if output directory equals input directory, preserve originals by default through safe names/subfolder behavior unless the user explicitly chooses otherwise
+Fix this:
 
-## Rename numerically
-
-Provide an explicit option:
-
-**Rename outputs numerically** — Yes / No
-
-Prefer a normal checkbox/toggle in the UI rather than a literal modal `y/n` prompt.
-
-When disabled:
-
-- preserve the original base filename where practical
-
-When enabled:
-
-- output names become a deterministic numerical sequence such as:
-  - `001.jpg`
-  - `002.jpg`
-  - `003.jpg`
-- use the selected/actual output extension
-- allow a starting number if it can be added without making the workflow cumbersome
-- choose sensible zero-padding from the batch size so alphabetical ordering matches numerical ordering
-- show a filename preview before running, for example:
-  - `IMG_4821.jpg → 001.jpg`
-  - `IMG_4822.jpg → 002.jpg`
-
-Ordering must be deterministic. Use a documented stable order such as filename/natural sort rather than filesystem enumeration accident.
-
-## Preview / confirmation
-
-Before starting the batch, show a compact summary containing at least:
-
-- number of supported images
-- target dimensions / fit behavior
-- output format if changed
-- output directory
-- whether numerical renaming is enabled
-- a few example source → output names
-
-The user should be able to cancel before any output is written.
-
-## Processing
-
-- show progress (`current / total`)
-- allow cancellation where practical
-- process with bounded concurrency so a large directory does not exhaust browser memory
-- release decoded image resources/object URLs promptly
-- one bad image should be reported without corrupting or silently aborting already completed outputs
-- summarize completed / skipped / failed counts at the end
-
-## Workspace behavior after batch
-
-Do **not** automatically dump every resized image into the workspace.
-
-Default completion is simply:
-
-> **Done — resized files were written to the chosen directory.**
-
-Optionally provide an explicit action such as:
-
-- **Add results to workspace**
-- or **Open output folder** where browser capabilities permit an honest workflow
-
-If Add results to workspace is chosen, route those outputs through the existing FrameChute image/result-object substrate.
+- × closes immediately
+- Escape closes
+- Cancel closes, if present
+- closing without applying does not mutate the image
+- reopening gives a clean dialog state
+- restore focus sensibly after dismissal
+- use the existing dialog lifecycle; no second resize modal
 
 ---
 
-# 3. Shrink all images to fit — right-click utility
+# 2. Resize Folder / batch resize
 
-Add a straightforward **Shrink all images to fit** command to the image/object right-click menu.
+Add **Resize Folder… / Resize Images in Folder…**.
 
-The purpose is workspace cleanup and recovery: if several images are too large for the usable workspace, the user should be able to make all image objects fit sensibly in one action instead of resizing each one manually.
+Flow:
+
+`Choose input directory → detect supported images → choose resize settings → choose output directory → preview summary → Resize All`
 
 Requirements:
 
-- expose the command from the normal image/object right-click menu
-- operate on all image objects in the current workspace, not only the image that happened to be right-clicked
-- preserve each image's aspect ratio
-- shrink only when necessary; do not enlarge already-small images merely to fill space
-- fit against a sensible usable workspace/viewport bound with margin for controls rather than allowing images to remain partly inaccessible
-- preserve image positions as reasonably as possible, but prioritize making oversized images reachable and visible
-- do not bake or resample image pixels; this is a workspace/display-size operation, not destructive image resizing
-- use the existing object sizing/transform path rather than inventing another size model
-- persist the resulting object dimensions through the normal workspace/FCX state
-- give a concise status result such as `Shrank 6 images to fit.`; if nothing needed shrinking, say so honestly
+- explicit directory picker / File System Access where available
+- supported images only; unrelated files skipped honestly
+- no silent recursive traversal in v1 unless explicitly enabled
+- show count before processing
+- reuse the same resize engine as single-image Resize
+- preserve aspect ratio
+- clear fit/contain behavior when both dimensions are supplied
+- output directory can differ from input directory
+- never silently overwrite originals
+- collision-safe output naming
+- bounded concurrency and prompt release of decoded resources/object URLs
+- progress current/total
+- cancellation where practical
+- one bad image should not corrupt already completed outputs
+- final completed / skipped / failed summary
+- do not dump all resized images into the workspace automatically
 
-The intended mental model is:
+### Rename numerically
 
-> **My workspace got unwieldy. Make every image manageable again.**
+Include:
+
+**Rename outputs numerically** — on/off
+
+When off, preserve source base filenames where practical.
+
+When on, produce deterministic names such as:
+
+`001.jpg`  
+`002.jpg`  
+`003.jpg`
+
+Also:
+
+- preserve selected output extension
+- sensible zero-padding based on batch size
+- optional starting number if simple to expose
+- natural/stable filename ordering, never accidental filesystem enumeration order
+- show source → destination examples before starting
+
+Example:
+
+`IMG_4821.jpg → 001.jpg`
 
 ---
 
-# 4. Quick Actions panel must remain fully reachable
+# 3. Shrink all images to fit
 
-The vertical Quick Actions panel currently allows some controls to extend below the visible viewport, making lower actions inaccessible.
+Add **Shrink all images to fit** to the normal image/object right-click menu.
 
-Keep the compact vertical layout, but make it independently scrollable whenever its contents exceed the available browser height.
+This is a workspace sizing action, not destructive pixel resizing.
 
 Requirements:
 
-- all Quick Actions must always be reachable without resizing the browser window
-- the panel should use a bounded viewport-aware height and vertical scrolling when needed
-- do not let the page/workspace itself need to scroll merely to reach Quick Actions
-- preserve the existing vertical 1990s-Mac-inspired presentation
-- avoid horizontal scrolling
-- the scrollbar should appear only when needed
-- keyboard users must be able to tab through every action, with the panel scrolling the focused control into view naturally
-- wheel/trackpad scrolling over the panel should scroll the Quick Actions list rather than losing access to lower controls
-- keep important fixed affordances such as the close/hide control usable even when the action list is long, where practical
-- do not solve this by shrinking controls until they become hard to read or click
-- preserve the dependable system-font/layout fallback if decorative styling fails
+- operate on all image objects in the current workspace
+- preserve aspect ratio
+- shrink only oversized images; never enlarge smaller ones
+- fit within a sensible usable workspace/viewport bound with margin
+- preserve positions where practical while prioritizing reachability
+- use the existing object sizing/transform system
+- persist resulting object dimensions in normal workspace/FCX state
+- concise completion status, e.g. `Shrank 6 images to fit.`
 
-The core requirement is simple:
+---
+
+# 4. Quick Actions must scroll
+
+The vertical Quick Actions panel currently lets lower controls become inaccessible on short windows.
+
+Keep the vertical 1990s-Mac-inspired panel, but make it independently scrollable.
+
+Requirements:
+
+- all actions always reachable
+- bounded viewport-aware height
+- vertical scrollbar only when necessary
+- no horizontal scrollbar
+- wheel/trackpad over the panel scrolls the panel
+- keyboard Tab reaches lower actions and naturally scrolls them into view
+- keep close/hide affordance reachable where practical
+- do not shrink controls into unusability just to make them fit
+- preserve dependable system-font/layout fallback
 
 > **If FrameChute shows an action, the user must be able to reach it.**
 
 ---
 
-# 5. Context menus must never cover one another
+# 5. Context menus must not overlap
 
-FrameChute currently has more than one right-click/context-menu surface, including the original object/layer menu and the newer Open File workspace menu.
+FrameChute currently has multiple context-menu surfaces, including the original object/layer menu and the Open File menu.
 
-They must be coordinated so one menu never opens directly on top of another and hides it.
+They must never render directly on top of one another and hide commands.
 
 Preferred behavior:
 
-- treat context menus as one coordinated menu system wherever practical
-- opening a new context menu may close the previous menu when the two are alternate responses to the same right-click interaction
-- do not leave two menus stacked at the same coordinates with one obscuring the other
-- if there is an intentional case where two menu surfaces should remain open simultaneously, position the newer menu beside or away from the existing menu using collision-aware placement
-- respect viewport edges while repositioning so the fix does not merely push a menu offscreen
-- clicking outside / Escape should dismiss context-menu state predictably
-- keyboard focus must follow whichever menu is actually active
-- avoid duplicate `Open File…` surfaces fighting for z-index or click ownership
-- where practical, prefer one shared menu-positioning/dismissal coordinator instead of independent menus that know nothing about each other
+- coordinate context menus as one menu family wherever practical
+- opening one alternate context menu may close the previous one
+- never leave two menus stacked at identical coordinates
+- if two menus intentionally remain open, collision-position the newer one beside the existing menu
+- keep menus inside viewport bounds
+- outside click and Escape dismiss predictably
+- active keyboard focus belongs to the visible/active menu
+- avoid duplicate Open File surfaces fighting for z-index or pointer ownership
+- prefer shared menu placement/dismissal helpers instead of independent unaware menus
 
-The user should never have to wonder whether a command disappeared because another menu happened to render over it.
+---
+
+# 6. Take object syncing seriously — relative-time linkage
+
+The existing **Sync with…** concept should become genuinely useful for individual media objects.
+
+The user must be able to sync one specific audio/video object to another specific audio/video object.
+
+The key behavior is **relative time movement**, not forced equality of absolute timestamps.
+
+Example:
+
+- Audio A currently at 12.0s
+- Video B currently at 47.0s
+- user syncs A ↔ B
+- user seeks A backward by 3.5s
+- B also moves backward by 3.5s, ending at 43.5s
+
+Likewise, if the user seeks B forward by 8s, A moves forward by 8s.
+
+The objects keep their own independent starts, ends, durations, and offsets. Sync means:
+
+> **Whatever time delta I apply to one linked object, apply the same delta to the other linked object(s).**
+
+Requirements:
+
+- Sync with… must allow selecting a specific other object, not only a vague global group
+- preserve each object's relative offset at the moment linking is established
+- seeking either linked object propagates the same delta to its partner(s)
+- works forward and backward
+- does not reset both objects to identical currentTime values
+- clamp safely at each object's own duration bounds
+- avoid feedback loops where A updates B which updates A repeatedly
+- retain normal play/pause semantics unless an existing sync mode intentionally coordinates those too
+- **Make independent** cleanly breaks the relationship
+- persist explicit links/offsets through normal workspace/FCX state if the current sync architecture persists media relationships
+- build on the existing media-link/sync system rather than replacing it
+
+This is the foundation for later synchronized tracks, cues, animation, and coordinated scenes.
+
+---
+
+# 7. Warp mode — first spatial deformation foundation
+
+Begin the image warp system now, but keep the first implementation deliberately understandable.
+
+Add **Warp** to the normal image right-click/object menu.
+
+When Warp mode is active, the image temporarily changes from ordinary resize interaction into a deformation surface.
+
+## A. Corner warp
+
+Normally the bottom-right corner remains the existing resize affordance.
+
+**Exception:** after the user explicitly chooses **Warp**, the four image corners become warp control points instead of normal resize handles for the duration of Warp mode.
+
+The user can pull individual corners to create perspective-like / 2.5D deformation.
+
+The original image remains nondestructive until the user applies/exports the result.
+
+Warp mode must have an obvious exit/apply path so ordinary bottom-right resize behavior returns afterward.
+
+## B. Single internal push/pull point
+
+For this first warp pass, also let the user click a point anywhere inside the image and manipulate that local region.
+
+The interaction should feel physical:
+
+`Warp → click point inside image → drag / push / pull → surrounding image bends with it`
+
+The selected point should have a visible influence radius / falloff.
+
+The goal is to support pleasing **concave** and **convex** deformation, including a sense of pushing part of the image backward or pulling it forward in an arc.
+
+Think of it like gently deforming a flexible sheet:
+
+- Pull outward / toward viewer → convex bulge
+- Push inward / away from viewer → concave dent
+- drag laterally → local directional bend
+- preserve a smooth falloff around the chosen point rather than producing a hard tear
+
+The UI should remain simple. A reasonable v1 can expose only:
+
+- control point
+- push / pull direction from the drag gesture
+- radius
+- strength
+- reset point / reset warp
+- Apply
+- Cancel
+
+Do not expose a giant mesh editor yet.
+
+## C. Architecture for later expansion
+
+Although v1 may expose four corner points plus one free internal point, store deformation in a generic control-point model so future versions can add:
+
+- additional edge points
+- multiple free points
+- pinned/fixed points
+- mesh warp
+- object pivots / fulcrums
+- rotation around an arbitrary point
+- orbit/revolution around another point/object
+- eventual 2.5D/3D scene transforms
+
+Do not hard-code the model so tightly to four corners that those future additions require replacing the whole system.
+
+Prefer a WebGL/Canvas-backed rendering path for the actual warped raster where appropriate, while allowing lightweight preview techniques if they stay visually faithful.
+
+### Warp mode interaction rules
+
+- normal resize remains normal outside Warp mode
+- entering Warp is explicit from the right-click/object menu
+- entering Warp must not accidentally resize the object
+- leaving Warp restores ordinary grab/resize behavior
+- Cancel restores the pre-warp state
+- Apply preserves the warp nondestructively in the object state where practical
+- Save As must be able to bake the current warp into actual image output
+- Add/result behavior should reuse existing image result/save architecture
+- FCX should preserve the warp state for workspace-owned objects
+
+This is not yet a full 3D editor. It is the first spatial deformation primitive that can later grow into one.
 
 ---
 
 # Architecture / longevity requirements
 
-This must build on FrameChute's existing image operations, file/directory permission handling, first-class result objects, native Save/Save As architecture, dialog lifecycle, Quick Actions substrate, object sizing model, and current context-menu architecture.
+Build on existing FrameChute primitives for:
 
-Do not create parallel systems for:
-
-- image resizing
 - image decoding/encoding
-- result object creation
-- FCX persistence
-- native Save As
-- directory/file permission handling
-- resize-dialog state/lifecycle
-- Quick Actions selection/dispatch
+- image transforms
 - object sizing/transforms
+- result objects
+- FCX persistence
+- native Save/Save As
+- directory/file permissions
+- dialog lifecycle
+- Quick Actions selection/dispatch
 - context-menu positioning/dismissal
+- media syncing/linking
 
-Prefer small adapters around existing primitives.
+Do not create duplicate systems for these responsibilities.
 
-Graceful degradation matters:
+Preserve Manifest V3 and Chrome Web Store constraints. No remote processing.
 
-- if a preferred browser directory API is unavailable, provide an honest fallback where practical
-- never fake a successful batch write if directory write access is unavailable
-- keep the basic single-image Resize + Save As workflow functional even if batch-directory support is unavailable in a given browser/runtime
-
-Preserve Manifest V3 and Chrome Web Store constraints. No remote image processing.
+Graceful degradation is required when a browser capability is unavailable.
 
 ---
 
 # Acceptance workflows
 
-## A. Single image
+## A. Single resize
 
-`Open image → Resize → change dimensions → preview updates → Save As → reopen saved file and verify actual pixel dimensions → original remains unchanged`
+`Open image → Resize → change dimensions → live preview → Save As → reopen file → actual pixel dimensions match → original unchanged`
 
-Then separately:
-
-`Open image → Resize → Add to Workspace → resized result appears as a normal FrameChute image object → FCX snapshot/restore preserves it`
+`Open image → Resize → Add to Workspace → result becomes normal FrameChute image → FCX restore preserves it`
 
 ## B. Batch preserve names
 
-`Choose folder with supported images + unrelated files → Resize Folder → numerical rename OFF → choose output directory → run → supported images are resized, unrelated files ignored, original filenames are preserved safely`
+`Choose folder containing images + unrelated files → Resize Folder → numerical rename OFF → output directory → supported images resized → unrelated files ignored → source filenames preserved safely`
 
 ## C. Batch numerical names
 
-`Choose folder → Resize Folder → Rename outputs numerically ON → preview mapping → run → output directory contains deterministic 001/002/003… sequence with correct resized bytes`
+`Choose folder → Rename outputs numerically ON → preview mapping → run → deterministic 001/002/003… outputs`
 
-## D. Safety
+## D. Resize dismissal
 
-`Choose input directory as output directory → run without explicit overwrite approval → originals remain intact`
+`Resize → × → closes with no mutation → reopen works`
 
-## E. Resize dismissal
+Also verify Escape and Cancel.
 
-`Open image → Resize → click × → dialog closes immediately → image remains unchanged → reopen Resize → dialog works normally`
+## E. Shrink all
 
-Also verify:
+`Several mixed-size images → right-click image → Shrink all images to fit → oversized objects become manageable → small objects are not enlarged`
 
-`Open Resize → press Escape → closes`
+## F. Quick Actions overflow
 
-and, if Cancel is present:
+`Short viewport → many Quick Actions → scroll panel → every action reachable → Tab reaches lower controls`
 
-`Open Resize → Cancel → closes without mutation`
+## G. Context-menu collision
 
-## F. Shrink all images to fit
+`Invoke object menu / Open File menu in overlapping scenarios → menus never obscure each other → visible commands remain clickable → Escape/outside click works predictably`
 
-`Open several images of mixed sizes → make at least two larger than the usable workspace → right-click an image → Shrink all images to fit → oversized images become fully manageable without changing their source pixel data → already-small images are not enlarged`
+## H. Relative media sync
 
-## G. Quick Actions overflow
+`Audio at 12s + video at 47s → Sync with… → seek audio -3s → audio 9s, video 44s → seek video +5s → video 49s, audio 14s`
 
-`Use a viewport short enough that the full Quick Actions list cannot fit → select an object with many actions → scroll inside Quick Actions → every action becomes reachable and clickable → keyboard Tab can also reach lower actions`
+Also test different durations and boundary clamping without losing the stored relative relationship.
 
-## H. Context-menu collision
+## I. Corner warp
 
-`Open/right-click in a way that can invoke the object menu and Open File menu → verify the menus never stack on top of one another → active commands remain visible and clickable → Escape/outside click dismisses predictably`
+`Open image → Warp → drag one corner → image deforms perspectively while object remains otherwise usable → Apply → Save As → output reflects warp → leave Warp → bottom-right returns to normal resize semantics`
+
+## J. Push/pull warp
+
+`Open image → Warp → click center point → pull outward → smooth convex bulge → reset → push inward → smooth concave dent → Cancel restores original → repeat and Apply → FCX restore preserves applied warp state`
 
 ---
 
 # Tests / release checks
 
-When this draft is eventually implemented, add focused tests for pure resize/batch naming logic, dialog dismissal/state reset, shrink-all sizing logic, Quick Actions overflow behavior, and context-menu collision/dismissal where practical, then run the repository's normal full test and Chrome Web Store release gates.
+When this draft is eventually implemented, add focused tests for resize/batch naming logic, dialog dismissal, shrink-all sizing, Quick Actions overflow, context-menu coordination, relative-sync delta propagation/loop prevention, and serializable warp-control-point state where practical.
+
+Then run the repository's normal full automated tests and Chrome Web Store release gates.
