@@ -1,4 +1,5 @@
 await import("./advanced-mode.js");
+await import("./fcx-simple-export-ui.js");
 
 const advancedMode = window.frameChuteAdvancedMode === true;
 
