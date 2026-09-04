@@ -5,6 +5,7 @@ import { saveBlobAs } from "./native-save.js";
 import { zipSync } from "../vendor/fflate.mjs";
 import { PDFDocument } from "../vendor/pdf-lib.mjs";
 import { compareText, replaceAllText, extractDocxText, createSimpleDocx, textToPdf, readableText } from "./document-operations.js";
+import { enterPaintMode, leavePaintMode, paintOverlayFor, syncPaintOverlay } from "../image-edit/paint-runtime.js";
 
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
@@ -29,8 +30,8 @@ function nameOf(block) { return block.querySelector(".block-name")?.value || "re
 function imageOf(block) { return block.querySelector(".image-frame, .gallery-image, img"); }
 function applies(type, { min = 1, max = Infinity } = {}) { return (items) => items.length >= min && items.length <= max && items.every((item) => kind(item) === type); }
 function announce(message) { if (status) status.textContent = message; }
-function addResult(blob, name) {
-  window.dispatchEvent(new CustomEvent("framechute:add-result-object", { detail: { blob, name, kind: blob.type.startsWith("image/") ? "image" : "file" } }));
+function addResult(blob, name, point) {
+  window.dispatchEvent(new CustomEvent("framechute:add-result-object", { detail: { blob, name, point, kind: blob.type.startsWith("image/") ? "image" : "file" } }));
 }
 async function textOf(block) {
   if(kind(block)==="text")return block.querySelector(".text-editor")?.value||"";
@@ -43,7 +44,7 @@ const addTextResult=(text,name)=>window.FrameChuteWorkspace.createBlock({type:"t
 
 async function transformed(block, overrides = {}) {
   const image = imageOf(block); if (!image?.complete) throw new Error("The image is not ready yet");
-  return imageElementToBlob(image, { ...(transforms.get(block) || {}), ...overrides });
+  return imageElementToBlob(image, { ...(transforms.get(block) || {}), paintOverlay: paintOverlayFor(block), ...overrides });
 }
 function register(action) { registry.register(action); }
 function showDialog(title, content, applyLabel = "Apply") {
@@ -62,6 +63,7 @@ register({ id: "object.duplicate", label: "Duplicate", appliesTo: (s) => s.lengt
 } });
 register({id:"object.copy-to",label:"Copy To…",appliesTo:(s)=>s.length>0&&typeof window.showDirectoryPicker==="function",async run({selection:items}){let directory;try{directory=await window.showDirectoryPicker({mode:"readwrite"});}catch(error){if(error.name==="AbortError")return;throw error;}let copied=0,excluded=[];for(const item of items){const blob=imageOf(item)?await transformed(item,{format:"png"}):await window.FrameChuteWorkspace.sourceBlob(item);if(!blob){excluded.push(nameOf(item));continue;}const filename=imageOf(item)?`${nameOf(item).replace(/\.[^.]+$/,"")}.png`:nameOf(item),handle=await directory.getFileHandle(filename,{create:true}),writer=await handle.createWritable();await writer.write(blob);await writer.close();copied++;}announce(`${copied} file(s) copied. Originals were not deleted.${excluded.length?` Unsupported: ${excluded.join(", ")}.`:""}`);}});
 register({ id: "image.rotate-left", label: "↶ Rotate", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { rotate: (transforms.get(item)?.rotate || 0) - 90 })); } });
+register({ id: "image.paint", label: "Edit Image", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) { await enterPaintMode(item); announce("Draw on the image, then choose Done. Your source stays unchanged."); } });
 register({ id: "image.rotate-right", label: "Rotate ↷", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { rotate: (transforms.get(item)?.rotate || 0) + 90 })); } });
 register({ id: "image.flip-x", label: "Flip Horizontal", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { flipX: !transforms.get(item)?.flipX })); } });
 register({ id: "image.flip-y", label: "Flip Vertical", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { flipY: !transforms.get(item)?.flipY })); } });
@@ -71,7 +73,11 @@ register({ id: "image.resize", label: "Resize", appliesTo: applies("image"), asy
   announce(`${results.filter((r) => r.status === "fulfilled").length} resized image result(s) added.`);
 } });
 register({ id: "image.crop", label: "Crop", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) {
-  const crop=await cropOptions(imageOf(item));if(!crop)return;updateTransform(item,{crop});announce("Crop is non-destructive. Use Save As to bake it.");
+  const crop=await cropOptions(imageOf(item));if(!crop)return;
+  const blob=await transformed(item,{crop,width:crop.width,height:crop.height,lockAspect:false,format:"png"});
+  const bounds=item.getBoundingClientRect(),point={x:Math.round(bounds.left+32+window.scrollX),y:Math.round(bounds.top+32+window.scrollY)};
+  addResult(blob,`${nameOf(item).replace(/\.[^.]+$/,"")}-cropped.png`,point);
+  announce("A cropped image object was created. The original is unchanged.");
 } });
 register({ id: "image.trim-alpha", label: "Trim transparency", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) {
   const image = imageOf(item), canvas = document.createElement("canvas"); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
@@ -123,6 +129,7 @@ register({ id: "selection.zip", label: "Compress to ZIP", appliesTo: (s) => s.le
 function updateTransform(item, patch) {
   const value = { ...(transforms.get(item) || {}), ...patch }; transforms.set(item, value);
   const image = imageOf(item); if (image) image.style.transform = `rotate(${(value.rotate || 0) + (value.straighten || 0)}deg) scaleX(${value.flipX ? -1 : 1}) scaleY(${value.flipY ? -1 : 1})`;
+  syncPaintOverlay(item);
   item.dataset.utilityTransformed = "true";
 }
 function render() {
@@ -147,7 +154,15 @@ window.addEventListener("framechute:block-captured", (event) => {
 function restoreTransforms(block, value) { if (!value) return; transforms.set(block, structuredClone(value)); updateTransform(block, {}); }
 window.addEventListener("framechute:block-restored", (event) => restoreTransforms(event.detail.block, event.detail.record.state?.quickActionTransforms));
 window.addEventListener("framechute:custom-block-ready", (event) => restoreTransforms(event.detail.block, event.detail.payload?.quickActionTransforms));
-selection.addEventListener("change", render);
+selection.addEventListener("change", () => { document.querySelectorAll(".is-paint-editing").forEach((block) => { if (!selection.has(block)) leavePaintMode(block); }); render(); });
+window.addEventListener("keydown", (event) => {
+  if (!['Delete','Backspace'].includes(event.key) || !selection.size || event.defaultPrevented) return;
+  const target=event.target;
+  if (document.querySelector("dialog[open]") || (target instanceof Element && target.closest('input,textarea,select,[contenteditable="true"],button,a,.text-editor,.docx-editor,.pdf-text-layer'))) return;
+  event.preventDefault();
+  for (const block of [...selection.items]) block.querySelector(":scope > .block-header .remove-block")?.click();
+  for (const block of [...selection.items]) if (!block.isConnected) selection.remove(block);
+});
 workspace.addEventListener("click", (event) => { const block=event.target.closest(".block"); if (!block || event.target.closest("button,input,textarea,[contenteditable=true]")) return; if (event.ctrlKey||event.metaKey||event.shiftKey) selection.toggle(block); else selection.replace(block); });
 workspace.addEventListener("contextmenu", (event) => { const block=event.target.closest(".block"); if (!block) return; event.preventDefault(); selection.has(block) ? render() : selection.replace(block); });
 new MutationObserver((mutations) => { selection.items.filter((item)=>!item.isConnected).forEach((item)=>selection.remove(item)); for (const mutation of mutations) for (const node of mutation.addedNodes) if (node instanceof HTMLElement && node.classList.contains("block")) enhanceSelectionControl(node); }).observe(workspace,{childList:true});
