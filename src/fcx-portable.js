@@ -84,6 +84,17 @@ async function packageAssets(state, mode) {
     reference.source.missingWithoutOriginal = !descriptor.embedded;
     if (reference.payload) reference.block.state.text = LOCAL_MARKER + JSON.stringify(reference.payload);
   }
+  // Generated media and dirty document runtimes are workspace-owned. They are
+  // always embedded, including in State Only exports, because there is no real
+  // OS handle that could be reconnected later.
+  for (const block of state.blocks) {
+    const blob=block.state?.embeddedBlob;
+    if (!(blob instanceof Blob)) continue;
+    total+=blob.size;if(total>MAX_ASSET_BYTES)throw new Error("Workspace-owned results exceed the 1.5 GB export safety limit.");
+    const assetId=`result-${String(++count).padStart(4,"0")}`,path=`assets/${assetId}/0001${extension(block.name)}`;
+    entries.push([path,blob]);table[assetId]={id:assetId,kind:"result",originalName:block.name,embedded:true,files:[{path,name:block.name,mimeType:blob.type||"application/octet-stream",size:blob.size}]};
+    block.state.embeddedAssetId=assetId;delete block.state.embeddedBlob;
+  }
   return { entries, table };
 }
 
@@ -151,6 +162,10 @@ async function materializeAssets(entries, manifest) {
   return handles;
 }
 
+function restoreResultAssets(state, entries, manifest) {
+  for(const block of state.blocks||[]){const id=block.state?.embeddedAssetId;if(!id)continue;const item=manifest.assets?.[id]?.files?.[0],blob=item&&entries.get(item.path);if(!blob)throw new Error(`Embedded result is missing: ${id}`);block.state.embeddedBlob=new Blob([blob],{type:item.mimeType||"application/octet-stream"});}
+}
+
 function rewriteSources(state, handles) {
   for (const reference of sourceReferences(state)) {
     const key = handles.get(reference.source.portableAssetId);
@@ -181,6 +196,7 @@ async function importFcx(file) {
     const entries = await readZip(file);
     const manifest = validateManifest(await jsonEntry(entries, "manifest.json"));
     const state = validateState(await jsonEntry(entries, "state.json"));
+    restoreResultAssets(state,entries,manifest);
     const handles = await materializeAssets(entries, manifest);
     rewriteSources(state, handles); stagePlayback(state);
     if (state.appearance?.backgroundImageAsset?.portableAssetId) {

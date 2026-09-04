@@ -9,7 +9,7 @@ FrameChute's utility layer follows **select → act → save/result**. Clicking 
 - `actions/native-save.js` normalizes names and serializes before creating/truncating a writable destination. Native Save As remains separate from FCX **Export Snapshot**.
 - `framechute:add-result-object` is the result bridge. Extraction/generation dispatches a Blob and `web-drop.js` creates a normal image object that is immediately selectable and editable.
 - `actions/image-operations.js` bakes non-destructive crop/size/rotation/flip/straighten/background/format state only when saving or generating a result.
-- `actions/data-utilities.js` provides local CSV tables and lazy, size-bounded ZIP/CBZ entry browsing using the already packaged Fflate build.
+- `actions/data-utilities.js` provides local CSV tables and eagerly decoded ZIP/CBZ entry browsing guarded by advertised per-entry, cumulative expanded-size, and entry-count limits.
 
 ## Part 1 delivered
 
@@ -18,7 +18,7 @@ FrameChute's utility layer follows **select → act → save/result**. Clicking 
 - Files: rename/batch sequential rename, workspace duplicate, and ZIP creation from a selection.
 - PDF: page rotate/delete/duplicate/reorder/extract, insert/merge, pages-to-PNG results, margin crop, and conservative structural compression with native Save and Save As.
 - CSV: quoted parsing/serialization, editable cells, add row, sort, filter/find, exact duplicate removal, and Save As CSV.
-- ZIP/CBZ: local listing, per-entry sizes, image-oriented opening into a result object, and individual unsupported-entry extraction.
+- ZIP/CBZ: bounded local listing, common document/media routing into durable result objects, CBZ URL cleanup, and a real Save As fallback for unsupported entries.
 
 ## Honest Part 1 limits / Part 2 backends
 
