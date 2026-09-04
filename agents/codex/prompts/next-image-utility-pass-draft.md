@@ -8,11 +8,15 @@ FrameChute should make ordinary visual/file jobs feel immediate rather than forc
 
 > **Preview it. Save it. Keep working with it only if you want to.**
 
-Preserve existing object, save, FCX, ingestion, menu, timing, and media systems. Do not solve these items by creating parallel architectures.
+Preserve existing object, save, FCX, ingestion, menu, timing, media, and workspace systems. Do not solve these items by creating parallel architectures.
 
 ---
 
-# 1. Image Resize — complete single-image workflow
+# CURRENT PRIORITY PASS
+
+Implement these as one coherent pass before moving into the later roadmap sections.
+
+## 1. Image Resize — complete single-image workflow
 
 Upgrade the existing Resize Image action into a complete workflow:
 
@@ -47,7 +51,7 @@ Fix this:
 
 ---
 
-# 2. Resize Folder / batch resize
+## 2. Resize Folder / batch resize
 
 Add **Resize Folder… / Resize Images in Folder…**.
 
@@ -102,7 +106,7 @@ Example:
 
 ---
 
-# 3. Shrink all images to fit
+## 3. Shrink all images to fit
 
 Add **Shrink all images to fit** to the normal image/object right-click menu.
 
@@ -119,13 +123,40 @@ Requirements:
 - persist resulting object dimensions in normal workspace/FCX state
 - concise completion status, e.g. `Shrank 6 images to fit.`
 
+Also expose the related single-object display commands where practical:
+
+- Fit to Workspace
+- Fit Width
+- Fit Height
+- Actual Size
+- Shrink all images to fit
+
+These are display/workspace sizing operations, not destructive resampling.
+
 ---
 
-# 4. Quick Actions must scroll
+## 4. Quick Actions — LEFT by default and genuinely scrollable
 
-The vertical Quick Actions panel currently lets lower controls become inaccessible on short windows.
+The vertical Quick Actions panel currently has two immediate UX problems:
 
-Keep the vertical 1990s-Mac-inspired panel, but make it independently scrollable.
+1. it starts on the **right**, where it can collide visually with the FrameChute mascot
+2. lower actions can become inaccessible because the panel does not properly scroll
+
+Fix both as part of this pass.
+
+### Default placement
+
+- Quick Actions should open on the **left side of the workspace by default**, not the right
+- choose a sensible left inset so it does not sit flush against the browser edge
+- preserve the current compact vertical panel idea
+- keep the right side clear enough that the mascot and Quick Actions do not fight for the same visual space
+- if responsive constraints make the left placement impossible, reposition intelligently rather than covering the mascot or important workspace controls
+- if the panel is user-movable now or later, the initial/default position is still left
+- do not hard-code placement in a way that makes future draggable/persisted panel positioning difficult
+
+### Scrolling
+
+The action list must become independently vertically scrollable whenever it exceeds the available height.
 
 Requirements:
 
@@ -135,15 +166,43 @@ Requirements:
 - no horizontal scrollbar
 - wheel/trackpad over the panel scrolls the panel
 - keyboard Tab reaches lower actions and naturally scrolls them into view
-- keep close/hide affordance reachable where practical
+- keep important header/close/hide affordances reachable where practical while the action list scrolls
 - do not shrink controls into unusability just to make them fit
 - preserve dependable system-font/layout fallback
+- do not make the entire workspace/page scroll merely so the user can reach a Quick Action
 
 > **If FrameChute shows an action, the user must be able to reach it.**
 
+Acceptance example:
+
+`short browser window → select object with many Quick Actions → panel opens on left → mascot remains unobstructed → scroll inside panel → every action becomes reachable`
+
 ---
 
-# 5. Context menus must not overlap
+## 5. Settings dock — explicit Grab / Move affordance
+
+The Settings surface should follow the same discoverability principle as movable FrameChute objects.
+
+The current little cross/star-like drag affordance is counterintuitive. A user should not have to guess that a small cross means “drag this panel.”
+
+Requirements:
+
+- give the Settings dock a clear **Grab / Move** affordance
+- prefer a small visible control labeled **Grab**, **Move**, or an unmistakable grip/hand with tooltip/ARIA text such as `Grab / Move Settings`
+- if space allows, `Grab` text is preferable to an ambiguous symbol-only cross
+- dragging from that affordance moves the Settings dock
+- keep the draggable hit target comfortably usable
+- do not make the close button double as the drag control
+- keep the close **×** visually and behaviorally distinct: × means close, Grab means move
+- if the old cross/star grip remains anywhere, it must no longer be the only clue; replace it or supplement it with the explicit Grab/Move affordance
+- keyboard/focus behavior must remain sensible
+- retain the existing Settings functionality; this is a discoverability/interaction fix, not a Settings rewrite
+
+Apply the same vocabulary consistently where other floating docks have ambiguous drag handles: **Grab / Move** should mean movement.
+
+---
+
+## 6. Context menus must not overlap
 
 FrameChute currently has multiple context-menu surfaces, including the original object/layer menu and the Open File menu.
 
@@ -163,7 +222,7 @@ Preferred behavior:
 
 ---
 
-# 6. Take object syncing seriously — relative-time linkage
+## 7. Take object syncing seriously — relative-time linkage
 
 The existing **Sync with…** concept should become genuinely useful for individual media objects.
 
@@ -203,7 +262,7 @@ This is the foundation for later synchronized tracks, cues, animation, and coord
 
 ---
 
-# 7. Warp mode — first spatial deformation foundation
+## 8. Warp mode — first spatial deformation foundation
 
 Begin the image warp system now, but keep the first implementation deliberately understandable.
 
@@ -211,7 +270,7 @@ Add **Warp** to the normal image right-click/object menu.
 
 When Warp mode is active, the image temporarily changes from ordinary resize interaction into a deformation surface.
 
-## A. Corner warp
+### A. Corner warp
 
 Normally the bottom-right corner remains the existing resize affordance.
 
@@ -223,7 +282,7 @@ The original image remains nondestructive until the user applies/exports the res
 
 Warp mode must have an obvious exit/apply path so ordinary bottom-right resize behavior returns afterward.
 
-## B. Single internal push/pull point
+### B. Single internal push/pull point
 
 For this first warp pass, also let the user click a point anywhere inside the image and manipulate that local region.
 
@@ -237,12 +296,12 @@ The goal is to support pleasing **concave** and **convex** deformation, includin
 
 Think of it like gently deforming a flexible sheet:
 
-- Pull outward / toward viewer → convex bulge
-- Push inward / away from viewer → concave dent
+- pull outward / toward viewer → convex bulge
+- push inward / away from viewer → concave dent
 - drag laterally → local directional bend
 - preserve a smooth falloff around the chosen point rather than producing a hard tear
 
-The UI should remain simple. A reasonable v1 can expose only:
+A reasonable v1 can expose only:
 
 - control point
 - push / pull direction from the drag gesture
@@ -254,7 +313,7 @@ The UI should remain simple. A reasonable v1 can expose only:
 
 Do not expose a giant mesh editor yet.
 
-## C. Architecture for later expansion
+### C. Architecture for later expansion
 
 Although v1 may expose four corner points plus one free internal point, store deformation in a generic control-point model so future versions can add:
 
@@ -271,17 +330,17 @@ Do not hard-code the model so tightly to four corners that those future addition
 
 Prefer a WebGL/Canvas-backed rendering path for the actual warped raster where appropriate, while allowing lightweight preview techniques if they stay visually faithful.
 
-### Warp mode interaction rules
+Warp interaction rules:
 
 - normal resize remains normal outside Warp mode
 - entering Warp is explicit from the right-click/object menu
 - entering Warp must not accidentally resize the object
 - leaving Warp restores ordinary grab/resize behavior
 - Cancel restores the pre-warp state
-- Apply preserves the warp nondestructively in the object state where practical
-- Save As must be able to bake the current warp into actual image output
-- Add/result behavior should reuse existing image result/save architecture
-- FCX should preserve the warp state for workspace-owned objects
+- Apply preserves the warp nondestructively in object state where practical
+- Save As can bake the current warp into actual image output
+- Add/result behavior reuses existing image result/save architecture
+- FCX preserves warp state for workspace-owned objects
 
 This is not yet a full 3D editor. It is the first spatial deformation primitive that can later grow into one.
 
@@ -300,6 +359,7 @@ Build on existing FrameChute primitives for:
 - directory/file permissions
 - dialog lifecycle
 - Quick Actions selection/dispatch
+- floating-dock movement/placement
 - context-menu positioning/dismissal
 - media syncing/linking
 
@@ -311,7 +371,7 @@ Graceful degradation is required when a browser capability is unavailable.
 
 ---
 
-# Acceptance workflows
+# Acceptance workflows for current pass
 
 ## A. Single resize
 
@@ -337,45 +397,58 @@ Also verify Escape and Cancel.
 
 `Several mixed-size images → right-click image → Shrink all images to fit → oversized objects become manageable → small objects are not enlarged`
 
-## F. Quick Actions overflow
+## F. Quick Actions placement and overflow
 
-`Short viewport → many Quick Actions → scroll panel → every action reachable → Tab reaches lower controls`
+`Short viewport → many Quick Actions → panel starts on left → mascot remains unobstructed → scroll panel → every action reachable → Tab reaches lower controls`
 
-## G. Context-menu collision
+## G. Settings Grab
+
+`Open Settings → use explicit Grab / Move control → drag Settings dock → panel moves predictably → × still only closes and does not act as movement affordance`
+
+## H. Context-menu collision
 
 `Invoke object menu / Open File menu in overlapping scenarios → menus never obscure each other → visible commands remain clickable → Escape/outside click works predictably`
 
-## H. Relative media sync
+## I. Relative media sync
 
 `Audio at 12s + video at 47s → Sync with… → seek audio -3s → audio 9s, video 44s → seek video +5s → video 49s, audio 14s`
 
 Also test different durations and boundary clamping without losing the stored relative relationship.
 
-## I. Corner warp
+## J. Corner warp
 
 `Open image → Warp → drag one corner → image deforms perspectively while object remains otherwise usable → Apply → Save As → output reflects warp → leave Warp → bottom-right returns to normal resize semantics`
 
-## J. Push/pull warp
+## K. Push/pull warp
 
 `Open image → Warp → click center point → pull outward → smooth convex bulge → reset → push inward → smooth concave dent → Cancel restores original → repeat and Apply → FCX restore preserves applied warp state`
 
 ---
 
-# Tests / release checks
+# Tests / release checks for current pass
 
-When this draft is eventually implemented, add focused tests for resize/batch naming logic, dialog dismissal, shrink-all sizing, Quick Actions overflow, context-menu coordination, relative-sync delta propagation/loop prevention, and serializable warp-control-point state where practical.
+Add focused tests where practical for:
+
+- resize/batch naming logic
+- resize-dialog dismissal
+- shrink-all sizing
+- Quick Actions default placement and overflow reachability
+- Settings Grab/Move semantics
+- context-menu coordination
+- relative-sync delta propagation and loop prevention
+- serializable warp-control-point state
 
 Then run the repository's normal full automated tests and Chrome Web Store release gates.
 
 ---
 
-# Additional object/workspace foundations to fold into the roadmap
+# FOLLOW-UP OBJECT / WORKSPACE FOUNDATIONS
 
 These are deliberate compounding features. They are more valuable than adding a long list of unrelated file-format tricks because each one improves many existing and future FrameChute objects.
 
 Do not create dead buttons or placeholder UI. If the whole set is too large for one implementation pass, implement it in the priority order below and leave later items as documented follow-up work rather than half-working features.
 
-## 8. Real Undo / Redo
+## 9. Real Undo / Redo
 
 FrameChute needs a shared workspace history system before object manipulation becomes much deeper.
 
@@ -385,7 +458,7 @@ Required user behavior:
 - `Ctrl/Cmd+Shift+Z` → Redo
 - where platform conventions make sense, `Ctrl+Y` may also Redo on Windows
 
-At minimum, design the history model to cover:
+Design the history model to cover at least:
 
 - move
 - object display resize
@@ -406,7 +479,7 @@ Undo/Redo should restore real object state through the existing object model and
 
 > **Users should be able to experiment without fearing the workspace.**
 
-## 9. Group / Ungroup
+## 10. Group / Ungroup
 
 Allow multiple selected objects to become one manipulable group while preserving their individual identities.
 
@@ -421,13 +494,13 @@ Requirements:
 - preserve child-relative positions and transforms
 - moving the group moves all children coherently
 - scaling/rotating the group should preserve relative layout where supported
-- group state must survive FCX snapshot/restore
+- group state survives FCX snapshot/restore
 - group/ungroup integrates with Undo/Redo
-- deletion of a group must have clear semantics and never silently destroy recoverability of child state
+- deletion of a group has clear semantics and never silently destroys recoverability of child state
 
 Architect the group as the beginning of a scene graph so it can later own a pivot/fulcrum and participate in animation, web, presentation, and game-oriented modes.
 
-## 10. Align, distribute, and snapping
+## 11. Align, distribute, and snapping
 
 Multi-selection should gain fast layout commands:
 
@@ -448,34 +521,30 @@ Also add lightweight snapping where practical:
 
 Snapping should assist rather than trap the user. Keep it easy to temporarily bypass if needed and avoid jittery competing snap targets.
 
-These commands must operate through the same object-position/transform model as normal dragging.
-
-## 11. Lock / Unlock object
+## 12. Lock / Unlock object
 
 Add a simple **Lock** command so reference/background objects stop moving accidentally.
 
-Initial behavior can be one understandable state:
+Initial behavior:
 
 - Lock
 - Unlock
 
-A locked object should remain visible and usable as content but reject accidental workspace move/resize/rotate/warp gestures unless the user unlocks it.
+A locked object remains visible and usable as content but rejects accidental workspace move/resize/rotate/warp gestures until unlocked.
 
-Later this can grow into separate position/size/edit locks, but do not overcomplicate v1.
+Persist lock state in workspace/FCX state and integrate it with Undo/Redo.
 
-Persist lock state in normal workspace/FCX state and integrate it with Undo/Redo.
-
-## 12. Duplicate with visible offset
+## 13. Duplicate with visible offset
 
 Make `Ctrl/Cmd+D` a dependable Duplicate shortcut.
 
-A duplicate should appear with a small visible spatial offset so the user can immediately tell duplication occurred rather than thinking nothing happened.
+A duplicate should appear with a small visible spatial offset so the user can immediately tell duplication occurred.
 
-The duplicate must be a normal independent FrameChute object using the existing semantic duplication/result architecture, preserving the appropriate source/edit state without accidentally retaining relationships that should be independent.
+Use the existing semantic duplication/result architecture and preserve appropriate source/edit state without accidentally retaining relationships that should be independent.
 
-## 13. Sync Groups and optional Sync Master
+## 14. Sync Groups and optional Sync Master
 
-Build on section 6 rather than creating another timing system.
+Build on the relative-sync system rather than creating another timing architecture.
 
 Once specific pairwise relative sync is reliable, allow three or more media objects to belong to the same explicit **Sync Group**.
 
@@ -495,15 +564,9 @@ Video C   01:09
 
 Every member retains its established relative offset.
 
-Later/where practical, allow **Set as Sync Master**:
+Later/where practical, allow **Set as Sync Master** so master seek/play behavior can coordinate followers without changing the core delta-preserving relationship.
 
-- seeking the master propagates relative deltas
-- play/pause from the master can coordinate followers if that behavior is explicitly enabled
-- followers still retain their own durations and clamp honestly at boundaries
-
-Do not require Sync Master for ordinary two-way relative seeking. The important primitive remains delta-preserving linkage.
-
-## 14. Object Properties
+## 15. Object Properties
 
 Add a plain, compact **Properties…** surface for precision without crowding the everyday UI.
 
@@ -523,22 +586,13 @@ File size       (when known)
 Source          (when meaningful/safe)
 ```
 
-As capabilities appear, this same properties model can later expose:
-
-```text
-Pivot / Fulcrum
-Warp
-Sync group
-Start time
-End time
-Lock state
-```
+Later expose Pivot/Fulcrum, Warp, Sync group, Start time, End time, and Lock state through this same model.
 
 Editable values must write through existing object state rather than becoming a disconnected inspector model.
 
-## 15. Opacity for visual objects
+## 16. Opacity for visual objects
 
-Give applicable visual objects a simple opacity control, ideally contextual and also visible in Properties.
+Give applicable visual objects a simple opacity control:
 
 - range 0–100%
 - live preview
@@ -546,13 +600,11 @@ Give applicable visual objects a simple opacity control, ideally contextual and 
 - participates in Undo/Redo
 - composes correctly with image warp/crop/masks and grouping
 
-This should become an animatable property later, so represent it semantically rather than baking it into pixels.
+Represent it semantically so it can become animatable later.
 
-## 16. Nondestructive crop / mask state
+## 17. Nondestructive crop / mask state
 
-Continue moving image editing away from unnecessary destructive baking.
-
-Where practical, represent crop/mask as object state over the original source:
+Represent crop/mask as object state over the original source where practical:
 
 ```text
 source image
@@ -564,32 +616,13 @@ source image
 = visible object
 ```
 
-The user should be able to:
-
-- Edit Crop
-- Reset Crop
-- edit/restore mask where supported
-- Save As… to bake the current composed result when desired
-
-Do not destroy source pixels merely because the user wants to experiment with a crop or mask inside the workspace.
-
-## 17. Complete the Fit family
-
-Alongside **Shrink all images to fit**, expose understandable single-object fit commands where appropriate:
-
-- Fit to Workspace
-- Fit Width
-- Fit Height
-- Actual Size
-- Shrink all images to fit
-
-These are display/workspace sizing operations, not destructive resampling. Preserve aspect ratio unless the action explicitly says otherwise.
+The user should be able to Edit Crop, Reset Crop, restore/edit masks where supported, and Save As to bake the composed result when desired.
 
 ## 18. Recent authorized output folders
 
 After the user explicitly chooses/authorizes an output directory, make repeated work less tedious where browser permission semantics permit it.
 
-A Save/Batch flow may show something like:
+Example:
 
 ```text
 Recent output folders
@@ -599,12 +632,7 @@ Recent output folders
 - Choose another…
 ```
 
-Rules:
-
-- never bypass browser permission requirements
-- reconnect/re-request permission honestly if the browser no longer grants access
-- do not pretend a remembered path is writable when it is not
-- keep this convenience local
+Never bypass browser permissions or pretend a remembered directory remains writable when it is not.
 
 ## 19. Autosave / crash recovery for workspace state
 
@@ -612,23 +640,15 @@ As FrameChute becomes a real working surface, accidental browser closure/crash m
 
 Implement local recovery separately from native file Save:
 
-- periodically preserve recoverable workspace state locally using the existing FCX/workspace serialization primitives where practical
+- periodically preserve recoverable workspace state locally using existing FCX/workspace serialization primitives where practical
 - avoid excessive writes during rapid pointer gestures
-- on an unclean/recoverable reopen, offer a clear choice such as:
-
-```text
-Recovered workspace from 2 minutes ago
-[ Restore ] [ Discard ]
-```
-
-- do not silently overwrite source files
+- on recoverable reopen, offer Restore / Discard
+- never silently overwrite source files
 - clearly distinguish recovery state from an explicitly exported `.fcx`
-- preserve privacy/local-first behavior
+- preserve local-first/privacy behavior
 - bound storage usage and clean obsolete recovery generations
 
 ## 20. Command Palette
-
-As FrameChute gains more abilities, avoid turning the interface into hundreds of permanent buttons.
 
 Add a lightweight command palette, preferably `Ctrl/Cmd+K`, that searches available actions by understandable names.
 
@@ -646,19 +666,9 @@ convert
 properties
 ```
 
-Requirements:
-
-- contextual actions should respect the current selection/object type
-- unavailable actions should not pretend to work
-- keyboard-first but fully clickable
-- search should be simple and fast
-- invoking a palette command should call the same underlying action as the visible menu/Quick Action, not duplicate business logic
-
-This is one of the main ways FrameChute can gain breadth without becoming a giant cockpit.
+Contextual actions must respect the current selection/object type and invoke the same underlying action as menus/Quick Actions rather than duplicating logic.
 
 ## 21. Send result to… / explicit result routing
-
-Generalize the current idea that operation outputs are useful objects rather than dead downloads.
 
 When an operation creates a result, give the user explicit destinations where appropriate:
 
@@ -668,7 +678,7 @@ Add to Workspace
 Copy
 ```
 
-Later this can become a small **Send result to…** model:
+Later generalize this to:
 
 ```text
 Workspace
@@ -678,25 +688,20 @@ New canvas
 Another compatible FrameChute object
 ```
 
-Rules:
-
-- never force a result into the workspace just because FrameChute can
-- never force a download if the user only wants to keep working with the result
-- all routes should converge on existing result/save/clipboard/object primitives
-- preserve the product rule: **save it, keep working with it, or both**
+Never force a result into the workspace or force a download when the user wants another route.
 
 ---
 
-# Priority after the current resize / warp / sync pass
-
-If these foundations are implemented in stages, prefer this order:
+# Priority after the current pass
 
 ```text
 CURRENT PASS
 resize + batch resize
 warp
 relative media sync
-menu/Quick Actions/fit fixes
+Quick Actions left + scroll
+Settings Grab / Move
+menu / fit fixes
 
         ↓
 
