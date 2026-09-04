@@ -69,3 +69,15 @@ export async function transformPdfPages(bytes, operation) {
   } else throw new Error(`Unsupported PDF page operation: ${operation.type}`);
   return new Uint8Array(await pdf.save());
 }
+
+export async function extractPdfPages(bytes, pageNumbers) {
+  const source=await PDFDocument.load(bytes instanceof Uint8Array?bytes.slice():bytes),output=await PDFDocument.create(),indices=[...new Set(pageNumbers)].map(page=>page-1).filter(index=>index>=0&&index<source.getPageCount());
+  if(!indices.length)throw new Error("Choose at least one valid page");const pages=await output.copyPages(source,indices);pages.forEach(page=>output.addPage(page));return new Uint8Array(await output.save());
+}
+export async function mergePdfBytes(bytes, addedBytes, insertAfter=null) {
+  const output=await PDFDocument.load(bytes instanceof Uint8Array?bytes.slice():bytes),added=await PDFDocument.load(addedBytes instanceof Uint8Array?addedBytes.slice():addedBytes),pages=await output.copyPages(added,added.getPageIndices());let at=insertAfter==null?output.getPageCount():Math.max(0,Math.min(output.getPageCount(),insertAfter));for(const page of pages)output.insertPage(at++,page);return new Uint8Array(await output.save());
+}
+export async function cropPdfMargins(bytes, pageNumber, margins) {
+  const output=await PDFDocument.load(bytes instanceof Uint8Array?bytes.slice():bytes),page=output.getPage(pageNumber-1),{width,height}=page.getSize(),left=Math.max(0,Number(margins.left)||0),right=Math.max(0,Number(margins.right)||0),top=Math.max(0,Number(margins.top)||0),bottom=Math.max(0,Number(margins.bottom)||0);if(left+right>=width||top+bottom>=height)throw new Error("Crop margins leave no visible page");page.setCropBox(left,bottom,width-left-right,height-top-bottom);return new Uint8Array(await output.save());
+}
+export async function conservativelyCompressPdf(bytes) { const pdf=await PDFDocument.load(bytes instanceof Uint8Array?bytes.slice():bytes);return new Uint8Array(await pdf.save({useObjectStreams:true,addDefaultPage:false,objectsPerTick:50})); }

@@ -384,12 +384,15 @@ function createCustomBlock(payload, options = {}) {
 
   if (options.replace) options.replace.replaceWith(block);
   else workspace.append(block);
+  window.dispatchEvent(new CustomEvent("framechute:custom-block-ready", { detail: { block, payload } }));
   return block;
 }
 
 window.addEventListener("framechute:add-result-object", async (event) => {
   const { blob, name, kind } = event.detail || {};
-  if (!(blob instanceof Blob) || kind !== "image") return;
+  if (!(blob instanceof Blob)) return;
+  if (kind === "text") { await createDroppedText(await blob.text(), { x: 120, y: 120 }); const block=[...workspace.querySelectorAll('.block[data-block-type="text"]')].at(-1); if(block)block.querySelector(".block-name").value=name||"Extracted text"; return; }
+  if (kind !== "image") { window.dispatchEvent(new CustomEvent("framechute:open-result-file", { detail: { file: new File([blob], name || "result", { type: blob.type }), kind } })); return; }
   const dataUrl = await fileAsDataUrl(new File([blob], name || "result.png", { type: blob.type }));
   const block = createCustomBlock({ kind: "image", name: name || "Result", displayName: name || "Result", dataUrl });
   if (block) {
