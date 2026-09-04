@@ -677,6 +677,7 @@ function captureWorkspace(name) {
     name,
     createdAt: new Date().toISOString(),
     appearance: detail.appearance ?? null,
+    workspace: { scrollX: window.scrollX, scrollY: window.scrollY },
     blocks: [...workspace.querySelectorAll(".block")].map(captureBlock)
   };
 }
@@ -697,8 +698,19 @@ async function restoreWorkspace(snapshot) {
     await createBlock(record);
   }
 
+  if (snapshot.workspace) window.scrollTo(Number(snapshot.workspace.scrollX) || 0, Number(snapshot.workspace.scrollY) || 0);
+
   setStatus(`Restored “${snapshot.name}”.`);
 }
+
+// Portable formats and future history consumers use the same semantic
+// serializer/restorer as local snapshots rather than inspecting private maps.
+window.addEventListener("framechute:capture-workspace", (event) => {
+  event.detail.snapshot = captureWorkspace(event.detail.name || "FrameChute workspace");
+});
+window.addEventListener("framechute:restore-workspace", (event) => {
+  event.detail.promise = restoreWorkspace(event.detail.snapshot);
+});
 
 async function refreshSnapshotList(selectedId = "") {
   const snapshots = await listSnapshots();
