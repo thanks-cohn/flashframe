@@ -444,8 +444,8 @@ body.hide-block-headers #workspace .block > .block-header {
 .compact-drag-handle {
   position: absolute;
   top: 5px;
-  left: 7px;
-  z-index: 30;
+  left: 40px;
+  z-index: var(--object-control-grab-z, 40);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -464,7 +464,7 @@ body.hide-block-headers #workspace .block > .block-header {
 }
 
 body:not(.hide-block-headers) .block-header {
-  padding-left: 91px;
+  padding-left: 124px;
 }
 
 body.hide-block-headers .compact-drag-handle {
@@ -476,7 +476,7 @@ body.hide-block-headers .compact-drag-handle {
   position: absolute;
   right: 0;
   bottom: 0;
-  z-index: 35;
+  z-index: var(--object-control-resize-z, 41);
   width: 32px;
   height: 32px;
   cursor: nwse-resize;

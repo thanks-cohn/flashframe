@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { floodFill, displayToIntrinsic, serializePaintLayer, deserializePaintLayer, compositeRgba } from "../src/image-edit/paint-layer.mjs";
+import { floodFill, displayToIntrinsic, transformedDisplayToIntrinsic, serializePaintLayer, deserializePaintLayer, compositeRgba } from "../src/image-edit/paint-layer.mjs";
 
 function pixels(width, height, color = [255, 255, 255, 255]) {
   const data = new Uint8ClampedArray(width * height * 4);
@@ -35,6 +35,28 @@ test("large flat fills are iterative and bounded", () => {
 test("display coordinates stay registered across resizing", () => {
   assert.deepEqual(displayToIntrinsic(150, 100, { left: 50, top: 50, width: 200, height: 100 }, 1000, 500), { x: 500, y: 250 });
   assert.deepEqual(displayToIntrinsic(250, 150, { left: 50, top: 50, width: 400, height: 200 }, 1000, 500), { x: 500, y: 250 });
+});
+
+test("inverse coordinate mapping follows quarter turns around transform origin", () => {
+  const layout={left:300,top:200,width:200,height:100},origin={x:100,y:50};
+  const matrices=[
+    [{a:0,b:1,c:-1,d:0,e:0,f:0},420,170],
+    [{a:-1,b:0,c:0,d:-1,e:0,f:0},480,270],
+    [{a:0,b:-1,c:1,d:0,e:0,f:0},380,330]
+  ];
+  for(const [matrix,clientX,clientY] of matrices) assert.deepEqual(transformedDisplayToIntrinsic(clientX,clientY,layout,matrix,origin,1000,500),{x:100,y:150});
+});
+
+test("inverse coordinate mapping handles flips and rotate-flip combinations after movement", () => {
+  const layout={left:725,top:410,width:320,height:180},origin={x:160,y:90};
+  const local={x:64,y:135};
+  const cases=[{a:-1,b:0,c:0,d:1,e:0,f:0},{a:1,b:0,c:0,d:-1,e:0,f:0},{a:0,b:-1,c:-1,d:0,e:0,f:0}];
+  for(const matrix of cases){
+    const dx=local.x-origin.x,dy=local.y-origin.y;
+    const clientX=layout.left+origin.x+matrix.a*dx+matrix.c*dy+matrix.e;
+    const clientY=layout.top+origin.y+matrix.b*dx+matrix.d*dy+matrix.f;
+    assert.deepEqual(transformedDisplayToIntrinsic(clientX,clientY,layout,matrix,origin,1600,900),{x:320,y:675});
+  }
 });
 
 test("paint-layer state round trips RGBA and reserves a source mask", () => {

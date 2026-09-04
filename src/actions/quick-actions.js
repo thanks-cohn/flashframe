@@ -30,8 +30,8 @@ function nameOf(block) { return block.querySelector(".block-name")?.value || "re
 function imageOf(block) { return block.querySelector(".image-frame, .gallery-image, img"); }
 function applies(type, { min = 1, max = Infinity } = {}) { return (items) => items.length >= min && items.length <= max && items.every((item) => kind(item) === type); }
 function announce(message) { if (status) status.textContent = message; }
-function addResult(blob, name) {
-  window.dispatchEvent(new CustomEvent("framechute:add-result-object", { detail: { blob, name, kind: blob.type.startsWith("image/") ? "image" : "file" } }));
+function addResult(blob, name, point) {
+  window.dispatchEvent(new CustomEvent("framechute:add-result-object", { detail: { blob, name, point, kind: blob.type.startsWith("image/") ? "image" : "file" } }));
 }
 async function textOf(block) {
   if(kind(block)==="text")return block.querySelector(".text-editor")?.value||"";
@@ -73,7 +73,11 @@ register({ id: "image.resize", label: "Resize", appliesTo: applies("image"), asy
   announce(`${results.filter((r) => r.status === "fulfilled").length} resized image result(s) added.`);
 } });
 register({ id: "image.crop", label: "Crop", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) {
-  const crop=await cropOptions(imageOf(item));if(!crop)return;updateTransform(item,{crop});announce("Crop is non-destructive. Use Save As to bake it.");
+  const crop=await cropOptions(imageOf(item));if(!crop)return;
+  const blob=await transformed(item,{crop,width:crop.width,height:crop.height,lockAspect:false,format:"png"});
+  const bounds=item.getBoundingClientRect(),point={x:Math.round(bounds.left+32+window.scrollX),y:Math.round(bounds.top+32+window.scrollY)};
+  addResult(blob,`${nameOf(item).replace(/\.[^.]+$/,"")}-cropped.png`,point);
+  announce("A cropped image object was created. The original is unchanged.");
 } });
 register({ id: "image.trim-alpha", label: "Trim transparency", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) {
   const image = imageOf(item), canvas = document.createElement("canvas"); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
@@ -151,6 +155,14 @@ function restoreTransforms(block, value) { if (!value) return; transforms.set(bl
 window.addEventListener("framechute:block-restored", (event) => restoreTransforms(event.detail.block, event.detail.record.state?.quickActionTransforms));
 window.addEventListener("framechute:custom-block-ready", (event) => restoreTransforms(event.detail.block, event.detail.payload?.quickActionTransforms));
 selection.addEventListener("change", () => { document.querySelectorAll(".is-paint-editing").forEach((block) => { if (!selection.has(block)) leavePaintMode(block); }); render(); });
+window.addEventListener("keydown", (event) => {
+  if (!['Delete','Backspace'].includes(event.key) || !selection.size || event.defaultPrevented) return;
+  const target=event.target;
+  if (document.querySelector("dialog[open]") || (target instanceof Element && target.closest('input,textarea,select,[contenteditable="true"],button,a,.text-editor,.docx-editor,.pdf-text-layer'))) return;
+  event.preventDefault();
+  for (const block of [...selection.items]) block.querySelector(":scope > .block-header .remove-block")?.click();
+  for (const block of [...selection.items]) if (!block.isConnected) selection.remove(block);
+});
 workspace.addEventListener("click", (event) => { const block=event.target.closest(".block"); if (!block || event.target.closest("button,input,textarea,[contenteditable=true]")) return; if (event.ctrlKey||event.metaKey||event.shiftKey) selection.toggle(block); else selection.replace(block); });
 workspace.addEventListener("contextmenu", (event) => { const block=event.target.closest(".block"); if (!block) return; event.preventDefault(); selection.has(block) ? render() : selection.replace(block); });
 new MutationObserver((mutations) => { selection.items.filter((item)=>!item.isConnected).forEach((item)=>selection.remove(item)); for (const mutation of mutations) for (const node of mutation.addedNodes) if (node instanceof HTMLElement && node.classList.contains("block")) enhanceSelectionControl(node); }).observe(workspace,{childList:true});

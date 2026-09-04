@@ -19,11 +19,14 @@
 }
 
 .block.is-frameless-media:has(> .image-frame) > .image-frame,
-.block.is-frameless-media:has(> .image-frame) > .frameless-resize-handle {
+.block.is-frameless-media:has(> .image-frame) > .frameless-resize-handle,
+.block.is-frameless-media:has(> .image-frame) > .quick-select-toggle,
+.block.is-frameless-media:has(> .image-frame) > .image-paint-layer,
+.block.is-frameless-media:has(> .image-frame) > .paint-toolbar {
   pointer-events: auto !important;
 }
 
-.block.is-frameless-media > :not(.image-frame):not(.video-player):not(.custom-state-store):not(.remote-video-state):not(.frameless-resize-handle) {
+.block.is-frameless-media > :not(.image-frame):not(.video-player):not(.custom-state-store):not(.remote-video-state):not(.frameless-resize-handle):not(.quick-select-toggle):not(.image-paint-layer):not(.paint-toolbar):not(.video-grab-handle) {
   display: none !important;
 }
 
@@ -38,7 +41,7 @@
   position: absolute;
   right: var(--frameless-content-right-gap, 0px);
   bottom: var(--frameless-content-bottom-gap, 0px);
-  z-index: 50;
+  z-index: var(--object-control-resize-z, 41);
   display: block !important;
   width: 36px;
   height: 36px;

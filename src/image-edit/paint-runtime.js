@@ -1,4 +1,4 @@
-import { floodFill, displayToIntrinsic, serializePaintLayer, deserializePaintLayer } from "./paint-layer.mjs";
+import { floodFill, transformedDisplayToIntrinsic, serializePaintLayer, deserializePaintLayer } from "./paint-layer.mjs";
 
 const layers = new WeakMap();
 const HISTORY_LIMIT = 24;
@@ -8,13 +8,16 @@ function rgba(hex) { const value = hex.replace("#", ""); return [0, 2, 4].map((a
 function snapshot(runtime) { runtime.history.push(runtime.context.getImageData(0, 0, runtime.canvas.width, runtime.canvas.height)); if (runtime.history.length > HISTORY_LIMIT) runtime.history.shift(); }
 function sync(runtime) {
   const image = runtime.image, canvas = runtime.canvas;
-  canvas.style.left = `${image.offsetLeft}px`; canvas.style.top = `${image.offsetTop}px`;
-  canvas.style.width = `${image.offsetWidth}px`; canvas.style.height = `${image.offsetHeight}px`;
-  canvas.style.transform = image.style.transform; canvas.style.transformOrigin = getComputedStyle(image).transformOrigin;
+  const scale=Math.min(image.offsetWidth/runtime.canvas.width,image.offsetHeight/runtime.canvas.height);
+  const width=runtime.canvas.width*scale,height=runtime.canvas.height*scale,gapX=(image.offsetWidth-width)/2,gapY=(image.offsetHeight-height)/2;
+  const imageStyle=getComputedStyle(image),[originX,originY]=imageStyle.transformOrigin.split(" ").map(Number.parseFloat);
+  canvas.style.left = `${image.offsetLeft+gapX}px`; canvas.style.top = `${image.offsetTop+gapY}px`;
+  canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
+  canvas.style.transform = imageStyle.transform; canvas.style.transformOrigin = `${originX-gapX}px ${originY-gapY}px`;
 }
 function paintToolbar(runtime) {
   const toolbar = document.createElement("div"); toolbar.className = "paint-toolbar"; toolbar.setAttribute("role", "toolbar"); toolbar.setAttribute("aria-label", "Image paint tools");
-  toolbar.innerHTML = '<button data-tool="brush" type="button">Brush</button><button data-tool="bucket" type="button">Bucket</button><button data-tool="erase" type="button">Erase</button><button data-tool="restore" type="button">Restore</button><label title="Paint color">Color <input class="paint-color" type="color" value="#e53935" aria-label="Paint color"></label><label title="Brush thickness">Size <input class="paint-size" type="range" min="1" max="100" value="18" aria-label="Brush thickness"></label><button class="paint-undo" type="button">Undo</button><button class="paint-done" type="button">Done</button>';
+  toolbar.innerHTML = '<button data-tool="brush" type="button">Brush</button><button data-tool="bucket" type="button">Bucket</button><button data-tool="erase" type="button">Erase</button><label title="Paint color">Color <input class="paint-color" type="color" value="#e53935" aria-label="Paint color"></label><label title="Brush thickness">Size <input class="paint-size" type="range" min="1" max="100" value="18" aria-label="Brush thickness"></label><button class="paint-undo" type="button">Undo</button><button class="paint-done" type="button">Done</button>';
   toolbar.querySelectorAll("[data-tool]").forEach((button) => button.onclick = () => { runtime.tool = button.dataset.tool; updateTools(runtime); });
   toolbar.querySelector(".paint-color").oninput = (event) => runtime.color = event.target.value;
   toolbar.querySelector(".paint-size").oninput = (event) => runtime.thickness = Number(event.target.value);
@@ -28,7 +31,15 @@ function compositePixels(runtime) {
   const context = scratch.getContext("2d", { willReadFrequently: true }); context.drawImage(runtime.image, 0, 0, scratch.width, scratch.height); context.drawImage(runtime.canvas, 0, 0);
   return context.getImageData(0, 0, scratch.width, scratch.height);
 }
-function point(runtime, event) { return displayToIntrinsic(event.clientX, event.clientY, runtime.canvas.getBoundingClientRect(), runtime.canvas.width, runtime.canvas.height); }
+function point(runtime, event) {
+  const canvasStyle = getComputedStyle(runtime.canvas), blockBounds = runtime.block.getBoundingClientRect();
+  const [originX, originY] = canvasStyle.transformOrigin.split(" ").map(Number.parseFloat);
+  const matrix = canvasStyle.transform === "none" ? new DOMMatrix() : new DOMMatrix(canvasStyle.transform);
+  return transformedDisplayToIntrinsic(event.clientX, event.clientY, {
+    left: blockBounds.left + runtime.canvas.offsetLeft, top: blockBounds.top + runtime.canvas.offsetTop,
+    width: runtime.canvas.offsetWidth, height: runtime.canvas.offsetHeight
+  }, matrix, { x: originX, y: originY }, runtime.canvas.width, runtime.canvas.height);
+}
 function stroke(runtime, from, to) {
   const ctx = runtime.context; ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = runtime.thickness; ctx.strokeStyle = runtime.color;
   ctx.globalCompositeOperation = runtime.tool === "erase" ? "destination-out" : "source-over";
@@ -38,7 +49,7 @@ function bindPointer(runtime) {
   const canvas = runtime.canvas;
   canvas.onpointerdown = (event) => {
     if (event.button !== 0) return; event.preventDefault(); snapshot(runtime);
-    const at = point(runtime, event);
+    const at = point(runtime, event); if (!at) { runtime.history.pop(); return; }
     if (runtime.tool === "bucket") { const visible = compositePixels(runtime), overlay = runtime.context.getImageData(0, 0, canvas.width, canvas.height); floodFill({ visible: visible.data, overlay: overlay.data, width: canvas.width, height: canvas.height, x: at.x, y: at.y, color: rgba(runtime.color) }); runtime.context.putImageData(overlay, 0, 0); return; }
     canvas.setPointerCapture(event.pointerId); runtime.last = at; stroke(runtime, at, at);
   };

@@ -36,6 +36,21 @@ export function displayToIntrinsic(clientX, clientY, bounds, width, height) {
   };
 }
 
+/** Map a viewport point through the inverse CSS 2D transform around its origin. */
+export function transformedDisplayToIntrinsic(clientX, clientY, layout, matrix, origin, intrinsicWidth, intrinsicHeight) {
+  const a = Number(matrix?.a ?? 1), b = Number(matrix?.b ?? 0), c = Number(matrix?.c ?? 0), d = Number(matrix?.d ?? 1);
+  const e = Number(matrix?.e ?? 0), f = Number(matrix?.f ?? 0), determinant = a * d - b * c;
+  if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-12) return null;
+  const ox = Number(origin?.x || 0), oy = Number(origin?.y || 0);
+  const tx = clientX - layout.left - ox - e, ty = clientY - layout.top - oy - f;
+  const localX = (d * tx - c * ty) / determinant + ox;
+  const localY = (-b * tx + a * ty) / determinant + oy;
+  return {
+    x: Math.max(0, Math.min(intrinsicWidth - 1, localX * intrinsicWidth / layout.width)),
+    y: Math.max(0, Math.min(intrinsicHeight - 1, localY * intrinsicHeight / layout.height))
+  };
+}
+
 export function serializePaintLayer(bytes, width, height, encodedOverlay = null) {
   let binary = "";
   if (!encodedOverlay) for (let at = 0; at < bytes.length; at += 0x8000) binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));

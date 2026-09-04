@@ -390,13 +390,14 @@ function createCustomBlock(payload, options = {}) {
 }
 
 window.addEventListener("framechute:add-result-object", async (event) => {
-  const { blob, name, kind } = event.detail || {};
+  const { blob, name, kind, point } = event.detail || {};
   if (!(blob instanceof Blob)) return;
   if(kind==="csv"){await window.FrameChuteWorkspace.createBlock({type:"csv",name:name||"result.csv",state:{rows:parseCsv(await blob.text())}});return;}
   if (kind === "text") { await createDroppedText(await blob.text(), { x: 120, y: 120 }); const block=[...workspace.querySelectorAll('.block[data-block-type="text"]')].at(-1); if(block)block.querySelector(".block-name").value=name||"Extracted text"; return; }
   if (kind !== "image") { window.dispatchEvent(new CustomEvent("framechute:open-result-file", { detail: { file: new File([blob], name || "result", { type: blob.type }), kind } })); return; }
   const dataUrl = await fileAsDataUrl(new File([blob], name || "result.png", { type: blob.type }));
-  const block = createCustomBlock({ kind: "image", name: name || "Result", displayName: name || "Result", dataUrl });
+  const style=point?{left:`${point.x}px`,top:`${point.y}px`}:undefined;
+  const block = createCustomBlock({ kind: "image", name: name || "Result", displayName: name || "Result", dataUrl },{style});
   if (block) {
     block.dataset.resultObject = "true";
     setStatus(`${name || "Image result"} added to the workspace.`);
