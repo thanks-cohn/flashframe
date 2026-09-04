@@ -198,10 +198,11 @@ function imageIsDirectGrabSurface(block) {
       && !block.classList.contains("show-object-header"));
 }
 
-function dragImageObject(block, event) {
+function dragVisualObject(block, event) {
   if (event.button !== 0 || !imageIsDirectGrabSurface(block)) return;
-  if (!event.target.closest(".image-frame")) return;
-  if (event.target.closest("button, input, textarea, a")) return;
+  const surface = event.target.closest(".image-frame, .video-grab-handle");
+  if (!surface) return;
+  if (event.target.closest("button:not(.video-grab-handle), input, textarea, a")) return;
   if (block.classList.contains("is-maximized")) return;
 
   event.preventDefault();
@@ -217,8 +218,7 @@ function dragImageObject(block, event) {
   const startY = event.clientY;
   const startLeft = Number.parseFloat(block.style.left) || block.offsetLeft;
   const startTop = Number.parseFloat(block.style.top) || block.offsetTop;
-  const image = block.querySelector(".image-frame") || block;
-  image.setPointerCapture(event.pointerId);
+  surface.setPointerCapture(event.pointerId);
   block.classList.add("is-frameless-dragging");
 
   const move = (moveEvent) => {
@@ -228,26 +228,26 @@ function dragImageObject(block, event) {
 
   const finish = () => {
     block.classList.remove("is-frameless-dragging");
-    image.removeEventListener("pointermove", move);
-    image.removeEventListener("pointerup", finish);
-    image.removeEventListener("pointercancel", finish);
+    surface.removeEventListener("pointermove", move);
+    surface.removeEventListener("pointerup", finish);
+    surface.removeEventListener("pointercancel", finish);
     workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
   };
 
-  image.addEventListener("pointermove", move);
-  image.addEventListener("pointerup", finish);
-  image.addEventListener("pointercancel", finish);
+  surface.addEventListener("pointermove", move);
+  surface.addEventListener("pointerup", finish);
+  surface.addEventListener("pointercancel", finish);
 }
 
 function attachFramelessResizeHandle(block) {
-  if (!isImageObject(block) || block.querySelector(":scope > .frameless-resize-handle")) return;
+  if (!isVisualMediaObject(block) || block.querySelector(":scope > .frameless-resize-handle")) return;
 
   const handle = document.createElement("button");
   handle.type = "button";
   handle.className = "frameless-resize-handle";
   handle.textContent = "⅃";
-  handle.title = "Drag to resize image";
-  handle.setAttribute("aria-label", "Resize image");
+  handle.title = `Drag to resize ${isVideoObject(block) ? "video" : "image"}`;
+  handle.setAttribute("aria-label", `Resize ${isVideoObject(block) ? "video" : "image"}`);
   block.append(handle);
   handle.addEventListener("pointerenter", () => {
     if (resizeHandleMode() !== "fade") return;
@@ -305,13 +305,40 @@ function attachFramelessResizeHandle(block) {
   });
 }
 
+function attachVideoAffordances(block) {
+  if (!isVideoObject(block) || block.dataset.directVideoBound === "true") return;
+  block.dataset.directVideoBound = "true";
+  block.tabIndex ||= 0;
+  const grab = document.createElement("button");
+  grab.type = "button";
+  grab.className = "video-grab-handle";
+  grab.textContent = "Grab";
+  grab.title = "Drag to move video";
+  grab.setAttribute("aria-label", "Drag to move video");
+  block.append(grab);
+  block.addEventListener("keydown", (event) => {
+    if (event.target.matches("input, textarea, select, button") || event.altKey || event.ctrlKey || event.metaKey) return;
+    const player = block.querySelector("video");
+    if (!player) return;
+    if (event.key === " ") {
+      event.preventDefault();
+      if (player.paused) void player.play(); else player.pause();
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const step = event.shiftKey ? 10 : 1;
+      player.currentTime = Math.max(0, Math.min(Number.isFinite(player.duration) ? player.duration : Infinity, player.currentTime + (event.key === "ArrowLeft" ? -step : step)));
+    }
+  });
+}
+
 function prepare(block) {
   if (!isVisualMediaObject(block) && !isGalleryObject(block)) return;
   if (isVisualMediaObject(block) && block.dataset.framelessBound !== "true") {
     block.dataset.framelessBound = "true";
-    block.addEventListener("pointerdown", (event) => dragImageObject(block, event), true);
+    block.addEventListener("pointerdown", (event) => dragVisualObject(block, event), true);
   }
   attachFramelessResizeHandle(block);
+  attachVideoAffordances(block);
   const payload = readPayload(block) || {};
   const footerVisibility = payload.footerVisibility ?? block.dataset.footerVisibility
     ?? (payload.hideFooter === true ? "hide" : payload.hideFooter === false ? "show" : "inherit");

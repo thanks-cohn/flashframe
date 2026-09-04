@@ -4,6 +4,7 @@ import { imageElementToBlob, alphaBounds } from "./image-operations.js";
 import { saveBlobAs } from "./native-save.js";
 import { zipSync } from "../vendor/fflate.mjs";
 import { PDFDocument } from "../vendor/pdf-lib.mjs";
+import { compareText, replaceAllText, extractDocxText, createSimpleDocx, textToPdf, readableText } from "./document-operations.js";
 
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
@@ -31,6 +32,14 @@ function announce(message) { if (status) status.textContent = message; }
 function addResult(blob, name) {
   window.dispatchEvent(new CustomEvent("framechute:add-result-object", { detail: { blob, name, kind: blob.type.startsWith("image/") ? "image" : "file" } }));
 }
+async function textOf(block) {
+  if(kind(block)==="text")return block.querySelector(".text-editor")?.value||"";
+  if(kind(block)==="docx"){const blob=await window.FrameChuteWorkspace.sourceBlob(block);return extractDocxText(blob);}
+  if(kind(block)==="pdf")return [...block.querySelectorAll(".pdf-text-layer")].map(node=>node.textContent||"").join("\n").trim();
+  return "";
+}
+const isTextDocument=(item)=>["text","docx","pdf"].includes(kind(item));
+const addTextResult=(text,name)=>window.FrameChuteWorkspace.createBlock({type:"text",name,state:{text}});
 
 async function transformed(block, overrides = {}) {
   const image = imageOf(block); if (!image?.complete) throw new Error("The image is not ready yet");
@@ -93,6 +102,11 @@ register({id:"image.contact-sheet",label:"Contact sheet",appliesTo:applies("imag
 register({id:"image.icons",label:"Generate icons",appliesTo:applies("image",{max:1}),async run({selection:[item]}){const files={};for(const size of [16,32,48,128,192,512])files[`icon-${size}.png`]=new Uint8Array(await (await transformed(item,{width:size,height:size,lockAspect:false,format:"png"})).arrayBuffer());await saveBlobAs({blob:new Blob([zipSync(files)],{type:"application/zip"}),filename:"icons.zip",extension:"zip",mimeType:"application/zip",description:"Icon set"});}});
 register({id:"image.compare",label:"Compare",appliesTo:applies("image",{min:2,max:2}),async run({selection:items}){const panel=document.createElement("div");panel.className="compare-panel";const first=imageOf(items[0]).cloneNode(),second=imageOf(items[1]).cloneNode(),range=document.createElement("input");range.type="range";range.min=0;range.max=100;range.value=50;second.style.opacity=".5";range.oninput=()=>second.style.opacity=String(Number(range.value)/100);panel.append(first,second,range);await showDialog("Compare two images — adjust opacity",panel,"Done");}});
 register({id:"image.make-pdf",label:"Make PDF",appliesTo:applies("image"),async run({selection:items}){const pdf=await PDFDocument.create();for(const item of items){const blob=await transformed(item,{format:"png"}),embedded=await pdf.embedPng(await blob.arrayBuffer()),page=pdf.addPage([embedded.width,embedded.height]);page.drawImage(embedded,{x:0,y:0,width:embedded.width,height:embedded.height});}const blob=new Blob([await pdf.save()],{type:"application/pdf"});window.dispatchEvent(new CustomEvent("framechute:add-result-object",{detail:{blob,name:"images.pdf",kind:"pdf"}}));}});
+register({id:"document.extract-text",label:"Extract text",appliesTo:(s)=>s.length===1&&isTextDocument(s[0]),async run({selection:[item]}){const text=await textOf(item);if(!text&&kind(item)==="pdf")throw new Error("No selectable text was found on the rendered PDF page. Scanned pages require the optional local OCR engine.");await addTextResult(text,`${nameOf(item)} text`);announce("Extracted text added as an editable workspace object.");}});
+register({id:"document.compare",label:"Compare documents",appliesTo:(s)=>s.length===2&&s.every(isTextDocument),async run({selection:items}){const changes=compareText(await textOf(items[0]),await textOf(items[1]));const html=changes.map(change=>change.type==="same"?change.text:change.type==="insert"?`[+${change.text}+]`:`[-${change.text}-]`).join(" ");await addTextResult(html,`Comparison — ${nameOf(items[0])} and ${nameOf(items[1])}`);}});
+register({id:"document.find-replace",label:"Find & Replace",appliesTo:(s)=>s.length===1&&["text","docx"].includes(kind(s[0])),async run({selection:[item]}){const search=prompt("Find","");if(!search)return;const replacement=prompt("Replace with","");if(replacement==null)return;if(kind(item)==="text"){const editor=item.querySelector(".text-editor"),result=replaceAllText(editor.value,search,replacement);editor.value=result.text;editor.dispatchEvent(new Event("input",{bubbles:true}));announce(`${result.count} replacement(s) made.`);}else{const editor=item.querySelector(".docx-editor"),result=replaceAllText(editor.textContent,search,replacement);editor.textContent=result.text;editor.dispatchEvent(new Event("input",{bubbles:true}));announce(`${result.count} replacement(s) made. Formatting across replaced runs may be simplified.`);}}});
+register({id:"document.to-pdf",label:"Convert to PDF",appliesTo:(s)=>s.length===1&&["text","docx"].includes(kind(s[0])),async run({selection:[item]}){const text=kind(item)==="docx"?readableText(item.querySelector(".docx-editor")?.innerHTML||""):await textOf(item),blob=await textToPdf(text,{title:nameOf(item)});window.dispatchEvent(new CustomEvent("framechute:add-result-object",{detail:{blob,name:`${nameOf(item).replace(/\.[^.]+$/,"")}.pdf`,kind:"pdf"}}));}});
+register({id:"document.to-docx",label:"Convert to DOCX",appliesTo:(s)=>s.length===1&&["text","pdf"].includes(kind(s[0])),async run({selection:[item]}){const blob=createSimpleDocx(await textOf(item));window.dispatchEvent(new CustomEvent("framechute:add-result-object",{detail:{blob,name:`${nameOf(item).replace(/\.[^.]+$/,"")}.docx`,kind:"docx"}}));}});
 register({id:"csv.merge",label:"Merge CSVs",appliesTo:applies("csv",{min:2}),async run({selection:items}){const records=items.map(item=>window.FrameChuteWorkspace.captureBlock(item)),headers=records.map(record=>JSON.stringify(record.state.rows?.[0]||[]));if(!headers.every(header=>header===headers[0]))throw new Error("CSV headers are not compatible.");const rows=[records[0].state.rows[0],...records.flatMap(record=>record.state.rows.slice(1))];await window.FrameChuteWorkspace.createBlock({type:"csv",name:"merged.csv",state:{rows}});announce(`${items.length} compatible CSV tables merged.`);}});
 register({ id: "video.extract-frame", label: "Extract Frame", appliesTo: applies("video", { max: 1 }), async run({ selection: [item] }) {
   const video = item.querySelector("video"); if (!video?.videoWidth) throw new Error("Seek to a decoded video frame first");
