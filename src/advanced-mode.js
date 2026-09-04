@@ -159,6 +159,7 @@ style.textContent = `
 
   body.framechute-classic .toolbar-primary { display: none !important; }
   body.framechute-classic .classic-toolbar-primary { display: flex; }
+  body.framechute-advanced #export-fcx { display: none !important; }
 
   body.framechute-classic .settings-body .setting-action-row,
   body.framechute-classic .settings-body label:has(#setting-frameless-aspect-ratio),
@@ -269,7 +270,8 @@ if (toolbar && advancedToolbar) {
   saved.setAttribute("aria-label", "Saved FrameChutes");
   const restore = proxyButton("Restore", "restore-frame");
   const reconnect = proxyButton("Reconnect all", "reconnect-all");
-  frames.append(save, saved, restore, reconnect);
+  const exportSnapshot = proxyButton("Export Snapshot", "export-fcx", "Export a portable FrameChute snapshot");
+  frames.append(save, saved, restore, reconnect, exportSnapshot);
   classic.append(add, frames);
   advancedToolbar.insertAdjacentElement("afterend", classic);
 
