@@ -12,6 +12,7 @@ const resizeHandleTimers = new WeakMap();
 const MEDIA_CHROME_MODE_KEY = "framechute.frameless-media-chrome-mode.v1";
 const CHROME_FADE_DELAY = 10000;
 const chromeFadeTimers = new WeakMap();
+const activePointers = new WeakSet();
 
 function mediaChromeMode() {
   try { return localStorage.getItem(MEDIA_CHROME_MODE_KEY) === "always" ? "always" : "auto-fade"; }
@@ -28,7 +29,7 @@ function revealMediaChrome(block) {
   delete video?.dataset.controlsBeforeFade;
   if (!block.classList.contains("is-frameless-media") || mediaChromeMode() === "always") return;
   chromeFadeTimers.set(block, setTimeout(() => {
-    if (block.matches(":focus-within") || block.classList.contains("is-frameless-dragging") || block.classList.contains("is-frameless-resizing")) {
+    if (activePointers.has(block) || block.classList.contains("is-frameless-dragging") || block.classList.contains("is-frameless-resizing")) {
       revealMediaChrome(block);
       return;
     }
@@ -386,9 +387,19 @@ function prepare(block) {
   if (isVisualMediaObject(block) && block.dataset.framelessBound !== "true") {
     block.dataset.framelessBound = "true";
     block.addEventListener("pointerdown", (event) => dragVisualObject(block, event), true);
-    for (const type of ["pointerdown", "pointermove", "focusin", "keydown"]) {
+    for (const type of ["pointermove", "keydown"]) {
       block.addEventListener(type, () => revealMediaChrome(block));
     }
+    block.addEventListener("pointerdown", () => {
+      activePointers.add(block);
+      revealMediaChrome(block);
+    });
+    const finishPointerInteraction = () => {
+      if (!activePointers.delete(block)) return;
+      revealMediaChrome(block);
+    };
+    block.addEventListener("pointerup", finishPointerInteraction);
+    block.addEventListener("pointercancel", finishPointerInteraction);
   }
   attachFramelessResizeHandle(block);
   attachVideoAffordances(block);

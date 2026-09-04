@@ -126,6 +126,16 @@
   opacity: 0 !important;
   visibility: hidden !important;
 }
+.block.is-frameless-media.is-object-chrome-faded > .video-grab-handle {
+  /* Keep the transparent Grab button in pointer hit-testing, like resize. */
+  visibility: visible !important;
+  opacity: 0 !important;
+  color: transparent !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  pointer-events: auto !important;
+}
 .block.is-frameless-media.is-object-chrome-faded.is-quick-selected {
   outline-color: transparent !important;
 }

@@ -37,6 +37,7 @@ menu.hidden = true;
 menu.innerHTML = '<button type="button">Open File…</button>';
 document.body.append(menu);
 menu.querySelector("button").addEventListener("click", () => { menu.hidden = true; void openFiles(); });
+window.addEventListener("framechute:open-file", () => void openFiles());
 
 workspace.addEventListener("contextmenu", event => {
   if (event.target.closest(".block")) return;
@@ -63,7 +64,10 @@ window.addEventListener("paste", async event => {
   const text = data.getData("text/plain").trim();
   if (!files.length && !text) return;
   event.preventDefault();
-  if (files.length) await window.FrameChuteIngest?.addFiles(files, point());
+  if (files.length) {
+    const handled = await window.FrameChuteIngest?.addFiles(files, point());
+    if (handled) return;
+  }
   if (text) {
     try {
       const url = new URL(text);

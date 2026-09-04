@@ -7,7 +7,7 @@ import { compositeRgba, floodFill } from "../src/image-edit/paint-layer.mjs";
 test("object menu reflects per-object Quick Actions visibility",()=>{
   assert.equal(objectMenuItems({quickActionsHidden:true})[0].label,"Show Quick Actions");
   assert.equal(objectMenuItems({quickActionsHidden:false})[0].label,"Hide Quick Actions");
-  assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["quick-actions","edit","duplicate","save-as","remove"]);
+  assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["quick-actions","edit","duplicate","save-as","open-file","remove"]);
 });
 
 test("standalone canvas metadata is honest, bounded, and transparent",()=>{
