@@ -160,7 +160,32 @@ If Add results to workspace is chosen, route those outputs through the existing 
 
 ---
 
-# 3. Quick Actions panel must remain fully reachable
+# 3. Shrink all images to fit — right-click utility
+
+Add a straightforward **Shrink all images to fit** command to the image/object right-click menu.
+
+The purpose is workspace cleanup and recovery: if several images are too large for the usable workspace, the user should be able to make all image objects fit sensibly in one action instead of resizing each one manually.
+
+Requirements:
+
+- expose the command from the normal image/object right-click menu
+- operate on all image objects in the current workspace, not only the image that happened to be right-clicked
+- preserve each image's aspect ratio
+- shrink only when necessary; do not enlarge already-small images merely to fill space
+- fit against a sensible usable workspace/viewport bound with margin for controls rather than allowing images to remain partly inaccessible
+- preserve image positions as reasonably as possible, but prioritize making oversized images reachable and visible
+- do not bake or resample image pixels; this is a workspace/display-size operation, not destructive image resizing
+- use the existing object sizing/transform path rather than inventing another size model
+- persist the resulting object dimensions through the normal workspace/FCX state
+- give a concise status result such as `Shrank 6 images to fit.`; if nothing needed shrinking, say so honestly
+
+The intended mental model is:
+
+> **My workspace got unwieldy. Make every image manageable again.**
+
+---
+
+# 4. Quick Actions panel must remain fully reachable
 
 The vertical Quick Actions panel currently allows some controls to extend below the visible viewport, making lower actions inaccessible.
 
@@ -186,9 +211,31 @@ The core requirement is simple:
 
 ---
 
+# 5. Context menus must never cover one another
+
+FrameChute currently has more than one right-click/context-menu surface, including the original object/layer menu and the newer Open File workspace menu.
+
+They must be coordinated so one menu never opens directly on top of another and hides it.
+
+Preferred behavior:
+
+- treat context menus as one coordinated menu system wherever practical
+- opening a new context menu may close the previous menu when the two are alternate responses to the same right-click interaction
+- do not leave two menus stacked at the same coordinates with one obscuring the other
+- if there is an intentional case where two menu surfaces should remain open simultaneously, position the newer menu beside or away from the existing menu using collision-aware placement
+- respect viewport edges while repositioning so the fix does not merely push a menu offscreen
+- clicking outside / Escape should dismiss context-menu state predictably
+- keyboard focus must follow whichever menu is actually active
+- avoid duplicate `Open File…` surfaces fighting for z-index or click ownership
+- where practical, prefer one shared menu-positioning/dismissal coordinator instead of independent menus that know nothing about each other
+
+The user should never have to wonder whether a command disappeared because another menu happened to render over it.
+
+---
+
 # Architecture / longevity requirements
 
-This must build on FrameChute's existing image operations, file/directory permission handling, first-class result objects, native Save/Save As architecture, dialog lifecycle, and Quick Actions substrate.
+This must build on FrameChute's existing image operations, file/directory permission handling, first-class result objects, native Save/Save As architecture, dialog lifecycle, Quick Actions substrate, object sizing model, and current context-menu architecture.
 
 Do not create parallel systems for:
 
@@ -200,6 +247,8 @@ Do not create parallel systems for:
 - directory/file permission handling
 - resize-dialog state/lifecycle
 - Quick Actions selection/dispatch
+- object sizing/transforms
+- context-menu positioning/dismissal
 
 Prefer small adapters around existing primitives.
 
@@ -247,12 +296,20 @@ and, if Cancel is present:
 
 `Open Resize → Cancel → closes without mutation`
 
-## F. Quick Actions overflow
+## F. Shrink all images to fit
+
+`Open several images of mixed sizes → make at least two larger than the usable workspace → right-click an image → Shrink all images to fit → oversized images become fully manageable without changing their source pixel data → already-small images are not enlarged`
+
+## G. Quick Actions overflow
 
 `Use a viewport short enough that the full Quick Actions list cannot fit → select an object with many actions → scroll inside Quick Actions → every action becomes reachable and clickable → keyboard Tab can also reach lower actions`
+
+## H. Context-menu collision
+
+`Open/right-click in a way that can invoke the object menu and Open File menu → verify the menus never stack on top of one another → active commands remain visible and clickable → Escape/outside click dismisses predictably`
 
 ---
 
 # Tests / release checks
 
-When this draft is eventually implemented, add focused tests for pure resize/batch naming logic, dialog dismissal/state reset, and Quick Actions overflow behavior where practical, then run the repository's normal full test and Chrome Web Store release gates.
+When this draft is eventually implemented, add focused tests for pure resize/batch naming logic, dialog dismissal/state reset, shrink-all sizing logic, Quick Actions overflow behavior, and context-menu collision/dismissal where practical, then run the repository's normal full test and Chrome Web Store release gates.
