@@ -366,3 +366,364 @@ Also test different durations and boundary clamping without losing the stored re
 When this draft is eventually implemented, add focused tests for resize/batch naming logic, dialog dismissal, shrink-all sizing, Quick Actions overflow, context-menu coordination, relative-sync delta propagation/loop prevention, and serializable warp-control-point state where practical.
 
 Then run the repository's normal full automated tests and Chrome Web Store release gates.
+
+---
+
+# Additional object/workspace foundations to fold into the roadmap
+
+These are deliberate compounding features. They are more valuable than adding a long list of unrelated file-format tricks because each one improves many existing and future FrameChute objects.
+
+Do not create dead buttons or placeholder UI. If the whole set is too large for one implementation pass, implement it in the priority order below and leave later items as documented follow-up work rather than half-working features.
+
+## 8. Real Undo / Redo
+
+FrameChute needs a shared workspace history system before object manipulation becomes much deeper.
+
+Required user behavior:
+
+- `Ctrl/Cmd+Z` → Undo
+- `Ctrl/Cmd+Shift+Z` → Redo
+- where platform conventions make sense, `Ctrl+Y` may also Redo on Windows
+
+At minimum, design the history model to cover:
+
+- move
+- object display resize
+- rotate
+- warp state changes
+- delete/remove
+- duplicate
+- layer-order changes
+- image edits that already have semantic state
+- timing changes
+- media-sync relationship changes
+- group/ungroup once added
+- opacity and lock/property changes once added
+
+Do not snapshot giant binary blobs for every pointermove. Coalesce continuous gestures into sensible history transactions: one drag should normally be one undo step, one resize gesture one step, one warp gesture one step.
+
+Undo/Redo should restore real object state through the existing object model and notify normal persistence/change systems.
+
+> **Users should be able to experiment without fearing the workspace.**
+
+## 9. Group / Ungroup
+
+Allow multiple selected objects to become one manipulable group while preserving their individual identities.
+
+Flow:
+
+`select several objects → Group → move/resize/rotate group together → Ungroup when desired`
+
+Requirements:
+
+- Group / Ungroup in contextual actions/right-click where appropriate
+- children remain real FrameChute objects rather than being flattened into a bitmap
+- preserve child-relative positions and transforms
+- moving the group moves all children coherently
+- scaling/rotating the group should preserve relative layout where supported
+- group state must survive FCX snapshot/restore
+- group/ungroup integrates with Undo/Redo
+- deletion of a group must have clear semantics and never silently destroy recoverability of child state
+
+Architect the group as the beginning of a scene graph so it can later own a pivot/fulcrum and participate in animation, web, presentation, and game-oriented modes.
+
+## 10. Align, distribute, and snapping
+
+Multi-selection should gain fast layout commands:
+
+- Align left
+- Align center
+- Align right
+- Align top
+- Align middle
+- Align bottom
+- Distribute horizontally
+- Distribute vertically
+
+Also add lightweight snapping where practical:
+
+- snap to nearby object edges
+- snap to nearby object centers
+- snap to workspace center
+
+Snapping should assist rather than trap the user. Keep it easy to temporarily bypass if needed and avoid jittery competing snap targets.
+
+These commands must operate through the same object-position/transform model as normal dragging.
+
+## 11. Lock / Unlock object
+
+Add a simple **Lock** command so reference/background objects stop moving accidentally.
+
+Initial behavior can be one understandable state:
+
+- Lock
+- Unlock
+
+A locked object should remain visible and usable as content but reject accidental workspace move/resize/rotate/warp gestures unless the user unlocks it.
+
+Later this can grow into separate position/size/edit locks, but do not overcomplicate v1.
+
+Persist lock state in normal workspace/FCX state and integrate it with Undo/Redo.
+
+## 12. Duplicate with visible offset
+
+Make `Ctrl/Cmd+D` a dependable Duplicate shortcut.
+
+A duplicate should appear with a small visible spatial offset so the user can immediately tell duplication occurred rather than thinking nothing happened.
+
+The duplicate must be a normal independent FrameChute object using the existing semantic duplication/result architecture, preserving the appropriate source/edit state without accidentally retaining relationships that should be independent.
+
+## 13. Sync Groups and optional Sync Master
+
+Build on section 6 rather than creating another timing system.
+
+Once specific pairwise relative sync is reliable, allow three or more media objects to belong to the same explicit **Sync Group**.
+
+Example:
+
+```text
+Video A   00:10
+Audio B   00:43
+Video C   01:05
+
+seek A +4s
+
+Video A   00:14
+Audio B   00:47
+Video C   01:09
+```
+
+Every member retains its established relative offset.
+
+Later/where practical, allow **Set as Sync Master**:
+
+- seeking the master propagates relative deltas
+- play/pause from the master can coordinate followers if that behavior is explicitly enabled
+- followers still retain their own durations and clamp honestly at boundaries
+
+Do not require Sync Master for ordinary two-way relative seeking. The important primitive remains delta-preserving linkage.
+
+## 14. Object Properties
+
+Add a plain, compact **Properties…** surface for precision without crowding the everyday UI.
+
+For applicable objects expose real values such as:
+
+```text
+Name
+Type
+Width × Height
+Position X / Y
+Rotation
+Opacity
+Layer
+Duration        (media)
+Current time    (media)
+File size       (when known)
+Source          (when meaningful/safe)
+```
+
+As capabilities appear, this same properties model can later expose:
+
+```text
+Pivot / Fulcrum
+Warp
+Sync group
+Start time
+End time
+Lock state
+```
+
+Editable values must write through existing object state rather than becoming a disconnected inspector model.
+
+## 15. Opacity for visual objects
+
+Give applicable visual objects a simple opacity control, ideally contextual and also visible in Properties.
+
+- range 0–100%
+- live preview
+- persists in workspace/FCX state
+- participates in Undo/Redo
+- composes correctly with image warp/crop/masks and grouping
+
+This should become an animatable property later, so represent it semantically rather than baking it into pixels.
+
+## 16. Nondestructive crop / mask state
+
+Continue moving image editing away from unnecessary destructive baking.
+
+Where practical, represent crop/mask as object state over the original source:
+
+```text
+source image
++ crop state
++ mask state
++ warp state
++ opacity
++ transform
+= visible object
+```
+
+The user should be able to:
+
+- Edit Crop
+- Reset Crop
+- edit/restore mask where supported
+- Save As… to bake the current composed result when desired
+
+Do not destroy source pixels merely because the user wants to experiment with a crop or mask inside the workspace.
+
+## 17. Complete the Fit family
+
+Alongside **Shrink all images to fit**, expose understandable single-object fit commands where appropriate:
+
+- Fit to Workspace
+- Fit Width
+- Fit Height
+- Actual Size
+- Shrink all images to fit
+
+These are display/workspace sizing operations, not destructive resampling. Preserve aspect ratio unless the action explicitly says otherwise.
+
+## 18. Recent authorized output folders
+
+After the user explicitly chooses/authorizes an output directory, make repeated work less tedious where browser permission semantics permit it.
+
+A Save/Batch flow may show something like:
+
+```text
+Recent output folders
+- Downloads/FrameChute
+- Pictures/Exports
+- Project/Assets
+- Choose another…
+```
+
+Rules:
+
+- never bypass browser permission requirements
+- reconnect/re-request permission honestly if the browser no longer grants access
+- do not pretend a remembered path is writable when it is not
+- keep this convenience local
+
+## 19. Autosave / crash recovery for workspace state
+
+As FrameChute becomes a real working surface, accidental browser closure/crash must not routinely destroy the workspace.
+
+Implement local recovery separately from native file Save:
+
+- periodically preserve recoverable workspace state locally using the existing FCX/workspace serialization primitives where practical
+- avoid excessive writes during rapid pointer gestures
+- on an unclean/recoverable reopen, offer a clear choice such as:
+
+```text
+Recovered workspace from 2 minutes ago
+[ Restore ] [ Discard ]
+```
+
+- do not silently overwrite source files
+- clearly distinguish recovery state from an explicitly exported `.fcx`
+- preserve privacy/local-first behavior
+- bound storage usage and clean obsolete recovery generations
+
+## 20. Command Palette
+
+As FrameChute gains more abilities, avoid turning the interface into hundreds of permanent buttons.
+
+Add a lightweight command palette, preferably `Ctrl/Cmd+K`, that searches available actions by understandable names.
+
+Examples:
+
+```text
+resize
+warp
+open file
+extract frame
+save snapshot
+sync
+fit
+convert
+properties
+```
+
+Requirements:
+
+- contextual actions should respect the current selection/object type
+- unavailable actions should not pretend to work
+- keyboard-first but fully clickable
+- search should be simple and fast
+- invoking a palette command should call the same underlying action as the visible menu/Quick Action, not duplicate business logic
+
+This is one of the main ways FrameChute can gain breadth without becoming a giant cockpit.
+
+## 21. Send result to… / explicit result routing
+
+Generalize the current idea that operation outputs are useful objects rather than dead downloads.
+
+When an operation creates a result, give the user explicit destinations where appropriate:
+
+```text
+Save As…
+Add to Workspace
+Copy
+```
+
+Later this can become a small **Send result to…** model:
+
+```text
+Workspace
+Clipboard
+File
+New canvas
+Another compatible FrameChute object
+```
+
+Rules:
+
+- never force a result into the workspace just because FrameChute can
+- never force a download if the user only wants to keep working with the result
+- all routes should converge on existing result/save/clipboard/object primitives
+- preserve the product rule: **save it, keep working with it, or both**
+
+---
+
+# Priority after the current resize / warp / sync pass
+
+If these foundations are implemented in stages, prefer this order:
+
+```text
+CURRENT PASS
+resize + batch resize
+warp
+relative media sync
+menu/Quick Actions/fit fixes
+
+        ↓
+
+FOUNDATION PASS
+Undo / Redo
+Group / Ungroup
+Lock
+Align / Distribute / Snap
+Duplicate shortcut
+Opacity
+Object Properties
+
+        ↓
+
+RELIABILITY / REACHABILITY PASS
+Autosave / Recovery
+Command Palette
+Recent authorized output folders
+Result routing
+
+        ↓
+
+SPATIAL / TIME PASS
+Pivot / Fulcrum
+Group pivot
+Rotate/orbit around pivot
+animation cues
+```
+
+The principle is not feature count. The goal is to make every new capability strengthen the same shared object/workspace model.
