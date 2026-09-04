@@ -49,7 +49,7 @@ menu.setAttribute("role", "menu");
 menu.innerHTML = `
   <button type="button" data-layer-action="front" role="menuitem">Bring to front</button>
   <button type="button" data-layer-action="back" role="menuitem">Send to back</button>
-  <button type="button" data-layer-action="grab" role="menuitem">Grab object <span class="flashframe-layer-menu-shortcut">G</span></button>
+  <button type="button" data-layer-action="grab" role="menuitem" title="Move Object: choose Grab, then drag the object from its visible image or video">Grab / Move Object <span class="flashframe-layer-menu-shortcut">G</span></button>
   <div class="flashframe-layer-menu-separator" role="separator"></div>
   <button type="button" data-layer-action="sync" role="menuitem">Sync with…</button>
   <button type="button" data-layer-action="independent" role="menuitem">Make independent</button>

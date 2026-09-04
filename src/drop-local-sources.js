@@ -885,6 +885,26 @@ async function addHandle(handle, file, point, offset = 0) {
   return kind;
 }
 
+window.FrameChuteIngest = Object.freeze({
+  ...(window.FrameChuteIngest || {}),
+  async addFiles(files, point = { x: 80, y: 80 }) {
+    let added = 0;
+    for (const file of files) {
+      if (!(file instanceof File)) continue;
+      if (classifyLocalFile(file) === "image") {
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        workspace.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: transfer, clientX: point.x, clientY: point.y }));
+        added += 1;
+        continue;
+      }
+      const handle = { kind: "file", name: file.name, __framechuteSyntheticFile: file };
+      if (await addHandle(handle, file, point, added * 28)) added += 1;
+    }
+    return added;
+  }
+});
+
 workspace.addEventListener("dragenter", (event) => {
   if (![...event.dataTransfer?.items || []].some((item) => item.kind === "file")) return;
   event.preventDefault();

@@ -573,6 +573,14 @@ function createUrlBlock(value, point = null, forceImage = false) {
   return block;
 }
 
+// One public ingestion seam is shared by paste/Open File and the established
+// drag/drop implementation; it deliberately delegates to the same creators.
+window.FrameChuteIngest = Object.freeze({
+  ...(window.FrameChuteIngest || {}),
+  addUrl: (value, point) => createUrlBlock(value, point),
+  addText: (value, point) => createDroppedText(value, point)
+});
+
 openImageButton?.addEventListener("click", async () => {
   try {
     const [handle] = await window.showOpenFilePicker({

@@ -758,3 +758,5 @@ body.hide-block-headers .compact-drag-handle {
     top: 430px;
   }
 }
+/* System-font fallback keeps this ordinary and usable if classic decoration is unavailable. */
+.workspace-file-menu{position:fixed;z-index:100001;padding:4px;border:2px solid #111;border-radius:5px;background:#ddd;box-shadow:inset 1px 1px #fff,3px 3px #0005;font:13px Geneva,Charcoal,system-ui,sans-serif}.workspace-file-menu[hidden]{display:none}.workspace-file-menu button{min-width:138px;padding:6px 14px;border:1px solid #111;border-radius:3px;background:#eee;color:#111;font:inherit;text-align:left;cursor:pointer}.workspace-file-menu button:focus-visible{outline:2px solid #111;outline-offset:1px}

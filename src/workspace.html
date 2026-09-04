@@ -80,6 +80,13 @@
         <span><strong>Preserve image aspect ratio</strong><small>Keep frameless images proportional while dragging their ⅃ corner. Turn this off to reshape them freely.</small></span>
       </label>
       <label class="setting-choice-row">
+        <span><strong>Object chrome</strong><small>Auto Fade leaves only frameless images and video visible after 10 seconds. Moving, clicking, grabbing, or resizing reveals controls again.</small></span>
+        <select id="setting-media-chrome-mode" aria-label="Frameless object chrome behavior">
+          <option value="auto-fade">Auto Fade (10 seconds)</option>
+          <option value="always">Always Show</option>
+        </select>
+      </label>
+      <label class="setting-choice-row">
         <span><strong>Resize corner ⅃</strong><small>Always show it, fade it after a delay, or hide it while keeping its corner hotspot active.</small></span>
         <select id="setting-frameless-resize-handle-mode" aria-label="Resize corner visibility">
           <option value="always">Always show</option>
