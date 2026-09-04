@@ -5,6 +5,7 @@ import {
   listImages,
   makeHandleKey,
   pickImageDirectory,
+  pickDocxFile,
   pickPdfFile,
   pickTextFile,
   pickVideoFile,
@@ -12,12 +13,16 @@ import {
   resolveHandle,
   storeHandle
 } from "./file-access.js";
+import { writeCompleteBlob, saveDocumentAs } from "./documents/document-save.js";
+import { openPdfDocument, renderPdfPage, serializeEditedPdf } from "./documents/pdf-document.js";
+import { DOCX_MIME, parseDocx, serializeDocx } from "./documents/docx-document.js";
 
 const workspace = document.querySelector("#workspace");
 const toolbar = document.querySelector(".toolbar");
 const addTextButton = document.querySelector("#add-text");
 const openTextButton = document.querySelector("#open-text");
 const openPdfButton = document.querySelector("#open-pdf");
+const openDocxButton = document.querySelector("#open-docx");
 const openGalleryButton = document.querySelector("#open-gallery");
 const openVideoButton = document.querySelector("#open-video");
 const saveFrameButton = document.querySelector("#save-frame");
@@ -28,6 +33,7 @@ const status = document.querySelector("#status");
 const templates = {
   text: document.querySelector("#text-block-template"),
   pdf: document.querySelector("#pdf-block-template"),
+  docx: document.querySelector("#docx-block-template"),
   gallery: document.querySelector("#gallery-block-template"),
   video: document.querySelector("#video-block-template")
 };
@@ -185,6 +191,7 @@ function defaultGeometry(type = "text") {
   const defaults = {
     text: { width: 540, height: 390 },
     pdf: { width: 620, height: 680 },
+    docx: { width: 680, height: 720 },
     gallery: { width: 560, height: 560 },
     video: { width: 640, height: 430 }
   };
@@ -246,6 +253,7 @@ function attachBlockInteractions(block) {
   block.addEventListener("pointerdown", () => bringToFront(block));
 
   removeButton?.addEventListener("click", () => {
+    if (block.dataset.documentDirty === "true" && !window.confirm("This document has unsaved native changes. Remove it anyway?")) return;
     releaseBlockResources(block);
     block.remove();
     setStatus("Block removed. The local source was not deleted.");
@@ -285,6 +293,41 @@ function attachBlockInteractions(block) {
   });
 }
 
+function setDocumentDirty(block, dirty) {
+  block.dataset.documentDirty = String(Boolean(dirty));
+  const indicator = block.querySelector(".document-dirty");
+  if (indicator) indicator.hidden = !dirty;
+}
+
+async function saveNativeDocument(block, saveAs = false) {
+  const runtime = runtimeSources.get(block);
+  if (!runtime?.serialize) throw new Error("Reconnect the original document before saving.");
+  const source = getSourceRecord(block);
+  const extension = block.dataset.blockType;
+  const filename = block.querySelector(".block-name")?.value || source?.displayName || `document.${extension}`;
+  const options = { serialize: runtime.serialize, filename, extension, mimeType: extension === "pdf" ? "application/pdf" : DOCX_MIME, handleKey: source?.handleKey };
+  let result;
+  if (!saveAs) result = await writeCompleteBlob(runtime.handle, runtime.serialize);
+  if (saveAs || !result?.saved) result = await saveDocumentAs(options);
+  if (!result.saved) return;
+  if (result.handle) {
+    runtime.handle = result.handle;
+    setSourceRecord(block, { kind: "file", handleKey: source?.handleKey, displayName: result.handle.name || filename });
+    block.querySelector(".block-name").value = result.handle.name || filename;
+  }
+  setDocumentDirty(block, false);
+  setStatus(result.downloaded ? `${filename} downloaded. Future Save may require Save As again.` : `${block.querySelector(".block-name").value} saved.`);
+}
+
+function attachDocumentSave(block) {
+  for (const [selector, saveAs] of [[".document-save", false], [".document-save-as", true]]) {
+    block.querySelector(selector)?.addEventListener("click", async () => {
+      try { await saveNativeDocument(block, saveAs); }
+      catch (error) { console.error(error); setStatus(`Could not save this ${block.dataset.blockType.toUpperCase()}. Your edits are still open.`); }
+    });
+  }
+}
+
 function updateTextSourceBadge(block) {
   const badge = block.querySelector(".source-badge");
   const source = getSourceRecord(block);
@@ -298,17 +341,17 @@ function updateTextSourceBadge(block) {
   }
 }
 
-function setPdfPage(block, page) {
+async function setPdfPage(block, page) {
   const input = block.querySelector(".pdf-page");
-  const viewer = block.querySelector(".pdf-viewer");
   const runtime = runtimeSources.get(block);
-  const nextPage = clampInteger(page, 1);
+  const nextPage = Math.min(clampInteger(page, 1), runtime?.model?.pageCount || Infinity);
 
   input.value = String(nextPage);
   block.dataset.currentPage = String(nextPage);
 
-  if (runtime?.url) {
-    viewer.src = `${runtime.url}#page=${nextPage}&toolbar=1&navpanes=0`;
+  if (runtime?.model) {
+    runtime.pageData = await renderPdfPage(runtime.model, nextPage, block.querySelector(".pdf-canvas"), block.querySelector(".pdf-text-layer"), runtime.edits);
+    block.querySelector(".pdf-count").textContent = `/ ${runtime.model.pageCount}`;
   }
 }
 
@@ -316,11 +359,14 @@ async function loadPdfHandle(block, handle, state = {}) {
   const file = await fileFromHandle(handle);
   if (!file) throw new Error("PDF could not be read");
 
-  const url = URL.createObjectURL(file);
-  replaceObjectUrl(block, url);
-  runtimeSources.set(block, { handle, url });
+  const model = await openPdfDocument(await file.arrayBuffer());
+  const edits = Array.isArray(state.edits) ? structuredClone(state.edits) : [];
+  const runtime = { handle, model, edits };
+  runtime.serialize = () => serializeEditedPdf(model, edits);
+  runtimeSources.set(block, runtime);
   clearSourceUnavailable(block);
-  setPdfPage(block, state.page ?? block.dataset.currentPage ?? 1);
+  setDocumentDirty(block, Boolean(state.dirty));
+  await setPdfPage(block, state.page ?? block.dataset.currentPage ?? 1);
 }
 
 async function showGalleryIndex(block, index) {
@@ -440,6 +486,7 @@ registerBlockType("pdf", {
   },
 
   initialize(block) {
+    attachDocumentSave(block);
     block.querySelector(".pdf-prev").addEventListener("click", () => {
       setPdfPage(block, clampInteger(block.querySelector(".pdf-page").value, 1) - 1);
     });
@@ -449,7 +496,38 @@ registerBlockType("pdf", {
     });
 
     block.querySelector(".pdf-page").addEventListener("change", (event) => {
-      setPdfPage(block, event.currentTarget.value);
+      void setPdfPage(block, event.currentTarget.value);
+    });
+
+    block.querySelector(".pdf-text-layer").addEventListener("dblclick", (event) => {
+      const span = event.target.closest(".pdf-text-item");
+      if (!span) return;
+      span.contentEditable = "true";
+      span.focus();
+      const range = document.createRange(); range.selectNodeContents(span);
+      const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    });
+    block.querySelector(".pdf-text-layer").addEventListener("keydown", (event) => {
+      if (event.target.matches('.pdf-text-item[contenteditable="true"]') && event.key === "Enter") { event.preventDefault(); event.target.blur(); }
+    });
+    block.querySelector(".pdf-text-layer").addEventListener("focusout", (event) => {
+      const span = event.target.closest('.pdf-text-item[contenteditable="true"]');
+      if (!span) return;
+      span.removeAttribute("contenteditable");
+      const runtime = runtimeSources.get(block); if (!runtime?.pageData) return;
+      const index = Number(span.dataset.index); const page = Number(block.dataset.currentPage || 1);
+      const original = runtime.pageData.content.items[index];
+      const replacement = span.textContent || "";
+      const existing = runtime.edits.find((edit) => edit.page === page && edit.index === index);
+      if (replacement === original.str) { if (existing) runtime.edits.splice(runtime.edits.indexOf(existing), 1); }
+      else {
+        const rect = { left: parseFloat(span.style.left), top: parseFloat(span.style.top), width: parseFloat(span.style.width), height: parseFloat(span.style.height) };
+        const [x, yTop] = runtime.pageData.viewport.convertToPdfPoint(rect.left, rect.top);
+        const [, yBottom] = runtime.pageData.viewport.convertToPdfPoint(rect.left, rect.top + rect.height);
+        const edit = { page, index, original: original.str, replacement, x, y: yBottom, width: rect.width / runtime.pageData.viewport.scale, height: Math.abs(yTop - yBottom), fontSize: Math.abs(yTop - yBottom) * .8, rotation: 0 };
+        if (existing) Object.assign(existing, edit); else runtime.edits.push(edit);
+      }
+      setDocumentDirty(block, runtime.edits.length > 0);
     });
 
     block.querySelector(".reconnect-source").addEventListener("click", async () => {
@@ -463,7 +541,8 @@ registerBlockType("pdf", {
   },
 
   capture(block) {
-    return { page: clampInteger(block.querySelector(".pdf-page").value, 1) };
+    const runtime = runtimeSources.get(block);
+    return { page: clampInteger(block.querySelector(".pdf-page").value, 1), edits: structuredClone(runtime?.edits || []), dirty: block.dataset.documentDirty === "true" };
   },
 
   async restore(block, state = {}, source = null) {
@@ -473,6 +552,56 @@ registerBlockType("pdf", {
     if (handle) await loadPdfHandle(block, handle, state);
     else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this PDF"} to display it.`);
   }
+});
+
+function docxBlocksFromEditor(editor) {
+  const paragraph = (node) => ({ type: "paragraph", style: /^H[1-6]$/.test(node.tagName) ? `Heading${node.tagName.slice(1)}` : "", list: node.tagName === "LI", alignment: node.style.textAlign || "left", runs: [...node.childNodes].map((child) => ({ text: child.textContent || "", bold: child.nodeType === 1 && ["B", "STRONG"].includes(child.tagName), italic: child.nodeType === 1 && ["I", "EM"].includes(child.tagName), underline: child.nodeType === 1 && child.tagName === "U" })).filter((run) => run.text.length) });
+  const blocks = [];
+  for (const node of editor.children) {
+    if (node.tagName === "TABLE") blocks.push({ type: "table", rows: [...node.rows].map((row) => [...row.cells].map((cell) => [...cell.children].map(paragraph))) });
+    else if (["UL", "OL"].includes(node.tagName)) for (const item of node.children) blocks.push(paragraph(item));
+    else blocks.push(paragraph(node));
+  }
+  return blocks;
+}
+
+function renderDocxEditor(block, blocks) {
+  const editor = block.querySelector(".docx-editor"); editor.replaceChildren();
+  const addParagraph = (p, parent = editor) => {
+    const heading = /^Heading([1-6])$/i.exec(p.style || "");
+    const tag = heading ? `h${heading[1]}` : "p";
+    const element = document.createElement(tag); element.style.textAlign = p.alignment || "left";
+    for (const run of p.runs || []) { let span = document.createElement(run.bold ? "strong" : run.italic ? "em" : run.underline ? "u" : "span"); span.textContent = run.text; element.append(span); }
+    parent.append(element); return element;
+  };
+  for (const item of blocks || []) {
+    if (item.type === "table") { const table = document.createElement("table"); for (const row of item.rows) { const tr = table.insertRow(); for (const cell of row) { const td = tr.insertCell(); for (const p of cell) addParagraph(p, td); } } editor.append(table); }
+    else addParagraph(item);
+  }
+}
+
+async function loadDocxHandle(block, handle, state = {}) {
+  const file = await fileFromHandle(handle); if (!file) throw new Error("DOCX could not be read");
+  const model = parseDocx(new Uint8Array(await file.arrayBuffer()));
+  if (Array.isArray(state.blocks)) model.blocks = structuredClone(state.blocks);
+  renderDocxEditor(block, model.blocks);
+  const runtime = { handle, model };
+  runtime.serialize = () => { model.blocks = docxBlocksFromEditor(block.querySelector(".docx-editor")); return serializeDocx(model); };
+  runtimeSources.set(block, runtime); clearSourceUnavailable(block); setDocumentDirty(block, Boolean(state.dirty));
+  requestAnimationFrame(() => { block.querySelector(".docx-editor").scrollTop = Number(state.scrollTop) || 0; });
+}
+
+registerBlockType("docx", {
+  createElement() { return templates.docx.content.firstElementChild.cloneNode(true); },
+  initialize(block) {
+    attachDocumentSave(block);
+    const editor = block.querySelector(".docx-editor");
+    editor.addEventListener("input", () => setDocumentDirty(block, true));
+    for (const [selector, command] of [[".docx-bold", "bold"], [".docx-italic", "italic"], [".docx-underline", "underline"]]) block.querySelector(selector).addEventListener("click", () => { editor.focus(); document.execCommand(command); setDocumentDirty(block, true); });
+    block.querySelector(".reconnect-source").addEventListener("click", async () => { try { await reconnectSource(block, pickDocxFile, (handle) => loadDocxHandle(block, handle, this.capture(block))); } catch (error) { console.error(error); setStatus("Could not reconnect that DOCX."); } });
+  },
+  capture(block) { return { blocks: docxBlocksFromEditor(block.querySelector(".docx-editor")), scrollTop: block.querySelector(".docx-editor").scrollTop, dirty: block.dataset.documentDirty === "true" }; },
+  async restore(block, state = {}, source = null) { if (state.blocks) renderDocxEditor(block, state.blocks); setDocumentDirty(block, Boolean(state.dirty)); const handle = await storedReadableHandle(source); if (handle) await loadDocxHandle(block, handle, state); else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this DOCX"} to continue editing and save it.`); }
 });
 
 registerBlockType("gallery", {
@@ -683,6 +812,7 @@ function captureWorkspace(name) {
 }
 
 async function restoreWorkspace(snapshot) {
+  if ([...workspace.querySelectorAll('.document-block[data-document-dirty="true"]')].length && !window.confirm("This workspace contains unsaved document changes. Replace it anyway?")) return false;
   for (const block of workspace.querySelectorAll(".block")) releaseBlockResources(block);
   workspace.replaceChildren();
   zCounter = 1;
@@ -701,6 +831,7 @@ async function restoreWorkspace(snapshot) {
   if (snapshot.workspace) window.scrollTo(Number(snapshot.workspace.scrollX) || 0, Number(snapshot.workspace.scrollY) || 0);
 
   setStatus(`Restored “${snapshot.name}”.`);
+  return true;
 }
 
 // Portable formats and future history consumers use the same semantic
@@ -751,6 +882,7 @@ async function addPickedBlock({ type, picker, initialState }) {
     });
 
     if (type === "pdf") await loadPdfHandle(block, picked.handle, { page: 1 });
+    if (type === "docx") await loadDocxHandle(block, picked.handle, {});
     if (type === "gallery") await loadGalleryHandle(block, picked.handle, { currentIndex: 0 });
     if (type === "video") await loadVideoHandle(block, picked.handle, { currentTime: 0, paused: true });
 
@@ -791,8 +923,20 @@ openTextButton.addEventListener("click", async () => {
 });
 
 openPdfButton.addEventListener("click", () => void addPickedBlock({ type: "pdf", picker: pickPdfFile }));
+openDocxButton.addEventListener("click", () => void addPickedBlock({ type: "docx", picker: pickDocxFile }));
 openGalleryButton.addEventListener("click", () => void addPickedBlock({ type: "gallery", picker: pickImageDirectory }));
 openVideoButton.addEventListener("click", () => void addPickedBlock({ type: "video", picker: pickVideoFile }));
+
+window.addEventListener("framechute:open-document-handle", (event) => {
+  const { handle, file, point } = event.detail || {};
+  const type = /\.docx$/i.test(file?.name || handle?.name || "") ? "docx" : "pdf";
+  event.detail.promise = (async () => {
+    const handleKey = makeHandleKey(type); await storeHandle(handleKey, handle);
+    const block = await createBlock({ type, name: file?.name || handle.name, source: { kind: "file", handleKey, displayName: file?.name || handle.name }, geometry: point ? { ...defaultGeometry(type), x: point.x, y: point.y } : undefined });
+    if (type === "pdf") await loadPdfHandle(block, handle, { page: 1 }); else await loadDocxHandle(block, handle, {});
+    setStatus(`${file?.name || handle.name} opened for editing.`);
+  })();
+});
 
 saveFrameButton.addEventListener("click", async () => {
   const defaultName = `Flashframe ${new Date().toLocaleString()}`;

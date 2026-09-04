@@ -163,6 +163,17 @@ export async function pickPdfFile() {
   return { handle, file: await handle.getFile() };
 }
 
+export async function pickDocxFile() {
+  const [handle] = await window.showOpenFilePicker({
+    multiple: false,
+    types: [{
+      description: "Word documents",
+      accept: { "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"] }
+    }]
+  });
+  return { handle, file: await handle.getFile() };
+}
+
 export async function pickVideoFile() {
   const [handle] = await window.showOpenFilePicker({
     multiple: false,

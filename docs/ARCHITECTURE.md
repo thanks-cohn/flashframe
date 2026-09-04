@@ -21,6 +21,21 @@ src/
 
 As the project grows, `workspace.js` can be split into canvas, persistence, block registry, and individual block modules. Do not introduce a build system until the code size justifies it.
 
+## Native document editing
+
+PDF and DOCX blocks use the workspace block registry for placement, source records,
+and semantic `capture`/`restore`, while `src/documents/` owns parsing and native
+serialization. Native **Save** and **Save As** are document-local operations; they
+do not invoke the legacy workspace save path or FCX export.
+
+PDF pages are rendered locally with packaged PDF.js. Existing text is edited as
+explicit page operations and saved by preserving the original PDF while drawing
+deterministic visual replacements. This first milestone uses a white replacement
+rectangle and embedded fallback font, so backgrounds and unusual fonts may not be
+reconstructed perfectly. DOCX keeps the original OOXML ZIP and, for ordinary run
+edits, patches `word/document.xml` so unrelated package parts and unsupported
+objects remain present. Structural edits fall back to the supported semantic model.
+
 ## Browser entry point
 
 The toolbar action should open or focus one full extension-owned workspace page:

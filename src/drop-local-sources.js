@@ -44,6 +44,8 @@ function isPdfFile(file) {
   return classifyLocalFile(file) === "pdf";
 }
 
+function isDocxFile(file) { return /\.docx$/i.test(file.name || "") || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"; }
+
 function isVideoFile(file) {
   return classifyLocalFile(file) === "video";
 }
@@ -847,12 +849,18 @@ async function addHandle(handle, file, point, offset = 0) {
   if (!localFile) return null;
 
   if (localFile.type.startsWith("image/")) return null;
+  if (isPdfFile(localFile) || isDocxFile(localFile)) {
+    const detail = { handle, file: localFile, point: { x: Math.max(8, point.x - 80 + offset), y: Math.max(8, point.y - 40 + offset) } };
+    window.dispatchEvent(new CustomEvent("framechute:open-document-handle", { detail }));
+    await detail.promise;
+    return isDocxFile(localFile) ? "docx" : "pdf";
+  }
   if (isTextFile(localFile)) {
     await createTextFileBlock(localFile, point, offset);
     return "text";
   }
 
-  const kind = isPdfFile(localFile) ? "pdf" : isAudioFile(localFile) ? "audio" : isVideoFile(localFile) ? "video" : "file";
+  const kind = isAudioFile(localFile) ? "audio" : isVideoFile(localFile) ? "video" : "file";
   const handleKey = makeHandleKey(kind);
   await storeHandle(handleKey, handle);
   const payload = {
