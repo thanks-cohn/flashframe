@@ -141,8 +141,8 @@ function render() {
 }
 function enhanceSelectionControl(block) {
   if (block.querySelector(":scope > .quick-select-toggle")) return;
-  const button = document.createElement("button"); button.type = "button"; button.className = "quick-select-toggle"; button.title = "Add or remove from selection"; button.setAttribute("aria-label", "Add or remove from Quick Actions selection"); button.textContent = "✓";
-  button.addEventListener("click", (event) => { event.stopPropagation(); selection.toggle(block); }); block.append(button);
+  const button = document.createElement("button"); button.type = "button"; button.className = "quick-select-toggle"; button.title = "Open object menu"; button.setAttribute("aria-label", "Open object menu"); button.textContent = "☰";
+  button.addEventListener("click", (event) => { event.stopPropagation(); if (!selection.has(block)) selection.replace(block); window.dispatchEvent(new CustomEvent("framechute:open-object-menu", { detail: { block, clientX:event.clientX, clientY:event.clientY } })); }); block.append(button);
 }
 window.addEventListener("framechute:block-captured", (event) => {
   const { block, record } = event.detail; const value = transforms.get(block); if (!value) return;

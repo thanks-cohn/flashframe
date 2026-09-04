@@ -1,3 +1,4 @@
+import { objectMenuItems } from "./object-menu-model.mjs";
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const bar = document.querySelector(".quick-actions");
@@ -108,58 +109,23 @@ if (!workspace || !bar || !actions?.selection) {
   bar.insertBefore(closeButton, bar.querySelector("progress"));
 
   const menu = document.createElement("div");
-  menu.className = "framechute-object-context-menu";
-  menu.hidden = true;
-  menu.setAttribute("role", "menu");
-  const toggleButton = document.createElement("button");
-  toggleButton.type = "button";
-  toggleButton.setAttribute("role", "menuitem");
-  menu.append(toggleButton);
-  document.body.append(menu);
+  menu.className = "framechute-object-context-menu"; menu.hidden = true; menu.setAttribute("role", "menu");
+  document.body.append(menu); let menuBlock = null;
 
-  let menuBlock = null;
-
-  function closeMenu() {
-    menu.hidden = true;
-    menuBlock = null;
-  }
-
-  function positionMenu(clientX, clientY) {
-    menu.style.left = `${clientX}px`;
-    menu.style.top = `${clientY}px`;
-    menu.hidden = false;
-    const rect = menu.getBoundingClientRect();
-    const left = Math.max(6, Math.min(clientX, window.innerWidth - rect.width - 6));
-    const top = Math.max(6, Math.min(clientY, window.innerHeight - rect.height - 6));
-    menu.style.left = `${left}px`;
-    menu.style.top = `${top}px`;
-  }
-
-  workspace.addEventListener("contextmenu", (event) => {
-    const block = event.target.closest(".block");
-    if (!isImageBlock(block)) {
-      closeMenu();
-      return;
-    }
-    event.preventDefault();
-    menuBlock = block;
-    const hidden = isHiddenFor(block);
-    toggleButton.textContent = hidden ? "Show Quick Actions" : "Hide Quick Actions";
-    toggleButton.dataset.mode = hidden ? "show" : "hide";
-    positionMenu(event.clientX, event.clientY);
-  });
-
-  toggleButton.addEventListener("click", () => {
-    if (!menuBlock) return;
-    const show = toggleButton.dataset.mode === "show";
-    setHiddenFor(menuBlock, !show);
-    selection.replace(menuBlock);
-    applyBarVisibility();
-    if (status) status.textContent = show
-      ? "Quick Actions shown for this image."
-      : "Quick Actions hidden for this image. Right-click it to show them again.";
+  function closeMenu() { menu.hidden = true; menuBlock = null; }
+  function positionMenu(clientX, clientY) { menu.style.left=`${clientX}px`;menu.style.top=`${clientY}px`;menu.hidden=false;const rect=menu.getBoundingClientRect();menu.style.left=`${Math.max(6,Math.min(clientX,innerWidth-rect.width-6))}px`;menu.style.top=`${Math.max(6,Math.min(clientY,innerHeight-rect.height-6))}px`;menu.querySelector("button")?.focus(); }
+  async function runMenuAction(id) {
+    const block=menuBlock; if(!block)return;
+    if(id==="quick-actions"){const show=isHiddenFor(block);setHiddenFor(block,!show);selection.replace(block);applyBarVisibility();if(status)status.textContent=`Quick Actions ${show?"shown":"hidden"} for this ${block.dataset.canvasObject==="true"?"canvas":"image"}.`;}
+    if(id==="edit")await actions.registry.run("image.paint",{selection:[block]});
+    if(id==="duplicate")await actions.registry.run("object.duplicate",{selection:[block]});
+    if(id==="save-as")await actions.registry.run("image.save-as",{selection:[block]});
+    if(id==="remove")block.querySelector(":scope > .block-header .remove-block")?.click();
     closeMenu();
-  });
+  }
+  function openMenu(block,clientX,clientY){if(!isImageBlock(block))return;menuBlock=block;menu.replaceChildren();for(const item of objectMenuItems({quickActionsHidden:isHiddenFor(block)})){if(item.separator){const rule=document.createElement("hr");rule.setAttribute("role","separator");menu.append(rule);continue;}const control=document.createElement("button");control.type="button";control.setAttribute("role","menuitem");control.textContent=item.label;if(item.danger)control.className="danger";control.onclick=()=>void runMenuAction(item.id);menu.append(control);}positionMenu(clientX,clientY);}
+  window.addEventListener("framechute:open-object-menu",event=>openMenu(event.detail?.block,event.detail?.clientX||0,event.detail?.clientY||0));
+  workspace.addEventListener("contextmenu", event => { const block=event.target.closest(".block");if(!isImageBlock(block)){closeMenu();return;}event.preventDefault();if(!selection.has(block))selection.replace(block);openMenu(block,event.clientX,event.clientY); });
 
   document.addEventListener("pointerdown", (event) => {
     if (!menu.hidden && !menu.contains(event.target)) closeMenu();

@@ -53,6 +53,7 @@ function defaultPlacement(kind, point = null) {
   customOffset += 28;
   const sizes = {
     image: { width: 520, height: 440 },
+    canvas: { width: 520, height: 440 },
     web: { width: 720, height: 560 }
   };
   const size = sizes[kind] ?? sizes.web;
@@ -341,8 +342,11 @@ async function renderImage(block, payload) {
   });
 }
 
+function blankCanvasDataUrl(width,height){const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;return canvas.toDataURL("image/png");}
+
 function renderImageBlock(payload, options = {}) {
   const block = buildShell(payload, options);
+  if(payload.kind==="canvas")block.dataset.canvasObject="true";
   const detail = document.createElement("span");
   detail.className = "custom-detail";
   detail.textContent = payload.displayName || "Image";
@@ -379,6 +383,7 @@ function renderWebBlock(payload, options = {}) {
 function createCustomBlock(payload, options = {}) {
   let block = null;
   if (payload.kind === "image") block = renderImageBlock(payload, options);
+  if (payload.kind === "canvas") block = renderImageBlock(payload, options);
   if (payload.kind === LEGACY_EMBED_KIND) payload = { kind: "web", name: payload.name || "Web page", url: payload.url }; // migrate old snapshots
   if (payload.kind === "web") block = renderWebBlock(payload, options);
   if (!block) return null;
@@ -388,6 +393,8 @@ function createCustomBlock(payload, options = {}) {
   window.dispatchEvent(new CustomEvent("framechute:custom-block-ready", { detail: { block, payload } }));
   return block;
 }
+
+window.addEventListener("framechute:add-canvas",event=>{const width=Math.max(1,Math.min(8192,Math.round(Number(event.detail?.width)||1080))),height=Math.max(1,Math.min(8192,Math.round(Number(event.detail?.height)||1080)));const payload={kind:"canvas",name:`Canvas ${width}×${height}`,displayName:`Transparent canvas · ${width} × ${height}`,dataUrl:blankCanvasDataUrl(width,height),canvas:{version:1,width,height,background:"transparent"}};const block=createCustomBlock(payload);if(!block)return;block.dataset.canvasObject="true";setStatus(`Transparent ${width} × ${height} canvas added.`);workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed",{bubbles:true}));});
 
 window.addEventListener("framechute:add-result-object", async (event) => {
   const { blob, name, kind, point } = event.detail || {};
