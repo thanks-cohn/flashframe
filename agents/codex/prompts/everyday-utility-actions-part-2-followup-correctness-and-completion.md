@@ -48,7 +48,7 @@ Requirements:
 
 Add a regression test covering a DOCX containing multiple paragraphs plus at least one formatted run and/or table, then perform find/replace and verify the document model remains structurally intact.
 
-## 2. Video keyboard focus must actually work
+## 2. Video keyboard focus and direct manipulation must actually work
 
 The current code uses `block.tabIndex ||= 0`; ordinary non-focusable elements can expose `tabIndex === -1`, which is truthy and therefore may never become keyboard-focusable.
 
@@ -65,7 +65,6 @@ Requirements:
 - Left/Right seeks backward/forward
 - Shift+Left/Right may keep the larger seek step if useful
 - do not steal shortcuts while focus is inside native controls, buttons, inputs, textareas, selects, or editable text
-- preserve the small Grab affordance
 - preserve direct dragging of the video object
 - preserve bottom-right resize behavior consistent with images
 - native video controls must still work
@@ -76,6 +75,46 @@ The interaction contract is:
 - Left/Right = change **where in time** the video is
 - Space = start/stop playback
 - bottom-right handle = change displayed size
+
+### Video-only / frameless default chrome behavior
+
+When the user chooses **Show video only** / frameless video, the default should become a clean "just the movie" presentation after inactivity.
+
+Default behavior:
+
+- initially show the small upper-left video/menu affordance, the Grab affordance, and the native video player controls
+- after **10 seconds of video interaction inactivity**, fade those visible controls away together so only the video remains visible
+- pointer movement over the video, focus, keyboard interaction, or another intentional interaction should reveal the controls again and restart the 10-second timer
+- while the user is actively dragging, resizing, scrubbing, using controls, or keyboard-seeking, do not fade the controls out underneath the interaction
+- the fade should be visually gentle rather than an abrupt `display:none` pop
+
+Expose an understandable per-video visibility preference using the existing chrome/visibility architecture rather than inventing a second system. At minimum support:
+
+- **Auto fade (default)** — controls fade after 10 seconds of inactivity
+- **Always show** — controls remain visible
+
+If the existing Show / Fade / Hide setting can represent this cleanly, extend/reuse it rather than adding a parallel setting. "Hide" may remain available where already supported, but the normal video-only default is Auto fade after 10 seconds.
+
+Most important invariant:
+
+> **Fading the affordances must never make the movie impossible to manipulate.**
+
+Even when every visible control has faded away:
+
+- the user must still be able to pick up / drag the movie spatially
+- the user must still be able to resize it from the bottom-right corner
+- keep the grab surface and resize hotspot interactive even if their visual marks are transparent
+- hovering/focusing those invisible hit areas may reveal their visual affordance before or as interaction begins
+- transparent hit areas must not interfere with normal native video playback controls when those controls are visible
+- do not require the top bar to be restored just to move or resize the movie
+
+The intended result is:
+
+> **After ten quiet seconds, it looks like nothing but the movie. It is still a real FrameChute object underneath: movable, resizable, focusable, and controllable.**
+
+Persist the user's visibility preference through ordinary workspace capture/restore and FCX snapshots.
+
+Add browser-level/manual acceptance coverage when possible for the 10-second reveal/fade cycle and for moving/resizing after the visible affordances have disappeared.
 
 ## 3. PDF Extract Text / PDF → DOCX must operate on the whole document
 
@@ -272,9 +311,11 @@ At minimum validate these end-to-end.
 
 `Open multi-page text PDF → Extract Text → result contains text from every page → Convert to DOCX → resulting DOCX contains full document text`
 
-## C. Video direct manipulation
+## C. Video direct manipulation and auto-fade
 
-`Open video → Show video only / hide header → focus object → Space toggles playback → Left/Right seeks → drag Grab affordance moves object → bottom-right handle resizes → native controls still work`
+`Open video → Show video only / hide header → controls initially visible → wait 10 seconds without interacting → upper-left affordance + Grab + native video controls fade away → only video remains → move/drag video anyway → resize from bottom-right anyway → move pointer/focus object and controls reappear → Space toggles playback → Left/Right seeks → wait again and controls fade → switch to Always show and verify they no longer auto-fade`
+
+Also verify that active scrubbing, dragging, resizing, and keyboard interaction reset/suspend the inactivity timer and that invisible grab/resize hit targets do not block native controls when those controls are visible.
 
 ## D. Existing-PDF office chore
 
@@ -305,6 +346,8 @@ Add focused regression coverage for:
 - structure-preserving DOCX find/replace
 - multi-page PDF extraction
 - focusability/keyboard decision logic where practical
+- video-only 10-second auto-fade state/timer logic where practical
+- persistence of per-video visibility preference
 - any new PDF page-number/watermark/redaction helpers
 - media adapter capability detection and conversion helpers if added
 - FCX durability for newly generated result kinds
