@@ -118,6 +118,7 @@ if (!workspace || !bar || !actions?.selection) {
       if(id==="edit")await actions.registry.run("image.paint",{selection:[block]});
       if(id==="duplicate")await actions.registry.run("object.duplicate",{selection:[block]});
       if(id==="save-as")await actions.registry.run("image.save-as",{selection:[block]});
+      if(id==="open-file")window.dispatchEvent(new CustomEvent("framechute:open-file"));
       if(id==="remove")block.querySelector(":scope > .block-header .remove-block")?.click();
     } catch(error) {
       console.error(error);

@@ -4,10 +4,54 @@ const restoreAllButton = document.querySelector("#restore-image-frames");
 const aspectRatioInput = document.querySelector("#setting-frameless-aspect-ratio");
 const resizeHandleModeSelect = document.querySelector("#setting-frameless-resize-handle-mode");
 const resizeHandleDelayInput = document.querySelector("#setting-frameless-resize-handle-delay");
+const mediaChromeModeSelect = document.querySelector("#setting-media-chrome-mode");
 const ASPECT_RATIO_KEY = "framechute.frameless-image-aspect-ratio.v1";
 const RESIZE_HANDLE_MODE_KEY = "framechute.frameless-resize-handle-mode.v1";
 const RESIZE_HANDLE_DELAY_KEY = "framechute.frameless-resize-handle-delay.v1";
 const resizeHandleTimers = new WeakMap();
+const MEDIA_CHROME_MODE_KEY = "framechute.frameless-media-chrome-mode.v1";
+const CHROME_FADE_DELAY = 10000;
+const chromeFadeTimers = new WeakMap();
+const activePointers = new WeakSet();
+
+function mediaChromeMode() {
+  try { return localStorage.getItem(MEDIA_CHROME_MODE_KEY) === "always" ? "always" : "auto-fade"; }
+  catch { return "auto-fade"; }
+}
+
+function revealMediaChrome(block) {
+  const timer = chromeFadeTimers.get(block);
+  if (timer) clearTimeout(timer);
+  chromeFadeTimers.delete(block);
+  block.classList.remove("is-object-chrome-faded");
+  const video = block.querySelector(":scope > video, :scope > .video-player");
+  if (video && video.dataset.controlsBeforeFade === "true") video.controls = true;
+  delete video?.dataset.controlsBeforeFade;
+  if (!block.classList.contains("is-frameless-media") || mediaChromeMode() === "always") return;
+  chromeFadeTimers.set(block, setTimeout(() => {
+    if (activePointers.has(block) || block.classList.contains("is-frameless-dragging") || block.classList.contains("is-frameless-resizing")) {
+      revealMediaChrome(block);
+      return;
+    }
+    block.classList.add("is-object-chrome-faded");
+    if (video?.controls) {
+      video.dataset.controlsBeforeFade = "true";
+      video.controls = false;
+    }
+  }, CHROME_FADE_DELAY));
+}
+
+function applyMediaChromeMode() {
+  for (const block of workspace.querySelectorAll(".is-frameless-media")) revealMediaChrome(block);
+}
+
+if (mediaChromeModeSelect) {
+  mediaChromeModeSelect.value = mediaChromeMode();
+  mediaChromeModeSelect.addEventListener("change", () => {
+    try { localStorage.setItem(MEDIA_CHROME_MODE_KEY, mediaChromeModeSelect.value); } catch { /* best effort */ }
+    applyMediaChromeMode();
+  });
+}
 
 const stylesheet = document.createElement("link");
 stylesheet.rel = "stylesheet";
@@ -176,6 +220,13 @@ function applyFrameless(block, frameless, { persist = true, notify = true } = {}
   if (!isVisualMediaObject(block)) return;
   const enabled = Boolean(frameless);
   block.classList.toggle("is-frameless-media", enabled);
+  if (enabled) revealMediaChrome(block);
+  else {
+    const timer = chromeFadeTimers.get(block);
+    if (timer) clearTimeout(timer);
+    chromeFadeTimers.delete(block);
+    block.classList.remove("is-object-chrome-faded");
+  }
   block.dataset.frameless = String(enabled);
   const image = block.querySelector(":scope > .image-frame");
   if (image) {
@@ -336,6 +387,19 @@ function prepare(block) {
   if (isVisualMediaObject(block) && block.dataset.framelessBound !== "true") {
     block.dataset.framelessBound = "true";
     block.addEventListener("pointerdown", (event) => dragVisualObject(block, event), true);
+    for (const type of ["pointermove", "keydown"]) {
+      block.addEventListener(type, () => revealMediaChrome(block));
+    }
+    block.addEventListener("pointerdown", () => {
+      activePointers.add(block);
+      revealMediaChrome(block);
+    });
+    const finishPointerInteraction = () => {
+      if (!activePointers.delete(block)) return;
+      revealMediaChrome(block);
+    };
+    block.addEventListener("pointerup", finishPointerInteraction);
+    block.addEventListener("pointercancel", finishPointerInteraction);
   }
   attachFramelessResizeHandle(block);
   attachVideoAffordances(block);

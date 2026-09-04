@@ -53,6 +53,7 @@ if (advancedMode) {
 }
 
 await import("./drop-local-sources.js");
+await import("./workspace-ingestion.js");
 
 if (advancedMode) await import("./fit-to-size.js");
 

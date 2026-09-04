@@ -116,6 +116,30 @@
   display: none !important;
 }
 
+/* Auto Fade is visual only: menu/grab/selection/resize hit areas remain live. */
+.block.is-frameless-media.is-object-chrome-faded > .object-menu-toggle,
+.block.is-frameless-media.is-object-chrome-faded > .video-grab-handle,
+.block.is-frameless-media.is-object-chrome-faded > .frameless-resize-handle::after,
+.block.is-frameless-media.is-object-chrome-faded > .block-header,
+.block.is-frameless-media.is-object-chrome-faded > .block-toolbar,
+.block.is-frameless-media.is-object-chrome-faded > .framechute-source-location {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+.block.is-frameless-media.is-object-chrome-faded > .video-grab-handle {
+  /* Keep the transparent Grab button in pointer hit-testing, like resize. */
+  visibility: visible !important;
+  opacity: 0 !important;
+  color: transparent !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  pointer-events: auto !important;
+}
+.block.is-frameless-media.is-object-chrome-faded.is-quick-selected {
+  outline-color: transparent !important;
+}
+
 .block.hide-object-header > .block-header,
 .block.hide-object-header > .compact-drag-handle {
   display: none !important;
