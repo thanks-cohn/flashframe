@@ -20,13 +20,13 @@
 
 .block.is-frameless-media:has(> .image-frame) > .image-frame,
 .block.is-frameless-media:has(> .image-frame) > .frameless-resize-handle,
-.block.is-frameless-media:has(> .image-frame) > .quick-select-toggle,
+.block.is-frameless-media:has(> .image-frame) > .object-menu-toggle,
 .block.is-frameless-media:has(> .image-frame) > .image-paint-layer,
 .block.is-frameless-media:has(> .image-frame) > .paint-toolbar {
   pointer-events: auto !important;
 }
 
-.block.is-frameless-media > :not(.image-frame):not(.video-player):not(.custom-state-store):not(.remote-video-state):not(.frameless-resize-handle):not(.quick-select-toggle):not(.image-paint-layer):not(.paint-toolbar):not(.video-grab-handle) {
+.block.is-frameless-media > :not(.image-frame):not(.video-player):not(.custom-state-store):not(.remote-video-state):not(.frameless-resize-handle):not(.object-menu-toggle):not(.image-paint-layer):not(.paint-toolbar):not(.video-grab-handle) {
   display: none !important;
 }
 

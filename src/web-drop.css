@@ -19,6 +19,7 @@
 }
 .canvas-block .image-frame{image-rendering:auto}
 .canvas-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.new-canvas-dialog label{display:flex;justify-content:space-between;gap:16px;margin:8px 0}.new-canvas-dialog input{width:9em}
+.canvas-error{min-height:1.25em;color:#b42318;font-size:13px}
 
 .image-frame {
   object-fit: contain;

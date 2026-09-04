@@ -1,4 +1,4 @@
-import { objectMenuItems } from "./object-menu-model.mjs";
+import { isQuickActionsHidden, objectMenuItems, setQuickActionsHidden } from "./object-menu-model.mjs";
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const bar = document.querySelector(".quick-actions");
@@ -8,8 +8,6 @@ if (!workspace || !bar || !actions?.selection) {
   console.warn("FrameChute Quick Actions visibility controls could not initialize.");
 } else {
   const selection = actions.selection;
-  const HIDDEN_KEY = "quickActionsHidden";
-
   const style = document.createElement("style");
   style.textContent = `
     .quick-actions-close {
@@ -28,7 +26,7 @@ if (!workspace || !bar || !actions?.selection) {
     .quick-actions-close:hover { opacity: 1; background: #ffffff18 !important; }
     .framechute-object-context-menu {
       position: fixed;
-      z-index: 2147483647;
+      z-index: 100001;
       min-width: 190px;
       padding: 5px;
       border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
@@ -63,13 +61,12 @@ if (!workspace || !bar || !actions?.selection) {
   }
 
   function isHiddenFor(block) {
-    return isImageBlock(block) && block.dataset[HIDDEN_KEY] === "true";
+    return isImageBlock(block) && isQuickActionsHidden(block);
   }
 
   function setHiddenFor(block, hidden) {
     if (!isImageBlock(block)) return;
-    if (hidden) block.dataset[HIDDEN_KEY] = "true";
-    else delete block.dataset[HIDDEN_KEY];
+    setQuickActionsHidden(block, hidden);
   }
 
   function selectedImagesOnly() {
@@ -94,8 +91,8 @@ if (!workspace || !bar || !actions?.selection) {
   closeButton.type = "button";
   closeButton.className = "quick-actions-close";
   closeButton.textContent = "×";
-  closeButton.title = "Hide Quick Actions for this image";
-  closeButton.setAttribute("aria-label", "Hide Quick Actions for selected image");
+  closeButton.title = "Hide Quick Actions for this object";
+  closeButton.setAttribute("aria-label", "Hide Quick Actions for selected object");
   closeButton.addEventListener("click", (event) => {
     event.stopPropagation();
     const images = selectedImagesOnly();
@@ -103,8 +100,8 @@ if (!workspace || !bar || !actions?.selection) {
     images.forEach((block) => setHiddenFor(block, true));
     applyBarVisibility();
     if (status) status.textContent = images.length === 1
-      ? "Quick Actions hidden for this image. Right-click it to show them again."
-      : `Quick Actions hidden for ${images.length} selected images. Right-click an image to show them again.`;
+      ? "Quick Actions hidden for this object. Open its menu to show them again."
+      : `Quick Actions hidden for ${images.length} selected objects. Open an object menu to show them again.`;
   });
   bar.insertBefore(closeButton, bar.querySelector("progress"));
 
@@ -116,12 +113,16 @@ if (!workspace || !bar || !actions?.selection) {
   function positionMenu(clientX, clientY) { menu.style.left=`${clientX}px`;menu.style.top=`${clientY}px`;menu.hidden=false;const rect=menu.getBoundingClientRect();menu.style.left=`${Math.max(6,Math.min(clientX,innerWidth-rect.width-6))}px`;menu.style.top=`${Math.max(6,Math.min(clientY,innerHeight-rect.height-6))}px`;menu.querySelector("button")?.focus(); }
   async function runMenuAction(id) {
     const block=menuBlock; if(!block)return;
-    if(id==="quick-actions"){const show=isHiddenFor(block);setHiddenFor(block,!show);selection.replace(block);applyBarVisibility();if(status)status.textContent=`Quick Actions ${show?"shown":"hidden"} for this ${block.dataset.canvasObject==="true"?"canvas":"image"}.`;}
-    if(id==="edit")await actions.registry.run("image.paint",{selection:[block]});
-    if(id==="duplicate")await actions.registry.run("object.duplicate",{selection:[block]});
-    if(id==="save-as")await actions.registry.run("image.save-as",{selection:[block]});
-    if(id==="remove")block.querySelector(":scope > .block-header .remove-block")?.click();
-    closeMenu();
+    try {
+      if(id==="quick-actions"){const show=isHiddenFor(block);setHiddenFor(block,!show);selection.replace(block);applyBarVisibility();if(status)status.textContent=`Quick Actions ${show?"shown":"hidden"} for this object.`;}
+      if(id==="edit")await actions.registry.run("image.paint",{selection:[block]});
+      if(id==="duplicate")await actions.registry.run("object.duplicate",{selection:[block]});
+      if(id==="save-as")await actions.registry.run("image.save-as",{selection:[block]});
+      if(id==="remove")block.querySelector(":scope > .block-header .remove-block")?.click();
+    } catch(error) {
+      console.error(error);
+      if(status)status.textContent=error?.message || "That object action could not be completed.";
+    } finally { closeMenu(); }
   }
   function openMenu(block,clientX,clientY){if(!isImageBlock(block))return;menuBlock=block;menu.replaceChildren();for(const item of objectMenuItems({quickActionsHidden:isHiddenFor(block)})){if(item.separator){const rule=document.createElement("hr");rule.setAttribute("role","separator");menu.append(rule);continue;}const control=document.createElement("button");control.type="button";control.setAttribute("role","menuitem");control.textContent=item.label;if(item.danger)control.className="danger";control.onclick=()=>void runMenuAction(item.id);menu.append(control);}positionMenu(clientX,clientY);}
   window.addEventListener("framechute:open-object-menu",event=>openMenu(event.detail?.block,event.detail?.clientX||0,event.detail?.clientY||0));

@@ -1,3 +1,4 @@
+import { createCanvasPayload, validateCanvasSize } from "./standalone-canvas.mjs";
 import {
   fileFromHandle,
   hasReadPermission,
@@ -342,7 +343,11 @@ async function renderImage(block, payload) {
   });
 }
 
-function blankCanvasDataUrl(width,height){const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;return canvas.toDataURL("image/png");}
+async function blankCanvasDataUrl(width, height) {
+  const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("Could not create the transparent canvas.")), "image/png"));
+  return fileAsDataUrl(new File([blob], "transparent-canvas.png", { type: "image/png" }));
+}
 
 function renderImageBlock(payload, options = {}) {
   const block = buildShell(payload, options);
@@ -394,7 +399,17 @@ function createCustomBlock(payload, options = {}) {
   return block;
 }
 
-window.addEventListener("framechute:add-canvas",event=>{const width=Math.max(1,Math.min(8192,Math.round(Number(event.detail?.width)||1080))),height=Math.max(1,Math.min(8192,Math.round(Number(event.detail?.height)||1080)));const payload={kind:"canvas",name:`Canvas ${width}×${height}`,displayName:`Transparent canvas · ${width} × ${height}`,dataUrl:blankCanvasDataUrl(width,height),canvas:{version:1,width,height,background:"transparent"}};const block=createCustomBlock(payload);if(!block)return;block.dataset.canvasObject="true";setStatus(`Transparent ${width} × ${height} canvas added.`);workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed",{bubbles:true}));});
+window.addEventListener("framechute:add-canvas", event => {
+  event.detail.promise = (async () => {
+    try {
+      const { width, height } = validateCanvasSize(event.detail?.width, event.detail?.height);
+      const payload = createCanvasPayload(width, height, await blankCanvasDataUrl(width, height));
+      const block = createCustomBlock(payload); if (!block) return;
+      setStatus(`Transparent ${width} × ${height} canvas added.`);
+      workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed", { bubbles: true }));
+    } catch (error) { console.error(error); setStatus(error?.message || "The canvas could not be created."); }
+  })();
+});
 
 window.addEventListener("framechute:add-result-object", async (event) => {
   const { blob, name, kind, point } = event.detail || {};

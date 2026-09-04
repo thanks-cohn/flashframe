@@ -4,6 +4,8 @@ Framechute deliberately keeps selection separate from controls. Clicking an obje
 
 Choose **Upload → New Canvas**, then use a preset, the current view, or a custom pixel size. New canvases have a transparent PNG base and use the existing image paint overlay for Brush, Bucket, Erase, Undo, transforms, and export. Canvas objects therefore move, resize, duplicate, remove, save as PNG/WebP, and round-trip through FCX like imported image objects.
 
+Canvas creation is limited to 4,096 pixels on either axis and 8,388,608 pixels total. The transparent PNG backing is encoded asynchronously so creation cannot block the interface with an unbounded synchronous data-URL conversion; oversized input is rejected in the dialog with a clear explanation.
+
 PNG and WebP retain transparency. JPEG remains available through the common image exporter and is flattened against the chosen background.
 
 ## Browser smoke check
