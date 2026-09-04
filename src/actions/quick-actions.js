@@ -5,6 +5,7 @@ import { saveBlobAs } from "./native-save.js";
 import { zipSync } from "../vendor/fflate.mjs";
 import { PDFDocument } from "../vendor/pdf-lib.mjs";
 import { compareText, replaceAllText, extractDocxText, createSimpleDocx, textToPdf, readableText } from "./document-operations.js";
+import { enterPaintMode, leavePaintMode, paintOverlayFor, syncPaintOverlay } from "../image-edit/paint-runtime.js";
 
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
@@ -43,7 +44,7 @@ const addTextResult=(text,name)=>window.FrameChuteWorkspace.createBlock({type:"t
 
 async function transformed(block, overrides = {}) {
   const image = imageOf(block); if (!image?.complete) throw new Error("The image is not ready yet");
-  return imageElementToBlob(image, { ...(transforms.get(block) || {}), ...overrides });
+  return imageElementToBlob(image, { ...(transforms.get(block) || {}), paintOverlay: paintOverlayFor(block), ...overrides });
 }
 function register(action) { registry.register(action); }
 function showDialog(title, content, applyLabel = "Apply") {
@@ -62,6 +63,7 @@ register({ id: "object.duplicate", label: "Duplicate", appliesTo: (s) => s.lengt
 } });
 register({id:"object.copy-to",label:"Copy To…",appliesTo:(s)=>s.length>0&&typeof window.showDirectoryPicker==="function",async run({selection:items}){let directory;try{directory=await window.showDirectoryPicker({mode:"readwrite"});}catch(error){if(error.name==="AbortError")return;throw error;}let copied=0,excluded=[];for(const item of items){const blob=imageOf(item)?await transformed(item,{format:"png"}):await window.FrameChuteWorkspace.sourceBlob(item);if(!blob){excluded.push(nameOf(item));continue;}const filename=imageOf(item)?`${nameOf(item).replace(/\.[^.]+$/,"")}.png`:nameOf(item),handle=await directory.getFileHandle(filename,{create:true}),writer=await handle.createWritable();await writer.write(blob);await writer.close();copied++;}announce(`${copied} file(s) copied. Originals were not deleted.${excluded.length?` Unsupported: ${excluded.join(", ")}.`:""}`);}});
 register({ id: "image.rotate-left", label: "↶ Rotate", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { rotate: (transforms.get(item)?.rotate || 0) - 90 })); } });
+register({ id: "image.paint", label: "Edit Image", appliesTo: applies("image", { max: 1 }), async run({ selection: [item] }) { await enterPaintMode(item); announce("Draw on the image, then choose Done. Your source stays unchanged."); } });
 register({ id: "image.rotate-right", label: "Rotate ↷", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { rotate: (transforms.get(item)?.rotate || 0) + 90 })); } });
 register({ id: "image.flip-x", label: "Flip Horizontal", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { flipX: !transforms.get(item)?.flipX })); } });
 register({ id: "image.flip-y", label: "Flip Vertical", appliesTo: applies("image"), async run({ selection: items }) { items.forEach((item) => updateTransform(item, { flipY: !transforms.get(item)?.flipY })); } });
@@ -123,6 +125,7 @@ register({ id: "selection.zip", label: "Compress to ZIP", appliesTo: (s) => s.le
 function updateTransform(item, patch) {
   const value = { ...(transforms.get(item) || {}), ...patch }; transforms.set(item, value);
   const image = imageOf(item); if (image) image.style.transform = `rotate(${(value.rotate || 0) + (value.straighten || 0)}deg) scaleX(${value.flipX ? -1 : 1}) scaleY(${value.flipY ? -1 : 1})`;
+  syncPaintOverlay(item);
   item.dataset.utilityTransformed = "true";
 }
 function render() {
@@ -147,7 +150,7 @@ window.addEventListener("framechute:block-captured", (event) => {
 function restoreTransforms(block, value) { if (!value) return; transforms.set(block, structuredClone(value)); updateTransform(block, {}); }
 window.addEventListener("framechute:block-restored", (event) => restoreTransforms(event.detail.block, event.detail.record.state?.quickActionTransforms));
 window.addEventListener("framechute:custom-block-ready", (event) => restoreTransforms(event.detail.block, event.detail.payload?.quickActionTransforms));
-selection.addEventListener("change", render);
+selection.addEventListener("change", () => { document.querySelectorAll(".is-paint-editing").forEach((block) => { if (!selection.has(block)) leavePaintMode(block); }); render(); });
 workspace.addEventListener("click", (event) => { const block=event.target.closest(".block"); if (!block || event.target.closest("button,input,textarea,[contenteditable=true]")) return; if (event.ctrlKey||event.metaKey||event.shiftKey) selection.toggle(block); else selection.replace(block); });
 workspace.addEventListener("contextmenu", (event) => { const block=event.target.closest(".block"); if (!block) return; event.preventDefault(); selection.has(block) ? render() : selection.replace(block); });
 new MutationObserver((mutations) => { selection.items.filter((item)=>!item.isConnected).forEach((item)=>selection.remove(item)); for (const mutation of mutations) for (const node of mutation.addedNodes) if (node instanceof HTMLElement && node.classList.contains("block")) enhanceSelectionControl(node); }).observe(workspace,{childList:true});

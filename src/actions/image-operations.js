@@ -25,11 +25,16 @@ export async function imageElementToBlob(image, options = {}) {
   canvas.width = quarterTurns % 2 ? dimensions.height : dimensions.width;
   canvas.height = quarterTurns % 2 ? dimensions.width : dimensions.height;
   const context = canvas.getContext("2d", { alpha: true });
+  let drawSource = image;
+  if (options.paintOverlay) {
+    drawSource = document.createElement("canvas"); drawSource.width = sourceWidth; drawSource.height = sourceHeight;
+    const composite = drawSource.getContext("2d", { alpha: true }); composite.drawImage(image, 0, 0, sourceWidth, sourceHeight); composite.drawImage(options.paintOverlay, 0, 0, sourceWidth, sourceHeight);
+  }
   if (options.background) { context.fillStyle = options.background; context.fillRect(0, 0, canvas.width, canvas.height); }
   context.translate(canvas.width / 2, canvas.height / 2);
   context.rotate(quarterTurns * Math.PI / 2 + (Number(options.straighten) || 0) * Math.PI / 180);
   context.scale(options.flipX ? -1 : 1, options.flipY ? -1 : 1);
-  context.drawImage(image, crop.x, crop.y, crop.width, crop.height, -dimensions.width / 2, -dimensions.height / 2, dimensions.width, dimensions.height);
+  context.drawImage(drawSource, crop.x, crop.y, crop.width, crop.height, -dimensions.width / 2, -dimensions.height / 2, dimensions.width, dimensions.height);
   context.setTransform(1,0,0,1,0,0);
   if(options.perspective){
     const source=document.createElement("canvas");source.width=canvas.width;source.height=canvas.height;source.getContext("2d").drawImage(canvas,0,0);context.clearRect(0,0,canvas.width,canvas.height);
