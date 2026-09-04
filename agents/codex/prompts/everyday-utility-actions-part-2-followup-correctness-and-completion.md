@@ -82,7 +82,7 @@ When the user chooses **Show video only** / frameless video, the default should 
 
 Default behavior:
 
-- initially show the small upper-left video/menu affordance, the Grab affordance, and the native video player controls
+- initially show the small upper-left video/menu affordance, the Grab affordance, the selection/focus outline, and the native video player controls
 - after **10 seconds of video interaction inactivity**, fade those visible controls away together so only the video remains visible
 - pointer movement over the video, focus, keyboard interaction, or another intentional interaction should reveal the controls again and restart the 10-second timer
 - while the user is actively dragging, resizing, scrubbing, using controls, or keyboard-seeking, do not fade the controls out underneath the interaction
@@ -115,6 +115,29 @@ The intended result is:
 Persist the user's visibility preference through ordinary workspace capture/restore and FCX snapshots.
 
 Add browser-level/manual acceptance coverage when possible for the 10-second reveal/fade cycle and for moving/resizing after the visible affordances have disappeared.
+
+### Shared 10-second selection-outline behavior for images and videos
+
+The visible blue selection/focus box around a frameless image or frameless/video-only video should follow the same inactivity philosophy.
+
+Requirements:
+
+- when an image or video is selected/focused/interacted with, the blue outline may appear normally so the user can see the active object
+- after **10 seconds with no interaction on that object**, the blue outline should fade away
+- pointer movement over the object, click/tap, focus, keyboard interaction, drag, resize, or another intentional interaction should reveal/restart the outline timer
+- while actively dragging/resizing/using controls, never fade the outline underneath the interaction
+- this should apply to both frameless images and frameless/video-only videos
+- fading the outline is purely visual; selection state must remain intact internally
+- the object must remain draggable/resizable even when the outline and resize/grab visuals are hidden
+- the invisible bottom-right resize hotspot must remain available after the outline disappears
+- for video, the outline timer should coordinate with the same 10-second chrome timer rather than creating a conflicting second timer
+- for images, use the same shared inactivity helper/state model where practical so we do not duplicate timing logic
+
+The visual goal is:
+
+> **Interact with it and FrameChute briefly shows you what is selected. Leave it alone for ten seconds and the interface gets out of the way.**
+
+Do not clear selection just because the outline fades. If the user later interacts with the object, reveal the outline immediately and restart the timer.
 
 ## 3. PDF Extract Text / PDF → DOCX must operate on the whole document
 
@@ -313,9 +336,13 @@ At minimum validate these end-to-end.
 
 ## C. Video direct manipulation and auto-fade
 
-`Open video → Show video only / hide header → controls initially visible → wait 10 seconds without interacting → upper-left affordance + Grab + native video controls fade away → only video remains → move/drag video anyway → resize from bottom-right anyway → move pointer/focus object and controls reappear → Space toggles playback → Left/Right seeks → wait again and controls fade → switch to Always show and verify they no longer auto-fade`
+`Open video → Show video only / hide header → controls + blue active outline initially visible → wait 10 seconds without interacting → upper-left affordance + Grab + native video controls + blue outline fade away → only video remains → move/drag video anyway → resize from bottom-right anyway → move pointer/focus object and controls + outline reappear → Space toggles playback → Left/Right seeks → wait again and controls/outline fade → switch to Always show and verify video controls no longer auto-fade`
 
 Also verify that active scrubbing, dragging, resizing, and keyboard interaction reset/suspend the inactivity timer and that invisible grab/resize hit targets do not block native controls when those controls are visible.
+
+## C2. Frameless image selection-outline fade
+
+`Open image → Show image only → select/interact with image → blue outline visible → wait 10 seconds → blue outline fades but selection state remains → drag image successfully → resize from bottom-right hotspot successfully → outline reappears on renewed interaction and timer restarts`
 
 ## D. Existing-PDF office chore
 
@@ -346,8 +373,10 @@ Add focused regression coverage for:
 - structure-preserving DOCX find/replace
 - multi-page PDF extraction
 - focusability/keyboard decision logic where practical
+- shared 10-second inactivity state/timer behavior for frameless image/video selection outlines
 - video-only 10-second auto-fade state/timer logic where practical
 - persistence of per-video visibility preference
+- ensure fading outline/chrome never clears selection or disables grab/resize hit targets
 - any new PDF page-number/watermark/redaction helpers
 - media adapter capability detection and conversion helpers if added
 - FCX durability for newly generated result kinds
