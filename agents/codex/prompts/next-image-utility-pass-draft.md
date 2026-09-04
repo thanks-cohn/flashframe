@@ -40,6 +40,24 @@ The intended interaction is:
 
 > **Preview → Save it, keep working with it, or both.**
 
+## Resize dialog must close normally
+
+The existing Resize UI currently has a usability bug: once opened, the visible **×** close control does not actually dismiss it, leaving Escape as the practical way out.
+
+Fix this as part of the next pass.
+
+Required behavior:
+
+- the visible **×** button must always close/dismiss the Resize dialog
+- Escape should continue to close it as a secondary keyboard path
+- any visible **Cancel** control must also close it
+- closing without applying must not mutate the image or leave partial resize state behind
+- reopening Resize after closing should produce a clean, usable dialog rather than a stale/half-open state
+- focus should return sensibly to the invoking object/control after dismissal where practical
+- do not require the user to know the Escape-key workaround
+
+This should use the existing dialog lifecycle instead of adding a second resize modal implementation.
+
 ---
 
 # 2. Resize Folder / batch image resize
@@ -142,9 +160,35 @@ If Add results to workspace is chosen, route those outputs through the existing 
 
 ---
 
+# 3. Quick Actions panel must remain fully reachable
+
+The vertical Quick Actions panel currently allows some controls to extend below the visible viewport, making lower actions inaccessible.
+
+Keep the compact vertical layout, but make it independently scrollable whenever its contents exceed the available browser height.
+
+Requirements:
+
+- all Quick Actions must always be reachable without resizing the browser window
+- the panel should use a bounded viewport-aware height and vertical scrolling when needed
+- do not let the page/workspace itself need to scroll merely to reach Quick Actions
+- preserve the existing vertical 1990s-Mac-inspired presentation
+- avoid horizontal scrolling
+- the scrollbar should appear only when needed
+- keyboard users must be able to tab through every action, with the panel scrolling the focused control into view naturally
+- wheel/trackpad scrolling over the panel should scroll the Quick Actions list rather than losing access to lower controls
+- keep important fixed affordances such as the close/hide control usable even when the action list is long, where practical
+- do not solve this by shrinking controls until they become hard to read or click
+- preserve the dependable system-font/layout fallback if decorative styling fails
+
+The core requirement is simple:
+
+> **If FrameChute shows an action, the user must be able to reach it.**
+
+---
+
 # Architecture / longevity requirements
 
-This must build on FrameChute's existing image operations, file/directory permission handling, first-class result objects, and native Save/Save As architecture.
+This must build on FrameChute's existing image operations, file/directory permission handling, first-class result objects, native Save/Save As architecture, dialog lifecycle, and Quick Actions substrate.
 
 Do not create parallel systems for:
 
@@ -154,6 +198,8 @@ Do not create parallel systems for:
 - FCX persistence
 - native Save As
 - directory/file permission handling
+- resize-dialog state/lifecycle
+- Quick Actions selection/dispatch
 
 Prefer small adapters around existing primitives.
 
@@ -189,8 +235,24 @@ Then separately:
 
 `Choose input directory as output directory → run without explicit overwrite approval → originals remain intact`
 
+## E. Resize dismissal
+
+`Open image → Resize → click × → dialog closes immediately → image remains unchanged → reopen Resize → dialog works normally`
+
+Also verify:
+
+`Open Resize → press Escape → closes`
+
+and, if Cancel is present:
+
+`Open Resize → Cancel → closes without mutation`
+
+## F. Quick Actions overflow
+
+`Use a viewport short enough that the full Quick Actions list cannot fit → select an object with many actions → scroll inside Quick Actions → every action becomes reachable and clickable → keyboard Tab can also reach lower actions`
+
 ---
 
 # Tests / release checks
 
-When this draft is eventually implemented, add focused tests for pure resize/batch naming logic where practical and run the repository's normal full test and Chrome Web Store release gates.
+When this draft is eventually implemented, add focused tests for pure resize/batch naming logic, dialog dismissal/state reset, and Quick Actions overflow behavior where practical, then run the repository's normal full test and Chrome Web Store release gates.
