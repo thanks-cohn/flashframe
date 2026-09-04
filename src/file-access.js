@@ -8,6 +8,10 @@ import { isNativeImageName } from "./media-types.js";
 const transientHandles = new Map();
 const SYNTHETIC_IMAGE_HANDLE = "framechute-synthetic-image-v1";
 
+export function isTransientSyntheticHandle(handle) {
+  return Boolean(handle?.__framechuteSyntheticFile instanceof Blob || handle?.__framechuteSyntheticDirectory === true);
+}
+
 function isPersistableSyntheticImage(file) {
   if (!(file instanceof Blob)) return false;
   if (String(file.type || "").toLowerCase().startsWith("image/")) return true;
@@ -45,6 +49,15 @@ export function makeHandleKey(prefix = "source") {
 }
 
 export async function storeHandle(handleKey, handle) {
+  // FCX directory handles implement entries()/getFileHandle() with closures and
+  // therefore cannot be structured-cloned into IndexedDB. They only need to
+  // live for the imported workspace session; their files remain owned by the
+  // parsed FCX Blob. Native FileSystemHandles still take the durable path below.
+  if (handle?.__framechuteSyntheticDirectory === true) {
+    transientHandles.set(handleKey, handle);
+    return handleKey;
+  }
+
   const synthetic = handle?.__framechuteSyntheticFile;
   if (synthetic instanceof Blob) {
     transientHandles.set(handleKey, handle);

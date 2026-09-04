@@ -134,6 +134,14 @@ function revokeBackgroundUrl() {
   backgroundObjectUrl = null;
 }
 
+function matchesBackgroundReference(blob, reference) {
+  if (!(blob instanceof Blob) || !reference) return false;
+  if (Number.isFinite(reference.size) && blob.size !== reference.size) return false;
+  if (reference.mimeType && blob.type && blob.type !== reference.mimeType) return false;
+  if (reference.name && blob.name && blob.name !== reference.name) return false;
+  return true;
+}
+
 function applyBackground() {
   if (!workspace) return;
 
@@ -176,7 +184,13 @@ window.addEventListener("flashframe:capture-appearance", (event) => {
   event.detail.appearance = {
     backgroundColor: preferences.backgroundColor,
     backgroundMode: preferences.backgroundMode,
-    backgroundImage: backgroundBlob instanceof Blob ? backgroundBlob : null
+    backgroundImage: backgroundBlob instanceof Blob ? backgroundBlob : null,
+    backgroundImageReference: backgroundBlob instanceof Blob ? {
+      contentId: BACKGROUND_CONTENT_ID,
+      name: backgroundBlob.name || "Canvas background",
+      mimeType: backgroundBlob.type || "application/octet-stream",
+      size: backgroundBlob.size
+    } : null
   };
 });
 
@@ -187,16 +201,29 @@ window.addEventListener("flashframe:restore-appearance", (event) => {
   preferences.backgroundMode = ["cover", "contain", "tile"].includes(appearance.backgroundMode)
     ? appearance.backgroundMode
     : "cover";
-  backgroundBlob = appearance.backgroundImage instanceof Blob ? appearance.backgroundImage : null;
   savePreferences();
-  applyBackground();
   const color = document.querySelector("#setting-background-color");
   const mode = document.querySelector("#setting-background-mode");
   const status = document.querySelector("#setting-background-status");
   if (color) color.value = preferences.backgroundColor || defaultColor();
   if (mode) mode.value = preferences.backgroundMode;
-  if (status) status.textContent = backgroundBlob?.name || (backgroundBlob ? "Saved image" : "None");
-  event.detail.tasks?.push(putContent(BACKGROUND_CONTENT_ID, backgroundBlob));
+
+  const restoreBackground = async () => {
+    const embedded = appearance.backgroundImage instanceof Blob ? appearance.backgroundImage : null;
+    const reference = appearance.backgroundImageReference;
+    const locallyPreserved = !embedded && reference?.contentId
+      ? await getContent(reference.contentId)
+      : null;
+    backgroundBlob = embedded || (matchesBackgroundReference(locallyPreserved, reference) ? locallyPreserved : null);
+    applyBackground();
+    if (status) status.textContent = backgroundBlob?.name || (backgroundBlob ? "Saved image" : reference?.name ? `Missing: ${reference.name}` : "None");
+
+    // Never erase the originating profile's recoverable background just
+    // because a State Only FCX was opened elsewhere or its local record is
+    // unavailable. Embedded and explicitly empty snapshots remain durable.
+    if (embedded || !reference) await putContent(BACKGROUND_CONTENT_ID, backgroundBlob);
+  };
+  event.detail.tasks?.push(restoreBackground());
 });
 
 function intrinsicSize(media) {
