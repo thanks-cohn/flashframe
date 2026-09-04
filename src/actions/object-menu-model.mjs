@@ -1,6 +1,6 @@
 export function objectMenuItems({ quickActionsHidden = false } = {}) {
   return [
-    { id: "quick-actions", label: `${quickActionsHidden ? "Show" : "Hide"} Quick Actions` },
+    { id: "quick-actions", label: `${quickActionsHidden ? "Show" : "Hide"} Controls` },
     { id: "edit", label: "Edit" }, { id: "duplicate", label: "Duplicate" },
     { id: "save-as", label: "Save As" }, { separator: true },
     { id: "remove", label: "Remove", danger: true }

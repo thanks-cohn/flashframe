@@ -4,9 +4,9 @@ import { isQuickActionsHidden, objectMenuItems, setQuickActionsHidden } from "..
 import { canvasMetadata, createCanvasPayload, deserializeCanvasPayload, normalizeCanvasSize, serializeCanvasPayload, transparentRgba, validateCanvasSize } from "../src/standalone-canvas.mjs";
 import { compositeRgba, floodFill } from "../src/image-edit/paint-layer.mjs";
 
-test("object menu reflects per-object Quick Actions visibility",()=>{
-  assert.equal(objectMenuItems({quickActionsHidden:true})[0].label,"Show Quick Actions");
-  assert.equal(objectMenuItems({quickActionsHidden:false})[0].label,"Hide Quick Actions");
+test("object menu reflects per-object controls visibility",()=>{
+  assert.equal(objectMenuItems({quickActionsHidden:true})[0].label,"Show Controls");
+  assert.equal(objectMenuItems({quickActionsHidden:false})[0].label,"Hide Controls");
   assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["quick-actions","edit","duplicate","save-as","remove"]);
 });
 
@@ -26,7 +26,7 @@ test("ordinary selection cannot resurrect independently hidden object controls",
   assert.equal(isQuickActionsHidden(imageA),true);
   assert.equal(isQuickActionsHidden(imageB),false);
   assert.equal(isQuickActionsHidden(canvasC),true);
-  setQuickActionsHidden(imageA,false); // the explicit object-menu Show action
+  setQuickActionsHidden(imageA,false); // the explicit object-menu Show Controls action
   assert.equal(isQuickActionsHidden(imageA),false);
   assert.equal(isQuickActionsHidden(canvasC),true);
 });
