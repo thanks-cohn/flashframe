@@ -1,5 +1,6 @@
 import { fileFromHandle, resolveHandle, storeHandle } from "./file-access.js";
 import { createZip, jsonEntry, readZip, validateManifest, validateState, FCX_FORMAT, FCX_VERSION } from "./fcx-format.mjs";
+import { playConcurrently } from "./fcx-playback.mjs";
 
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
@@ -130,7 +131,7 @@ async function exportFcx() {
 function syntheticFileHandle(file) { return { kind: "file", name: file.name, __framechuteSyntheticFile: file }; }
 function syntheticDirectoryHandle(name, files) {
   const handles = new Map(files.map((file) => [file.name, syntheticFileHandle(file)]));
-  return { kind: "directory", name, async *entries() { yield* handles.entries(); }, async getFileHandle(fileName) { const value = handles.get(fileName); if (!value) throw new DOMException("File not found", "NotFoundError"); return value; } };
+  return { kind: "directory", name, __framechuteSyntheticDirectory: true, async *entries() { yield* handles.entries(); }, async getFileHandle(fileName) { const value = handles.get(fileName); if (!value) throw new DOMException("File not found", "NotFoundError"); return value; } };
 }
 
 async function materializeAssets(entries, manifest) {
@@ -208,9 +209,11 @@ async function pickFcx() {
 exportButton.addEventListener("click", exportFcx);
 importButton.addEventListener("click", pickFcx);
 resumeButton.addEventListener("click", async () => {
-  let blocked = 0;
   const media = [...workspace.querySelectorAll("video, audio")].filter((player) => resumeIds.has(player.closest(".block")?.dataset.blockId));
-  for (const player of media) { try { await player.play(); } catch { blocked += 1; } }
+  // Invoke every play() before awaiting any result so linked media are not
+  // deliberately staggered by asynchronous autoplay/decoder work.
+  const results = await playConcurrently(media);
+  const blocked = results.filter((result) => result.status === "rejected").length;
   if (!blocked) { resumeButton.hidden = true; resumeIds.clear(); setStatus("Snapshot playback resumed."); }
   else setStatus(`${blocked} media item${blocked === 1 ? "" : "s"} could not resume; use its play control.`);
 });

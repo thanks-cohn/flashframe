@@ -14,7 +14,7 @@ The importer rejects unsupported versions, malformed JSON, duplicate or unsafe p
 
 **Include Files** reads accessible file handles and stores their binary bytes. A gallery source is represented by one directory asset containing its image files. The canvas background uses the same asset table. Imported assets become synthetic browser handles, so existing block restoration and reconnect behavior remains in use.
 
-**State Only** keeps the original source identity, handle key, display name, and portable asset ID, but writes no bytes. The handle may continue to work in the originating browser profile. Elsewhere the normal visible reconnect placeholder is retained rather than dropping the block.
+**State Only** keeps the original source identity, handle key, display name, and portable asset ID, but writes no bytes. The handle may continue to work in the originating browser profile. Elsewhere the normal visible reconnect placeholder is retained rather than dropping the block. Canvas backgrounds likewise retain their browser-content identity and descriptive metadata, allowing the originating profile to restore its preserved background while showing a named missing state when those local bytes are unavailable.
 
 ## Restored state
 
