@@ -91,8 +91,8 @@ if (!workspace || !bar || !actions?.selection) {
   closeButton.type = "button";
   closeButton.className = "quick-actions-close";
   closeButton.textContent = "×";
-  closeButton.title = "Hide Quick Actions for this object";
-  closeButton.setAttribute("aria-label", "Hide Quick Actions for selected object");
+  closeButton.title = "Hide controls for this object";
+  closeButton.setAttribute("aria-label", "Hide controls for selected object");
   closeButton.addEventListener("click", (event) => {
     event.stopPropagation();
     const images = selectedImagesOnly();
@@ -100,8 +100,8 @@ if (!workspace || !bar || !actions?.selection) {
     images.forEach((block) => setHiddenFor(block, true));
     applyBarVisibility();
     if (status) status.textContent = images.length === 1
-      ? "Quick Actions hidden for this object. Open its menu to show them again."
-      : `Quick Actions hidden for ${images.length} selected objects. Open an object menu to show them again.`;
+      ? "Controls hidden for this object. Right-click it to show them again."
+      : `Controls hidden for ${images.length} selected objects. Right-click an object to show them again.`;
   });
   bar.insertBefore(closeButton, bar.querySelector("progress"));
 
@@ -114,7 +114,7 @@ if (!workspace || !bar || !actions?.selection) {
   async function runMenuAction(id) {
     const block=menuBlock; if(!block)return;
     try {
-      if(id==="quick-actions"){const show=isHiddenFor(block);setHiddenFor(block,!show);selection.replace(block);applyBarVisibility();if(status)status.textContent=`Quick Actions ${show?"shown":"hidden"} for this object.`;}
+      if(id==="quick-actions"){const show=isHiddenFor(block);setHiddenFor(block,!show);selection.replace(block);applyBarVisibility();if(status)status.textContent=`Controls ${show?"shown":"hidden"} for this object.`;}
       if(id==="edit")await actions.registry.run("image.paint",{selection:[block]});
       if(id==="duplicate")await actions.registry.run("object.duplicate",{selection:[block]});
       if(id==="save-as")await actions.registry.run("image.save-as",{selection:[block]});
