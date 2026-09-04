@@ -14,8 +14,9 @@ import {
   storeHandle
 } from "./file-access.js";
 import { writeCompleteBlob, saveDocumentAs } from "./documents/document-save.js";
-import { openPdfDocument, renderPdfPage, serializeEditedPdf } from "./documents/pdf-document.js";
+import { openPdfDocument, renderPdfPage, serializeEditedPdf, transformPdfPages, extractPdfPages, mergePdfBytes, cropPdfMargins, conservativelyCompressPdf } from "./documents/pdf-document.js";
 import { DOCX_MIME, parseDocx, serializeDocx } from "./documents/docx-document.js";
+import { duplicateBlockRecord } from "./actions/block-records.js";
 
 const workspace = document.querySelector("#workspace");
 const toolbar = document.querySelector(".toolbar");
@@ -63,6 +64,8 @@ function clampInteger(value, min = 1) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? Math.max(min, parsed) : min;
 }
+function bytesToBase64(bytes) { let result="";for(let at=0;at<bytes.length;at+=0x8000)result+=String.fromCharCode(...bytes.subarray(at,at+0x8000));return btoa(result); }
+function base64ToBytes(value) { const binary=atob(value||""),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return bytes; }
 
 function formatTime(seconds) {
   const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
@@ -368,6 +371,18 @@ async function loadPdfHandle(block, handle, state = {}) {
   setDocumentDirty(block, Boolean(state.dirty));
   await setPdfPage(block, state.page ?? block.dataset.currentPage ?? 1);
 }
+async function loadPdfBytes(block, bytes, state={}) { const model=await openPdfDocument(bytes),edits=Array.isArray(state.edits)?structuredClone(state.edits):[],runtime={handle:null,model,edits};runtime.serialize=()=>serializeEditedPdf(model,edits);runtimeSources.set(block,runtime);clearSourceUnavailable(block);setDocumentDirty(block,Boolean(state.dirty));await setPdfPage(block,state.page??1); }
+
+async function applyPdfPageOperation(block, operation) {
+  const previous = runtimeSources.get(block); if (!previous?.model) return;
+  const edited = await previous.serialize();
+  const bytes = await transformPdfPages(new Uint8Array(await edited.arrayBuffer()), operation);
+  const model = await openPdfDocument(bytes); const runtime = { handle: previous.handle, model, edits: [] };
+  runtime.serialize = () => serializeEditedPdf(model, runtime.edits); runtimeSources.set(block, runtime);
+  setDocumentDirty(block, true); await setPdfPage(block, Math.min(Number(operation.to || operation.page), model.pageCount));
+  setStatus("PDF page change is ready. Use native Save or Save As to write the PDF.");
+}
+async function replacePdfRuntime(block, bytes, page=1) { const previous=runtimeSources.get(block),model=await openPdfDocument(bytes),runtime={handle:previous?.handle,model,edits:[]};runtime.serialize=()=>serializeEditedPdf(model,runtime.edits);runtimeSources.set(block,runtime);setDocumentDirty(block,true);await setPdfPage(block,Math.min(page,model.pageCount)); }
 
 async function showGalleryIndex(block, index) {
   const runtime = runtimeSources.get(block);
@@ -498,6 +513,15 @@ registerBlockType("pdf", {
     block.querySelector(".pdf-page").addEventListener("change", (event) => {
       void setPdfPage(block, event.currentTarget.value);
     });
+    block.querySelector(".pdf-rotate").addEventListener("click", () => void applyPdfPageOperation(block, { type: "rotate", page: Number(block.dataset.currentPage || 1), degrees: 90 }));
+    block.querySelector(".pdf-delete").addEventListener("click", () => void applyPdfPageOperation(block, { type: "delete", page: Number(block.dataset.currentPage || 1) }).catch((error) => setStatus(error.message)));
+    block.querySelector(".pdf-duplicate").addEventListener("click", () => void applyPdfPageOperation(block, { type: "duplicate", page: Number(block.dataset.currentPage || 1) }));
+    block.querySelector(".pdf-move").addEventListener("click", () => { const to = Number(prompt("Move current page to position", block.dataset.currentPage || "1")); if (to) void applyPdfPageOperation(block, { type: "move", page: Number(block.dataset.currentPage || 1), to }); });
+    block.querySelector(".pdf-extract").addEventListener("click", async()=>{const runtime=runtimeSources.get(block),page=Number(block.dataset.currentPage||1),blob=await runtime.serialize(),bytes=await extractPdfPages(new Uint8Array(await blob.arrayBuffer()),[page]);window.dispatchEvent(new CustomEvent("framechute:add-result-object",{detail:{blob:new Blob([bytes],{type:"application/pdf"}),name:`${block.querySelector('.block-name').value}-page-${page}.pdf`,kind:"pdf"}}));});
+    block.querySelector(".pdf-merge").addEventListener("click",async()=>{try{const [handle]=await showOpenFilePicker({multiple:false,types:[{description:"PDF",accept:{"application/pdf":[".pdf"]}}]});if(!handle)return;const runtime=runtimeSources.get(block),base=await runtime.serialize(),added=await handle.getFile(),after=Number(block.dataset.currentPage||runtime.model.pageCount),bytes=await mergePdfBytes(new Uint8Array(await base.arrayBuffer()),new Uint8Array(await added.arrayBuffer()),after);await replacePdfRuntime(block,bytes,after+1);setStatus(`${added.name} inserted. Use Save As to preserve the original.`);}catch(error){if(error.name!=="AbortError")setStatus(error.message);}});
+    block.querySelector(".pdf-images").addEventListener("click",async()=>{const runtime=runtimeSources.get(block);for(let number=1;number<=runtime.model.pageCount;number++){const page=await runtime.model.pdf.getPage(number),viewport=page.getViewport({scale:2}),canvas=document.createElement("canvas");canvas.width=viewport.width;canvas.height=viewport.height;await page.render({canvasContext:canvas.getContext("2d"),viewport}).promise;const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));window.dispatchEvent(new CustomEvent("framechute:add-result-object",{detail:{blob,name:`page-${number}.png`,kind:"image"}}));}});
+    block.querySelector(".pdf-crop").addEventListener("click",async()=>{const margin=Number(prompt("Crop all margins by PDF points (72 = 1 inch)","18"));if(!Number.isFinite(margin))return;const runtime=runtimeSources.get(block),blob=await runtime.serialize(),page=Number(block.dataset.currentPage||1),bytes=await cropPdfMargins(new Uint8Array(await blob.arrayBuffer()),page,{left:margin,right:margin,top:margin,bottom:margin});await replacePdfRuntime(block,bytes,page);});
+    block.querySelector(".pdf-compress").addEventListener("click",async()=>{const runtime=runtimeSources.get(block),blob=await runtime.serialize(),before=blob.size,bytes=await conservativelyCompressPdf(new Uint8Array(await blob.arrayBuffer()));await replacePdfRuntime(block,bytes,Number(block.dataset.currentPage||1));setStatus(`Conservative PDF rewrite: ${before.toLocaleString()} → ${bytes.length.toLocaleString()} bytes. Embedded images were not recompressed.`);});
 
     block.querySelector(".pdf-text-layer").addEventListener("dblclick", (event) => {
       const span = event.target.closest(".pdf-text-item");
@@ -542,7 +566,7 @@ registerBlockType("pdf", {
 
   capture(block) {
     const runtime = runtimeSources.get(block);
-    return { page: clampInteger(block.querySelector(".pdf-page").value, 1), edits: structuredClone(runtime?.edits || []), dirty: block.dataset.documentDirty === "true" };
+    return { page: clampInteger(block.querySelector(".pdf-page").value, 1), edits: structuredClone(runtime?.edits || []), dirty: block.dataset.documentDirty === "true", embeddedPdfBase64: getSourceRecord(block) ? null : runtime?.model?.bytes ? bytesToBase64(runtime.model.bytes) : null };
   },
 
   async restore(block, state = {}, source = null) {
@@ -550,6 +574,7 @@ registerBlockType("pdf", {
     const handle = await storedReadableHandle(source);
 
     if (handle) await loadPdfHandle(block, handle, state);
+    else if(state.embeddedPdfBase64)await loadPdfBytes(block,base64ToBytes(state.embeddedPdfBase64),state);
     else setSourceUnavailable(block, `Reconnect ${source?.displayName ?? "this PDF"} to display it.`);
   }
 });
@@ -776,6 +801,8 @@ async function createBlock(record = {}) {
     setSourceUnavailable(block, `Flashframe could not restore ${record.source?.displayName ?? "this source"}.`);
   }
 
+  window.dispatchEvent(new CustomEvent("framechute:block-restored", { detail: { block, record } }));
+
   return block;
 }
 
@@ -785,7 +812,7 @@ function captureBlock(block) {
 
   if (!definition) throw new Error(`Cannot serialize unknown block type: ${type}`);
 
-  return {
+  const record = {
     id: block.dataset.blockId,
     type,
     name: block.querySelector(".block-name")?.value?.trim() || "Untitled",
@@ -795,7 +822,32 @@ function captureBlock(block) {
     timedMotion: block.dataset.timedMotion ? JSON.parse(block.dataset.timedMotion) : null,
     layerRule: block.dataset.layerRuleData ? JSON.parse(block.dataset.layerRuleData) : null
   };
+  window.dispatchEvent(new CustomEvent("framechute:block-captured", { detail: { block, record } }));
+  return record;
 }
+
+// Shared public bridge for utility modules. It deliberately delegates to the
+// same registry/capture/create path as built-in blocks so FCX and duplication
+// never need to inspect or clone live DOM/runtime state.
+window.FrameChuteWorkspace = Object.freeze({
+  registerBlockType,
+  createBlock,
+  captureBlock,
+  async sourceBlob(block) {
+    const type = block.dataset.blockType;
+    const definition = blockTypes.get(type); if (definition?.exportBlob) return definition.exportBlob(block);
+    if (type === "text") return new Blob([block.querySelector(".text-editor")?.value || ""], { type: "text/plain" });
+    const runtime = runtimeSources.get(block);
+    if ((type === "pdf" || type === "docx") && runtime?.serialize) return runtime.serialize();
+    if (runtime?.handle) return fileFromHandle(runtime.handle);
+    if (type === "gallery" && runtime?.entries?.[runtime.index]) return runtime.entries[runtime.index].handle.getFile();
+    return null;
+  },
+  async duplicateBlock(block) {
+    const record = duplicateBlockRecord(captureBlock(block), { id: crypto.randomUUID(), z: ++zCounter });
+    return createBlock(record);
+  }
+});
 
 function captureWorkspace(name) {
   const detail = {};
@@ -935,6 +987,17 @@ window.addEventListener("framechute:open-document-handle", (event) => {
     const block = await createBlock({ type, name: file?.name || handle.name, source: { kind: "file", handleKey, displayName: file?.name || handle.name }, geometry: point ? { ...defaultGeometry(type), x: point.x, y: point.y } : undefined });
     if (type === "pdf") await loadPdfHandle(block, handle, { page: 1 }); else await loadDocxHandle(block, handle, {});
     setStatus(`${file?.name || handle.name} opened for editing.`);
+  })();
+});
+
+window.addEventListener("framechute:open-result-file", (event) => {
+  const { file, kind } = event.detail || {}; if (!(file instanceof File)) return;
+  event.detail.promise = (async () => {
+    const type = kind === "pdf" ? "pdf" : (kind === "video" || kind === "audio") ? "video" : null;
+    if (!type) { setStatus(`${file.name} was extracted. Use Save As because this file type has no workspace editor yet.`); return; }
+    const handle = { kind: "file", name: file.name, __framechuteSyntheticFile: file };
+    const block = await createBlock({ type, name: file.name, state: type === "pdf" ? { page: 1 } : { currentTime: 0, paused: true } });
+    if (type === "pdf") await loadPdfHandle(block, handle, { page: 1 }); else await loadVideoHandle(block, handle, { currentTime: 0, paused: true });
   })();
 });
 
