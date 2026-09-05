@@ -5,7 +5,7 @@ export function objectMenuItems({ quickActionsHidden = false, quickActionsEnable
     { id: "quick-actions-global", label: `Quick Actions  [ ${quickActionsEnabled ? "ON" : "OFF"} ]` },
     { id: "open-file", label: "Open File…" },
     { id: "remove", label: "Close Object", danger: true }, { separator: true },
-    { id: "quick-actions", label: `${quickActionsHidden ? "Show" : "Hide"} Quick Actions` },
+    { id: "quick-actions", label: `${quickActionsHidden ? "Show" : "Hide"} Quick Actions for This Object` },
     { id: "shrink-fit", label: "Shrink to Fit" },
     { id: "fit-workspace", label: "Fit to Workspace" },
     { id: "fit-width", label: "Fit Width" },

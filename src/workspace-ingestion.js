@@ -1,3 +1,5 @@
+import { routeOpenFileSelection } from "./file-selection-routing.mjs";
+
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const exportButton = document.querySelector("#export-fcx");
@@ -12,10 +14,11 @@ function point() {
 }
 
 function routeFiles(files) {
-  const snapshots=files.filter(file=>file.name.toLowerCase().endsWith(".fcx"));
-  for(const file of snapshots)window.dispatchEvent(new CustomEvent("framechute:open-snapshot-file",{detail:{file}}));
-  const ordinary=files.filter(file=>!file.name.toLowerCase().endsWith(".fcx"));
-  if(ordinary.length)void window.FrameChuteIngest?.addFiles(ordinary, point());
+  return routeOpenFileSelection(files, {
+    openSnapshot: file => window.dispatchEvent(new CustomEvent("framechute:open-snapshot-file", { detail: { file } })),
+    ingestFiles: ordinary => void window.FrameChuteIngest?.addFiles(ordinary, point()),
+    announce: message => { if (status) status.textContent = message; }
+  });
 }
 
 async function openFiles() {
