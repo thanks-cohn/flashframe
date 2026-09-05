@@ -89,6 +89,16 @@ body.toolbar-hidden .workspace {
   user-select: none;
 }
 
+.dock-drag.dock-drag-labelled {
+  display: flex;
+  width: auto;
+  min-width: 62px;
+  padding: 0 8px;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .floating-dock.dock-hidden {
   display: none !important;
 }
