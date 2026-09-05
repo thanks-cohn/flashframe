@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isQuickActionsHidden, objectMenuItems, setQuickActionsHidden } from "../src/actions/object-menu-model.mjs";
+import { isQuickActionsHidden, objectMenuItems, readQuickActionsEnabled, setQuickActionsHidden, writeQuickActionsEnabled } from "../src/actions/object-menu-model.mjs";
 import { canvasMetadata, createCanvasPayload, deserializeCanvasPayload, normalizeCanvasSize, serializeCanvasPayload, transparentRgba, validateCanvasSize } from "../src/standalone-canvas.mjs";
 import { compositeRgba, floodFill } from "../src/image-edit/paint-layer.mjs";
 
 test("object menu reflects per-object Quick Actions visibility",()=>{
   assert.equal(objectMenuItems({quickActionsHidden:true}).find(item=>item.id==="quick-actions").label,"Show Quick Actions");
   assert.equal(objectMenuItems({quickActionsHidden:false}).find(item=>item.id==="quick-actions").label,"Hide Quick Actions");
-  assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["open-file","remove","quick-actions","edit","duplicate","save-as"]);
-  assert.equal(objectMenuItems()[1].label,"Close Object");
+  assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["quick-actions-global","open-file","remove","quick-actions","shrink-fit","fit-workspace","fit-width","fit-height","actual-size","shrink-all","edit","duplicate","save-as"]);
+  assert.equal(objectMenuItems().find(item=>item.id==="remove").label,"Close Object");
 });
 
 test("standalone canvas metadata is honest, bounded, and transparent",()=>{
@@ -48,4 +48,13 @@ test("canvas pixels use the shared flood-fill and composition engine",()=>{
   const base=transparentRgba(2,2),overlay=transparentRgba(2,2);
   assert.equal(floodFill({visible:base,overlay,width:2,height:2,x:0,y:0,color:[10,20,30,255],tolerance:0}),4);
   assert.deepEqual([...compositeRgba(base,overlay)],[10,20,30,255,10,20,30,255,10,20,30,255,10,20,30,255]);
+});
+
+
+test("global Quick Actions preference is persistent and independent",()=>{
+  const values=new Map(),storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
+  assert.equal(readQuickActionsEnabled(storage),true);
+  writeQuickActionsEnabled(false,storage);
+  assert.equal(readQuickActionsEnabled(storage),false);
+  assert.equal(objectMenuItems({quickActionsEnabled:false})[0].label,"Quick Actions  [ OFF ]");
 });

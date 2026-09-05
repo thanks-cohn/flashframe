@@ -222,6 +222,11 @@ async function pickFcx() {
   } catch (error) { if (error?.name !== "AbortError") { console.error(error); setStatus(`Could not open .fcx: ${error.message}`); } }
 }
 
+window.addEventListener("framechute:open-snapshot-file", event => {
+  const file = event.detail?.file;
+  if (file) void importFcx(file);
+});
+
 exportButton.addEventListener("click", exportFcx);
 importButton.addEventListener("click", pickFcx);
 resumeButton.addEventListener("click", async () => {
