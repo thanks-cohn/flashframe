@@ -5,9 +5,10 @@ import { canvasMetadata, createCanvasPayload, deserializeCanvasPayload, normaliz
 import { compositeRgba, floodFill } from "../src/image-edit/paint-layer.mjs";
 
 test("object menu reflects per-object Quick Actions visibility",()=>{
-  assert.equal(objectMenuItems({quickActionsHidden:true})[0].label,"Show Quick Actions");
-  assert.equal(objectMenuItems({quickActionsHidden:false})[0].label,"Hide Quick Actions");
-  assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["quick-actions","edit","duplicate","save-as","open-file","remove"]);
+  assert.equal(objectMenuItems({quickActionsHidden:true}).find(item=>item.id==="quick-actions").label,"Show Quick Actions");
+  assert.equal(objectMenuItems({quickActionsHidden:false}).find(item=>item.id==="quick-actions").label,"Hide Quick Actions");
+  assert.deepEqual(objectMenuItems().filter(item=>item.id).map(item=>item.id),["open-file","remove","quick-actions","edit","duplicate","save-as"]);
+  assert.equal(objectMenuItems()[1].label,"Close Object");
 });
 
 test("standalone canvas metadata is honest, bounded, and transparent",()=>{
@@ -40,7 +41,7 @@ test("Canvas payload round-trips semantic identity and real FCX extension state"
   assert.equal(restored.dataUrl,"data:image/png;base64,transparent");
   assert.deepEqual(restored.imagePaintLayer,paint);
   assert.equal(restored.quickActionsHidden,true);
-  assert.equal(objectMenuItems({quickActionsHidden:restored.quickActionsHidden})[1].label,"Edit");
+  assert.equal(objectMenuItems({quickActionsHidden:restored.quickActionsHidden}).find(item=>item.id==="edit").label,"Edit");
 });
 
 test("canvas pixels use the shared flood-fill and composition engine",()=>{
