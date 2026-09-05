@@ -1,5 +1,22 @@
 # ADDENDUM — DOCX existing-image rendering
 
+## CURRENT CONFIRMED BUG — PRIORITIZE THIS
+
+This is now reproduced in the live extension: ordinary DOCX files containing embedded pictures open with their text visible while their pictures disappear from the FrameChute editor.
+
+Inspection of the current implementation confirms why:
+
+- `src/documents/docx-document.js` parses run content primarily as text/tab/line-break data
+- common Word drawing/image nodes are not represented in the editable block/run model
+- `renderDocxEditor(...)` therefore has no image contribution to render even though the underlying OOXML package may still contain `word/media/*`
+- the least-destructive serializer can preserve unknown original OOXML in some text-only edit cases, but a reconstruction/fallback path must not silently strip drawings, image relationships, or media parts
+
+Treat this as a correctness bug, not an optional fidelity enhancement.
+
+The first successful implementation target is simple:
+
+> **Open an ordinary DOCX containing inline PNG/JPEG images and actually see those images in the editable document in approximately the right places.**
+
 Read this together with:
 
 - `agents/codex/prompts/next-image-utility-pass-draft.md`
