@@ -1,3 +1,5 @@
+import { routeOpenFileSelection } from "./file-selection-routing.mjs";
+
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const exportButton = document.querySelector("#export-fcx");
@@ -11,17 +13,25 @@ function point() {
   return { x: Math.max(40, innerWidth / 2 - rect.left), y: Math.max(40, innerHeight / 2 - rect.top) };
 }
 
+function routeFiles(files) {
+  return routeOpenFileSelection(files, {
+    openSnapshot: file => window.dispatchEvent(new CustomEvent("framechute:open-snapshot-file", { detail: { file } })),
+    ingestFiles: ordinary => void window.FrameChuteIngest?.addFiles(ordinary, point()),
+    announce: message => { if (status) status.textContent = message; }
+  });
+}
+
 async function openFiles() {
   try {
     if (typeof showOpenFilePicker === "function") {
       const handles = await showOpenFilePicker({ multiple: true });
       const files = await Promise.all(handles.map(handle => handle.getFile()));
-      await window.FrameChuteIngest?.addFiles(files, point());
+      routeFiles(files);
       return;
     }
     const picker = document.createElement("input");
     picker.type = "file"; picker.multiple = true;
-    picker.addEventListener("change", () => void window.FrameChuteIngest?.addFiles([...picker.files], point()), { once: true });
+    picker.addEventListener("change", () => routeFiles([...picker.files]), { once: true });
     picker.click();
   } catch (error) {
     if (error?.name !== "AbortError") {
@@ -42,12 +52,14 @@ window.addEventListener("framechute:open-file", () => void openFiles());
 workspace.addEventListener("contextmenu", event => {
   if (event.target.closest(".block")) return;
   event.preventDefault();
+  window.dispatchEvent(new CustomEvent("framechute:close-context-menus",{detail:{except:menu}}));
   menu.style.left = `${Math.min(event.clientX, innerWidth - 150)}px`;
   menu.style.top = `${Math.min(event.clientY, innerHeight - 45)}px`;
   menu.hidden = false;
   menu.querySelector("button").focus();
 });
 document.addEventListener("pointerdown", event => { if (!menu.contains(event.target)) menu.hidden = true; });
+window.addEventListener("framechute:close-context-menus",event=>{if(event.detail?.except!==menu)menu.hidden=true;});
 
 window.addEventListener("keydown", event => {
   if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "e") {

@@ -190,6 +190,7 @@ function startMenuGrab(block, point = lastContextPoint) {
 }
 
 function showMenu(block, x, y) {
+  window.dispatchEvent(new CustomEvent("framechute:close-context-menus", { detail: { except: menu } }));
   targetBlock = block;
   menu.hidden = false;
   const timed = Boolean(block) && (block.dataset.timedMedia === "true" || Boolean(block.querySelector("video, audio")));
@@ -413,4 +414,9 @@ window.addEventListener("blur", () => {
   if (menuGrab) finishMenuGrab({ cancel: false });
 });
 window.addEventListener("resize", hideMenu);
-window.addEventListener("scroll", hideMenu, true);
+window.addEventListener("scroll", (event) => {
+  if (!menu.contains(event.target)) hideMenu();
+}, true);
+window.addEventListener("framechute:close-context-menus", (event) => {
+  if (event.detail?.except !== menu) hideMenu();
+});

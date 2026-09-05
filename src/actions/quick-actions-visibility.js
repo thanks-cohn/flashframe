@@ -1,4 +1,5 @@
-import { isQuickActionsHidden, objectMenuItems, setQuickActionsHidden } from "./object-menu-model.mjs";
+import { isQuickActionsHidden, objectMenuItems, readQuickActionsEnabled, setQuickActionsHidden, writeQuickActionsEnabled } from "./object-menu-model.mjs";
+import { fittedImageSize } from "./image-display-size.mjs";
 const workspace = document.querySelector("#workspace");
 const status = document.querySelector("#status");
 const bar = document.querySelector(".quick-actions");
@@ -8,6 +9,7 @@ if (!workspace || !bar || !actions?.selection) {
   console.warn("FrameChute Quick Actions visibility controls could not initialize.");
 } else {
   const selection = actions.selection;
+  let quickActionsEnabled = readQuickActionsEnabled();
   const style = document.createElement("style");
   style.textContent = `
     .quick-actions-close {
@@ -35,6 +37,10 @@ if (!workspace || !bar || !actions?.selection) {
       color: CanvasText;
       box-shadow: 0 12px 34px #0005;
       font: 13px system-ui, sans-serif;
+      max-height: calc(100vh - 12px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .framechute-object-context-menu[hidden] { display: none; }
     .framechute-object-context-menu button {
@@ -75,6 +81,7 @@ if (!workspace || !bar || !actions?.selection) {
   }
 
   function shouldHideBar() {
+    if (!quickActionsEnabled) return true;
     const items = selection.items;
     if (!items.length) return true;
     return items.every(isImageBlock) && items.every(isHiddenFor);
@@ -110,11 +117,27 @@ if (!workspace || !bar || !actions?.selection) {
   document.body.append(menu); let menuBlock = null;
 
   function closeMenu() { menu.hidden = true; menuBlock = null; }
-  function positionMenu(clientX, clientY) { menu.style.left=`${clientX}px`;menu.style.top=`${clientY}px`;menu.hidden=false;const rect=menu.getBoundingClientRect();menu.style.left=`${Math.max(6,Math.min(clientX,innerWidth-rect.width-6))}px`;menu.style.top=`${Math.max(6,Math.min(clientY,innerHeight-rect.height-6))}px`;menu.querySelector("button")?.focus(); }
+  function positionMenu(clientX, clientY) { window.dispatchEvent(new CustomEvent("framechute:close-context-menus", { detail: { except: menu } })); menu.style.left=`${clientX}px`;menu.style.top=`${clientY}px`;menu.hidden=false;const rect=menu.getBoundingClientRect();menu.style.left=`${Math.max(6,Math.min(clientX,innerWidth-rect.width-6))}px`;menu.style.top=`${Math.max(6,Math.min(clientY,innerHeight-rect.height-6))}px`;menu.querySelector("button")?.focus(); }
+  function imageFor(block) { return block?.querySelector(".image-frame, .gallery-image"); }
+  function resizeDisplay(block, mode) {
+    const image=imageFor(block); if(!image?.naturalWidth)return;
+    const blockRect=block.getBoundingClientRect(),imageRect=image.getBoundingClientRect();
+    const chromeWidth=Math.max(0,blockRect.width-imageRect.width),chromeHeight=Math.max(0,blockRect.height-imageRect.height);
+    const size=fittedImageSize(image.naturalWidth,image.naturalHeight,Math.max(1,workspace.clientWidth-48-chromeWidth),Math.max(1,workspace.clientHeight-48-chromeHeight),mode);
+    if(!size)return; block.style.width=`${Math.ceil(size.width+chromeWidth)}px`;block.style.height=`${Math.ceil(size.height+chromeHeight)}px`;
+    workspace.dispatchEvent(new CustomEvent("flashframe:workspace-changed",{bubbles:true}));
+  }
   async function runMenuAction(id) {
     const block=menuBlock; if(!block)return;
     try {
+      if(id==="quick-actions-global"){quickActionsEnabled=writeQuickActionsEnabled(!quickActionsEnabled);applyBarVisibility();if(status)status.textContent=`Quick Actions are now ${quickActionsEnabled?"on":"off"} everywhere.`;}
       if(id==="quick-actions"){const show=isHiddenFor(block);setHiddenFor(block,!show);selection.replace(block);applyBarVisibility();if(status)status.textContent=`Quick Actions ${show?"shown":"hidden"} for this object.`;}
+      if(id==="shrink-fit")resizeDisplay(block,"shrink");
+      if(id==="fit-workspace")resizeDisplay(block,"contain");
+      if(id==="fit-width")resizeDisplay(block,"width");
+      if(id==="fit-height")resizeDisplay(block,"height");
+      if(id==="actual-size")resizeDisplay(block,"actual");
+      if(id==="shrink-all")workspace.querySelectorAll(".block").forEach(candidate=>{if(isImageBlock(candidate))resizeDisplay(candidate,"shrink");});
       if(id==="edit")await actions.registry.run("image.paint",{selection:[block]});
       if(id==="duplicate")await actions.registry.run("object.duplicate",{selection:[block]});
       if(id==="save-as")await actions.registry.run("image.save-as",{selection:[block]});
@@ -125,7 +148,7 @@ if (!workspace || !bar || !actions?.selection) {
       if(status)status.textContent=error?.message || "That object action could not be completed.";
     } finally { closeMenu(); }
   }
-  function openMenu(block,clientX,clientY){if(!isImageBlock(block))return;menuBlock=block;menu.replaceChildren();for(const item of objectMenuItems({quickActionsHidden:isHiddenFor(block)})){if(item.separator){const rule=document.createElement("hr");rule.setAttribute("role","separator");menu.append(rule);continue;}const control=document.createElement("button");control.type="button";control.setAttribute("role","menuitem");control.textContent=item.label;if(item.danger)control.className="danger";control.onclick=()=>void runMenuAction(item.id);menu.append(control);}positionMenu(clientX,clientY);}
+  function openMenu(block,clientX,clientY){if(!isImageBlock(block))return;menuBlock=block;menu.replaceChildren();for(const item of objectMenuItems({quickActionsHidden:isHiddenFor(block),quickActionsEnabled})){if(item.separator){const rule=document.createElement("hr");rule.setAttribute("role","separator");menu.append(rule);continue;}const control=document.createElement("button");control.type="button";control.setAttribute("role","menuitem");control.textContent=item.label;if(item.danger)control.className="danger";control.onclick=()=>void runMenuAction(item.id);menu.append(control);}positionMenu(clientX,clientY);}
   window.addEventListener("framechute:open-object-menu",event=>openMenu(event.detail?.block,event.detail?.clientX||0,event.detail?.clientY||0));
   workspace.addEventListener("contextmenu", event => { const block=event.target.closest(".block");if(!isImageBlock(block)){closeMenu();return;}event.preventDefault();if(!selection.has(block))selection.replace(block);openMenu(block,event.clientX,event.clientY); });
 
@@ -134,8 +157,15 @@ if (!workspace || !bar || !actions?.selection) {
   });
   window.addEventListener("blur", closeMenu);
   window.addEventListener("resize", closeMenu);
-  window.addEventListener("scroll", closeMenu, true);
-  window.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+  window.addEventListener("scroll", event => { if (!menu.contains(event.target)) closeMenu(); }, true);
+  window.addEventListener("framechute:close-context-menus", event => { if (event.detail?.except !== menu) closeMenu(); });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { closeMenu(); return; }
+    if (menu.hidden || !["ArrowDown","ArrowUp","Home","End","PageDown","PageUp"].includes(event.key)) return;
+    event.preventDefault(); const controls=[...menu.querySelectorAll("button")],current=Math.max(0,controls.indexOf(document.activeElement));
+    let next=event.key==="Home"?0:event.key==="End"?controls.length-1:current+(event.key.includes("Down")?1:-1);
+    next=Math.max(0,Math.min(controls.length-1,next));controls[next]?.focus();controls[next]?.scrollIntoView({block:"nearest"});
+  });
 
   selection.addEventListener("change", applyBarVisibility);
 
